@@ -18,24 +18,36 @@ def _fix_db_url(url: str) -> str:
     """
     if not url:
         return url
+        
     if url.startswith('postgres://'):
         url = url.replace('postgres://', 'postgresql://', 1)
+        
     # Inject pg8000 if no driver already specified
     if url.startswith('postgresql://') and '+' not in url.split('//')[0]:
         url = url.replace('postgresql://', 'postgresql+pg8000://', 1)
 
-    # Decode URL-encoded characters in the password (pg8000 requirement)
+    # Cleanly decode URL-encoded characters in the password without corrupting the netloc host
     try:
         parsed = urlparse(url)
         if parsed.password and '%' in parsed.password:
             decoded_password = unquote(parsed.password)
-            # Rebuild netloc with decoded password
+            
+            # Rebuild netloc accurately: username:decoded_password@hostname:port
+            auth_part = f"{parsed.username}:{decoded_password}"
+            host_part = f"{parsed.hostname}"
             if parsed.port:
-                netloc = f"{parsed.username}:{decoded_password}@{parsed.hostname}:{parsed.port}"
-            else:
-                netloc = f"{parsed.username}:{decoded_password}@{parsed.hostname}"
-            url = urlunparse((parsed.scheme, netloc, parsed.path,
-                              parsed.params, parsed.query, parsed.fragment))
+                host_part += f":{parsed.port}"
+                
+            new_netloc = f"{auth_part}@{host_part}"
+            
+            url = urlunparse((
+                parsed.scheme, 
+                new_netloc, 
+                parsed.path,
+                parsed.params, 
+                parsed.query, 
+                parsed.fragment
+            ))
     except Exception:
         pass  # If parsing fails, use the URL as-is
 
