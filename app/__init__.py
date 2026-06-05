@@ -4,6 +4,11 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_login import LoginManager
 from flask_bcrypt import Bcrypt
+from dotenv import load_dotenv
+
+# Load .env for local development
+load_dotenv()
+
 from config import config_map
 
 db = SQLAlchemy()
@@ -16,11 +21,20 @@ login_manager.login_message = 'Please log in to access this page.'
 login_manager.login_message_category = 'warning'
 
 
-def create_app(config_name: str = 'default') -> Flask:
+def create_app(config_name: str = None) -> Flask:
+    # Auto-detect environment from FLASK_ENV
+    if config_name is None:
+        config_name = os.environ.get('FLASK_ENV', 'development')
+
     app = Flask(__name__, instance_relative_config=True)
     cfg = config_map.get(config_name, config_map['default'])
     app.config.from_object(cfg)
-    os.makedirs(app.instance_path, exist_ok=True)
+
+    # Only create instance folder in non-serverless environments
+    try:
+        os.makedirs(app.instance_path, exist_ok=True)
+    except OSError:
+        pass
 
     db.init_app(app)
     migrate.init_app(app, db)
@@ -57,6 +71,7 @@ def create_app(config_name: str = 'default') -> Flask:
         app.register_blueprint(banking_bp, url_prefix='/banking')
         app.register_blueprint(settings_bp, url_prefix='/settings')
 
+        # Auto-create tables (safe for both SQLite and PostgreSQL)
         db.create_all()
 
     # ── Global template context ──────────────────────────────

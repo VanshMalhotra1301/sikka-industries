@@ -11,3 +11,4 @@ backups/
 reports/
 *.sqlite3
 *.db
+.vercel/
