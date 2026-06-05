@@ -96,4 +96,16 @@ def create_app(config_name: str = None) -> Flask:
         from flask import render_template
         return render_template('errors/404.html'), 404
 
+    @app.errorhandler(500)
+    def internal_error(e):
+        from flask import render_template
+        import traceback
+        app.logger.error(f'Internal Server Error: {e}\n{traceback.format_exc()}')
+        db.session.rollback()  # Rollback any failed transaction
+        return render_template('errors/500.html'), 500
+
+    # Log startup info for debugging
+    app.logger.info(f'Sikka ERP started with config: {config_name}')
+    app.logger.info(f'Database URI prefix: {app.config.get("SQLALCHEMY_DATABASE_URI", "NOT SET")[:30]}...')
+
     return app

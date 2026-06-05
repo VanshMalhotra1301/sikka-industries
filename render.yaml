@@ -1,0 +1,17 @@
+databases: []
+
+services:
+  - type: web
+    name: sikka-erp
+    runtime: python
+    buildCommand: "./build.sh"
+    startCommand: "gunicorn run:app --bind 0.0.0.0:$PORT --workers 2 --timeout 120"
+    envVars:
+      - key: FLASK_ENV
+        value: production
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        sync: false   # set manually in Render dashboard
+      - key: PYTHON_VERSION
+        value: "3.11.9"

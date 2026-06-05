@@ -48,7 +48,7 @@ def init_admin():
     if existing_user:
         return "Admin user baseline already configured.", 200
         
-    hashed_password = bcrypt.generate_password_hash('SikkaAdmin2026').decode('utf-8')
+    hashed_password = bcrypt.generate_password_hash('admin123').decode('utf-8')
     admin_user = User(
         username='admin',
         password_hash=hashed_password,
@@ -57,7 +57,7 @@ def init_admin():
     )
     db.session.add(admin_user)
     db.session.commit()
-    return "Baseline Administrator initialized! Username: admin | Password: SikkaAdmin2026", 201
+    return "Demo Admin initialized! Username: admin | Password: admin123", 201
 
 @auth_bp.route('/users', methods=['GET', 'POST'])
 @login_required

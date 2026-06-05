@@ -1,7 +1,7 @@
 import os
 from datetime import timedelta
 from dotenv import load_dotenv
-from sqlalchemy.pool import NullPool
+from urllib.parse import urlparse, urlunparse, unquote
 
 # Load .env file in local development
 load_dotenv()
@@ -12,7 +12,9 @@ BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 def _fix_db_url(url: str) -> str:
     """
     1. Supabase returns 'postgres://' but SQLAlchemy 1.4+ requires 'postgresql://'.
-    2. Vercel needs pg8000 (pure Python driver) — inject '+pg8000' into the scheme.
+    2. Render needs pg8000 (pure Python driver) — inject '+pg8000' into the scheme.
+    3. pg8000 does NOT auto-decode URL-encoded passwords (e.g. %40 → @),
+       so we must unquote the password component ourselves.
     """
     if not url:
         return url
@@ -21,6 +23,22 @@ def _fix_db_url(url: str) -> str:
     # Inject pg8000 if no driver already specified
     if url.startswith('postgresql://') and '+' not in url.split('//')[0]:
         url = url.replace('postgresql://', 'postgresql+pg8000://', 1)
+
+    # Decode URL-encoded characters in the password (pg8000 requirement)
+    try:
+        parsed = urlparse(url)
+        if parsed.password and '%' in parsed.password:
+            decoded_password = unquote(parsed.password)
+            # Rebuild netloc with decoded password
+            if parsed.port:
+                netloc = f"{parsed.username}:{decoded_password}@{parsed.hostname}:{parsed.port}"
+            else:
+                netloc = f"{parsed.username}:{decoded_password}@{parsed.hostname}"
+            url = urlunparse((parsed.scheme, netloc, parsed.path,
+                              parsed.params, parsed.query, parsed.fragment))
+    except Exception:
+        pass  # If parsing fails, use the URL as-is
+
     return url
 
 
