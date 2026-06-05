@@ -1,10 +1,11 @@
 from flask import render_template, send_file, flash, redirect, url_for, request
 from flask_login import login_required
-from sqlalchemy import func
+from sqlalchemy import func, cast, Date
 from app import db
 from app.models import Sale, Product, Customer, SaleItem
 from app.modules.reports import reports_bp
 from app.utils.decorators import roles_required
+import datetime
 
 @reports_bp.route('/hub')
 @login_required
@@ -55,7 +56,7 @@ def download_stock_excel():
             excel_stream,
             mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             as_attachment=True,
-            download_name=f"Sikka_Inventory_Master_{func.date(func.now())}.xlsx"
+            download_name=f"Sikka_Inventory_Master_{datetime.date.today()}.xlsx"
         )
     except Exception as e:
         flash(f"Data conversion fault block generated an unexpected error: {str(e)}", "danger")
@@ -243,6 +244,6 @@ def day_book():
     except:
         t_date = datetime.date.today()
         
-    vouchers = Voucher.query.filter(db.func.date(Voucher.date) == t_date).all()
+    vouchers = Voucher.query.filter(cast(Voucher.date, Date) == t_date).all()
     
     return render_template('modules/reports/day_book.html', vouchers=vouchers, target_date=t_date)
