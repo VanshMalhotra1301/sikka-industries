@@ -13,8 +13,6 @@ def _fix_db_url(url: str) -> str:
     """
     1. Supabase returns 'postgres://' but SQLAlchemy 1.4+ requires 'postgresql://'.
     2. Render needs pg8000 (pure Python driver) — inject '+pg8000' into the scheme.
-    3. pg8000 does NOT auto-decode URL-encoded passwords (e.g. %40 → @),
-       so we must unquote the password component ourselves.
     """
     if not url:
         return url
@@ -25,32 +23,7 @@ def _fix_db_url(url: str) -> str:
     # Inject pg8000 if no driver already specified
     if url.startswith('postgresql://') and '+' not in url.split('//')[0]:
         url = url.replace('postgresql://', 'postgresql+pg8000://', 1)
-
-    # Cleanly decode URL-encoded characters in the password without corrupting the netloc host
-    try:
-        parsed = urlparse(url)
-        if parsed.password and '%' in parsed.password:
-            decoded_password = unquote(parsed.password)
-            
-            # Rebuild netloc accurately: username:decoded_password@hostname:port
-            auth_part = f"{parsed.username}:{decoded_password}"
-            host_part = f"{parsed.hostname}"
-            if parsed.port:
-                host_part += f":{parsed.port}"
-                
-            new_netloc = f"{auth_part}@{host_part}"
-            
-            url = urlunparse((
-                parsed.scheme, 
-                new_netloc, 
-                parsed.path,
-                parsed.params, 
-                parsed.query, 
-                parsed.fragment
-            ))
-    except Exception:
-        pass  # If parsing fails, use the URL as-is
-
+        
     return url
 
 
