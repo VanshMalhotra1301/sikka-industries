@@ -12,3 +12,4 @@ backups/
 *.sqlite3
 *.db
 .vercel/
+*.pyc
