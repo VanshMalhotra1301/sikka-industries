@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}Balance Sheet{% endblock %}
+{% block page_title %}Balance Sheet{% endblock %}
+{% block page_subtitle %}Statement of assets, liabilities, and equity{% endblock %}
+
+{% block content %}
+
+<div class="card" style="margin-bottom: 24px;">
+  <div class="card-header">
+    <div class="card-title"><i class="bi bi-bank" style="color:var(--accent-blue);"></i> Balance Sheet</div>
+  </div>
+  <div style="display: grid; grid-template-columns: 1fr 1fr; border-top: 1px solid var(--border-color);">
+    <!-- Liabilities Side -->
+    <div style="border-right: 1px solid var(--border-color);">
+      <div style="padding: 12px 16px; background: var(--bg-surface); font-weight: bold; border-bottom: 1px solid var(--border-color); display:flex; justify-content: space-between;">
+        <span>Liabilities</span>
+        <span>Amount (₹)</span>
+      </div>
+      <div style="padding: 16px;">
+        {% for l in liabilities %}
+          <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+            <span {% if 'Profit' in l.group %}class="fw-bold"{% endif %}>{{ l.group }}</span>
+            <span {% if 'Profit' in l.group %}class="fw-bold"{% endif %}>{{ "{:,.2f}".format(l.amount) }}</span>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+    
+    <!-- Assets Side -->
+    <div>
+      <div style="padding: 12px 16px; background: var(--bg-surface); font-weight: bold; border-bottom: 1px solid var(--border-color); display:flex; justify-content: space-between;">
+        <span>Assets</span>
+        <span>Amount (₹)</span>
+      </div>
+      <div style="padding: 16px;">
+        {% for a in assets %}
+          <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+            <span {% if 'Loss' in a.group %}class="fw-bold text-red"{% endif %}>{{ a.group }}</span>
+            <span {% if 'Loss' in a.group %}class="fw-bold text-red"{% endif %}>{{ "{:,.2f}".format(a.amount) }}</span>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  
+  <div style="display: grid; grid-template-columns: 1fr 1fr; border-top: 2px solid var(--border-color); border-bottom: 2px solid var(--border-color); background: var(--bg-surface);">
+    <div style="padding: 12px 16px; font-weight: bold; display: flex; justify-content: space-between; border-right: 1px solid var(--border-color);">
+      <span>Total</span>
+      <span>{{ "{:,.2f}".format(total_liabilities) }}</span>
+    </div>
+    <div style="padding: 12px 16px; font-weight: bold; display: flex; justify-content: space-between;">
+      <span>Total</span>
+      <span>{{ "{:,.2f}".format(total_assets) }}</span>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

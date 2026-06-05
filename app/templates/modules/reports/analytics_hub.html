@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% block title %}Analytics Hub{% endblock %}
+{% block page_title %}Reports Hub{% endblock %}
+{% block page_subtitle %}Business intelligence — analytics, exports and performance metrics{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <div class="page-header-left">
+    <h2>Analytics Hub</h2>
+    <p>Executive-level performance metrics and data exports</p>
+  </div>
+  <div class="page-actions">
+    <a href="{{ url_for('reports.download_stock_excel') }}" class="btn btn-success">
+      <i class="bi bi-file-earmark-excel-fill"></i> Export Stock Excel
+    </a>
+    <a href="{{ url_for('reports.download_sales_pdf') }}" class="btn btn-danger">
+      <i class="bi bi-file-earmark-pdf-fill"></i> Export Sales PDF
+    </a>
+  </div>
+</div>
+
+<!-- KPI Cards -->
+<div class="stats-grid" style="grid-template-columns: repeat(4,1fr); margin-bottom:24px;">
+
+  <div class="stat-card stat-green">
+    <i class="bi bi-trophy-fill stat-icon"></i>
+    <div class="stat-label">Best Selling Motor</div>
+    <div style="font-size:15px; font-weight:700; color:var(--accent-green); margin:8px 0 4px;">{{ best_product }}</div>
+    <div class="stat-sub">{{ "{:,.0f}".format(best_volume) }} units dispatched</div>
+  </div>
+
+  <div class="stat-card stat-blue">
+    <i class="bi bi-person-fill-check stat-icon"></i>
+    <div class="stat-label">Top Revenue Customer</div>
+    <div style="font-size:15px; font-weight:700; color:var(--accent-blue); margin:8px 0 4px;">{{ top_customer }}</div>
+    <div class="stat-sub">₹{{ "{:,.0f}".format(top_billing) }} total billing</div>
+  </div>
+
+  <div class="stat-card stat-purple">
+    <i class="bi bi-box-seam-fill stat-icon"></i>
+    <div class="stat-label">Raw Material Lines</div>
+    <div class="stat-value text-purple" style="font-size:32px;">{{ total_raw }}</div>
+    <div class="stat-sub">SKUs in catalog</div>
+  </div>
+
+  <div class="stat-card {% if alarms > 0 %}stat-red{% else %}stat-green{% endif %}">
+    <i class="bi bi-exclamation-triangle-fill stat-icon"></i>
+    <div class="stat-label">Low Stock Alarms</div>
+    <div class="stat-value {% if alarms > 0 %}text-red{% else %}text-green{% endif %}" style="font-size:32px;">{{ alarms }}</div>
+    <div class="stat-sub">{% if alarms > 0 %}Items below threshold{% else %}All items healthy{% endif %}</div>
+  </div>
+
+</div>
+
+<!-- Quick Navigation -->
+<div class="grid-3">
+
+  <div class="card" style="cursor:pointer;" onclick="location.href='{{ url_for('sales.register') }}'">
+    <div class="card-body" style="text-align:center; padding:32px;">
+      <div style="font-size:40px; margin-bottom:12px;">🧾</div>
+      <div style="font-weight:700; font-size:14px; color:var(--text-primary);">Sales Register</div>
+      <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">View all issued invoices</div>
+    </div>
+  </div>
+
+  <div class="card" style="cursor:pointer;" onclick="location.href='{{ url_for('purchases.register') }}'">
+    <div class="card-body" style="text-align:center; padding:32px;">
+      <div style="font-size:40px; margin-bottom:12px;">📦</div>
+      <div style="font-weight:700; font-size:14px; color:var(--text-primary);">Purchase Register</div>
+      <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">View all procurement bills</div>
+    </div>
+  </div>
+
+  <div class="card" style="cursor:pointer;" onclick="location.href='{{ url_for('accounting.cash_flow_statement') }}'">
+    <div class="card-body" style="text-align:center; padding:32px;">
+      <div style="font-size:40px; margin-bottom:12px;">💰</div>
+      <div style="font-weight:700; font-size:14px; color:var(--text-primary);">Cash Flow</div>
+      <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">Inflow vs outflow analysis</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Export Section -->
+<div class="card" style="margin-top:8px;">
+  <div class="card-header">
+    <div class="card-title"><i class="bi bi-download" style="color:var(--accent-amber);"></i> Export Data</div>
+  </div>
+  <div class="card-body">
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
+
+      <div style="background:rgba(16,185,129,0.05);border:1px solid rgba(16,185,129,0.2);border-radius:12px;padding:20px;">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+          <div style="font-size:28px;">📊</div>
+          <div>
+            <div style="font-weight:700;color:var(--text-primary);">Inventory Master — Excel</div>
+            <div style="font-size:11px;color:var(--text-muted);">Complete stock list with prices and valuation</div>
+          </div>
+        </div>
+        <a href="{{ url_for('reports.download_stock_excel') }}" class="btn btn-success btn-sm">
+          <i class="bi bi-file-earmark-excel-fill"></i> Download .xlsx
+        </a>
+      </div>
+
+      <div style="background:rgba(239,68,68,0.05);border:1px solid rgba(239,68,68,0.2);border-radius:12px;padding:20px;">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+          <div style="font-size:28px;">📄</div>
+          <div>
+            <div style="font-weight:700;color:var(--text-primary);">Sales Summary — PDF</div>
+            <div style="font-size:11px;color:var(--text-muted);">Executive sales brief for management review</div>
+          </div>
+        </div>
+        <a href="{{ url_for('reports.download_sales_pdf') }}" class="btn btn-danger btn-sm">
+          <i class="bi bi-file-earmark-pdf-fill"></i> Download .pdf
+        </a>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+{% endblock %}

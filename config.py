@@ -40,13 +40,14 @@ class DevelopmentConfig(Config):
 
 
 class ProductionConfig(Config):
-    """Production — Supabase PostgreSQL via pg8000 (pure Python, Vercel-safe)."""
+    """Production — Supabase PostgreSQL via pg8000."""
     DEBUG = False
     SQLALCHEMY_DATABASE_URI = _fix_db_url(os.environ.get('DATABASE_URL', ''))
-    # NullPool is REQUIRED for serverless: each request gets a fresh connection.
-    # Persistent pool workers don't survive between Vercel function invocations.
+    
+    # Render is persistent, so we can use standard connection pooling
     SQLALCHEMY_ENGINE_OPTIONS = {
-        'poolclass': NullPool,
+        'pool_pre_ping': True,
+        'pool_recycle': 300,
     }
 
     @classmethod

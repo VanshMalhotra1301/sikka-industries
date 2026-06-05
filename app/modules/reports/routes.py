@@ -42,11 +42,44 @@ def analytics_hub():
         total_raw=total_raw_lines, alarms=low_stock_count
     )
 
+@reports_bp.route('/export/stock/excel')
+@login_required
+@roles_required(['Admin', 'Store Manager', 'Accountant', 'Owner'])
+def download_stock_excel():
+    """Streams live on-demand inventory valuation datasets directly into analytical Excel books."""
+    from app.utils.excel_exporter import generate_stock_excel
+    try:
+        products = Product.query.order_by(Product.code.asc()).all()
+        excel_stream = generate_stock_excel(products)
+        return send_file(
+            excel_stream,
+            mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            as_attachment=True,
+            download_name=f"Sikka_Inventory_Master_{func.date(func.now())}.xlsx"
+        )
+    except Exception as e:
+        flash(f"Data conversion fault block generated an unexpected error: {str(e)}", "danger")
+        return redirect(url_for('reports.analytics_hub'))
 
 
-
-
-
+@reports_bp.route('/export/sales/pdf')
+@login_required
+@roles_required(['Admin', 'Accountant', 'Owner'])
+def download_sales_pdf():
+    """Generates and streams formal executive PDF summary briefs directly to client browsers."""
+    from app.utils.pdf_generator import generate_sales_summary_pdf
+    try:
+        sales = Sale.query.order_by(Sale.date.desc()).all()
+        pdf_stream = generate_sales_summary_pdf(sales)
+        return send_file(
+            pdf_stream,
+            mimetype="application/pdf",
+            as_attachment=False, # Opens directly inside native web preview frames cleanly
+            download_name=f"Sikka_Executive_Sales_Brief.pdf"
+        )
+    except Exception as e:
+        flash(f"Document build routine encountered structural compilation failures: {str(e)}", "danger")
+        return redirect(url_for('reports.analytics_hub'))
 
 
 @reports_bp.route('/trial_balance')

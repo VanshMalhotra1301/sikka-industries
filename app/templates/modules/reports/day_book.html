@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Day Book{% endblock %}
+{% block page_title %}Day Book{% endblock %}
+{% block page_subtitle %}Chronological record of transactions{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <div class="page-header-left">
+    <h2>Day Book for {{ target_date.strftime('%d %b %Y') }}</h2>
+  </div>
+  <div class="page-actions">
+    <form method="GET" action="{{ url_for('reports.day_book') }}" style="display: flex; gap: 8px;">
+      <input type="date" name="date" class="form-control" value="{{ target_date.strftime('%Y-%m-%d') }}">
+      <button type="submit" class="btn btn-primary">Filter</button>
+    </form>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <div class="card-title"><i class="bi bi-journal-richtext" style="color:var(--accent-blue);"></i> Transactions</div>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Particulars</th>
+          <th>Voucher Type</th>
+          <th>Voucher #</th>
+          <th class="text-right">Debit (₹)</th>
+          <th class="text-right">Credit (₹)</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for v in vouchers %}
+          {% for e in v.entries %}
+          <tr>
+            <td class="td-muted">{{ v.date.strftime('%d-%m-%Y') }}</td>
+            <td class="fw-bold">{{ e.ledger.name }}</td>
+            <td><span class="badge badge-blue">{{ v.voucher_type }}</span></td>
+            <td class="mono">{{ v.voucher_number }}</td>
+            <td class="text-right">{% if e.entry_type == 'Dr' %}{{ "{:,.2f}".format(e.amount) }}{% endif %}</td>
+            <td class="text-right">{% if e.entry_type == 'Cr' %}{{ "{:,.2f}".format(e.amount) }}{% endif %}</td>
+          </tr>
+          {% endfor %}
+        {% else %}
+        <tr><td colspan="6" class="text-center">No transactions recorded on this date.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}

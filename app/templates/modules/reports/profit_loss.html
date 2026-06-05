@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}Profit & Loss A/c{% endblock %}
+{% block page_title %}Profit & Loss Account{% endblock %}
+{% block page_subtitle %}Statement of comprehensive income{% endblock %}
+
+{% block content %}
+
+<div class="card" style="margin-bottom: 24px;">
+  <div class="card-header">
+    <div class="card-title"><i class="bi bi-graph-up-arrow" style="color:var(--accent-green);"></i> Profit & Loss A/c</div>
+  </div>
+  <div style="display: grid; grid-template-columns: 1fr 1fr; border-top: 1px solid var(--border-color);">
+    <!-- Expenses Side (Dr) -->
+    <div style="border-right: 1px solid var(--border-color);">
+      <div style="padding: 12px 16px; background: var(--bg-surface); font-weight: bold; border-bottom: 1px solid var(--border-color); display:flex; justify-content: space-between;">
+        <span>Particulars</span>
+        <span>Amount (₹)</span>
+      </div>
+      <div style="padding: 16px;">
+        {% for e in expenses %}
+          <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+            <span>{{ e.group }}</span>
+            <span>{{ "{:,.2f}".format(e.amount) }}</span>
+          </div>
+        {% endfor %}
+        
+        {% if net_profit > 0 %}
+        <div style="display: flex; justify-content: space-between; margin-top: 16px; font-weight: bold; color: var(--accent-green);">
+          <span>Net Profit</span>
+          <span>{{ "{:,.2f}".format(net_profit) }}</span>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+    
+    <!-- Income Side (Cr) -->
+    <div>
+      <div style="padding: 12px 16px; background: var(--bg-surface); font-weight: bold; border-bottom: 1px solid var(--border-color); display:flex; justify-content: space-between;">
+        <span>Particulars</span>
+        <span>Amount (₹)</span>
+      </div>
+      <div style="padding: 16px;">
+        {% for i in incomes %}
+          <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+            <span>{{ i.group }}</span>
+            <span>{{ "{:,.2f}".format(i.amount) }}</span>
+          </div>
+        {% endfor %}
+        
+        {% if net_profit < 0 %}
+        <div style="display: flex; justify-content: space-between; margin-top: 16px; font-weight: bold; color: var(--accent-red);">
+          <span>Net Loss</span>
+          <span>{{ "{:,.2f}".format(abs(net_profit)) }}</span>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  
+  <div style="display: grid; grid-template-columns: 1fr 1fr; border-top: 2px solid var(--border-color); border-bottom: 2px solid var(--border-color); background: var(--bg-surface);">
+    <div style="padding: 12px 16px; font-weight: bold; display: flex; justify-content: space-between; border-right: 1px solid var(--border-color);">
+      <span>Total</span>
+      <span>{{ "{:,.2f}".format(total_expense + (net_profit if net_profit > 0 else 0)) }}</span>
+    </div>
+    <div style="padding: 12px 16px; font-weight: bold; display: flex; justify-content: space-between;">
+      <span>Total</span>
+      <span>{{ "{:,.2f}".format(total_income + (abs(net_profit) if net_profit < 0 else 0)) }}</span>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

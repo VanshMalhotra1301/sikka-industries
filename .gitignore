@@ -8,7 +8,7 @@ env/
 .env
 uploads/
 backups/
-reports/
+/reports/
 *.sqlite3
 *.db
 .vercel/

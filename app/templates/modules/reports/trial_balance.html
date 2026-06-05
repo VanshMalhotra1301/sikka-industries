@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Trial Balance{% endblock %}
+{% block page_title %}Trial Balance{% endblock %}
+{% block page_subtitle %}Summary of all ledger balances{% endblock %}
+
+{% block content %}
+
+<div class="card">
+  <div class="card-header">
+    <div class="card-title"><i class="bi bi-bar-chart-steps" style="color:var(--accent-blue);"></i> Trial Balance</div>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Particulars</th>
+          <th>Account Group</th>
+          <th class="text-right">Debit Balance (₹)</th>
+          <th class="text-right">Credit Balance (₹)</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in data %}
+        <tr>
+          <td class="fw-bold">{{ row.ledger }}</td>
+          <td><span class="badge badge-blue">{{ row.group }}</span></td>
+          <td class="text-right">{% if row.dr > 0 %}{{ "{:,.2f}".format(row.dr) }}{% endif %}</td>
+          <td class="text-right">{% if row.cr > 0 %}{{ "{:,.2f}".format(row.cr) }}{% endif %}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="4" class="text-center">No transactions recorded yet.</td></tr>
+        {% endfor %}
+      </tbody>
+      <tfoot>
+        <tr style="background: var(--bg-surface);">
+          <td colspan="2" class="fw-bold text-right">Total</td>
+          <td class="text-right fw-bold" style="border-top: 2px solid var(--border-color); border-bottom: 2px solid var(--border-color);">{{ "{:,.2f}".format(total_dr) }}</td>
+          <td class="text-right fw-bold" style="border-top: 2px solid var(--border-color); border-bottom: 2px solid var(--border-color);">{{ "{:,.2f}".format(total_cr) }}</td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+  <div style="padding: 16px; text-align: center;">
+    {% if abs(total_dr - total_cr) < 0.01 %}
+      <span class="badge badge-green"><i class="bi bi-check-circle"></i> Trial Balance Matches</span>
+    {% else %}
+      <span class="badge badge-amber"><i class="bi bi-exclamation-triangle"></i> Difference in Opening Balances: ₹{{ "{:,.2f}".format(abs(total_dr - total_cr)) }}</span>
+    {% endif %}
+  </div>
+</div>
+
+{% endblock %}
