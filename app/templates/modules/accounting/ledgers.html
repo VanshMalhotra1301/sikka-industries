@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% block title %}Chart of Accounts{% endblock %}
+{% block page_title %}Chart of Accounts{% endblock %}
+{% block page_subtitle %}Manage Account Groups and Ledgers{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <div class="page-header-left">
+    <h2>Ledgers</h2>
+    <p>{{ ledgers|length }} ledgers across {{ groups|length }} groups</p>
+  </div>
+</div>
+
+<div style="display: grid; grid-template-columns: 1fr 2fr; gap: 24px;">
+
+  <!-- Form Section -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title"><i class="bi bi-journal-plus" style="color:var(--accent-blue);"></i> Create Ledger</div>
+    </div>
+    <div class="card-body">
+      <form method="POST" action="{{ url_for('accounting.general_ledgers') }}">
+        <div class="form-group">
+          <label>Ledger Name</label>
+          <input type="text" name="name" class="form-control" placeholder="e.g. Ram & Co." required>
+        </div>
+        <div class="form-group" style="margin-top: 16px;">
+          <label>Under Group</label>
+          <select name="group_id" class="form-control" required>
+            <option value="">-- Select Group --</option>
+            {% for g in groups %}
+              <option value="{{ g.id }}">{{ g.name }} ({{ g.nature }})</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div style="display: flex; gap: 12px; margin-top: 16px;">
+          <div class="form-group" style="flex:1;">
+            <label>Opening Balance</label>
+            <input type="number" step="0.01" name="opening_balance" class="form-control" value="0.00">
+          </div>
+          <div class="form-group" style="flex:1;">
+            <label>Type (Dr/Cr)</label>
+            <select name="opening_balance_type" class="form-control">
+              <option value="Dr">Debit (Dr)</option>
+              <option value="Cr">Credit (Cr)</option>
+            </select>
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary" style="margin-top: 24px; width:100%;">Create Ledger</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- List Section -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title"><i class="bi bi-list-ul"></i> All Ledgers</div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Ledger Name</th>
+            <th>Group</th>
+            <th>Nature</th>
+            <th class="text-right">Opening Bal.</th>
+            <th class="text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for l in ledgers %}
+          <tr>
+            <td class="fw-bold">{{ l.name }} {% if l.is_system %}<span class="badge badge-amber" style="font-size:10px;">Sys</span>{% endif %}</td>
+            <td>{{ l.group.name }}</td>
+            <td><span class="badge badge-blue">{{ l.group.nature }}</span></td>
+            <td class="text-right fw-bold">₹{{ "{:,.2f}".format(l.opening_balance) }} <span class="td-muted">{{ l.opening_balance_type }}</span></td>
+            <td class="text-right">
+              <a href="{{ url_for('accounting.ledger_transactions', ledger_id=l.id) }}" class="btn btn-ghost btn-xs text-blue">
+                <i class="bi bi-eye"></i> View Vouchers
+              </a>
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="5" class="text-center">No ledgers found.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+{% endblock %}

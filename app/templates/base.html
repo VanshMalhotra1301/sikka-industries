@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}ERP{% endblock %} — {{ company_name }}</title>
+  <meta name="description" content="{{ company_full }} — Enterprise Resource Planning System">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}">
+  <script>
+    (function() {
+      const savedTheme = localStorage.getItem('theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', savedTheme);
+    })();
+  </script>
+  {% block head %}{% endblock %}
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════ SIDEBAR ══════════════════════════════════════ -->
+<aside class="sidebar" id="sidebar">
+
+  <div class="sidebar-brand">
+    <div class="sidebar-logo">
+      <div class="sidebar-logo-icon">
+        <img src="{{ url_for('static', filename='assets/brand/logo.png') }}" alt="Logo" class="sidebar-logo-img">
+      </div>
+      <div>
+        <div class="sidebar-company">{{ company_name }}</div>
+        <div class="sidebar-tagline">ERP Console</div>
+      </div>
+    </div>
+    <div class="sidebar-user-badge">
+      <i class="bi bi-person-fill"></i>
+      {{ current_user.username }} · {{ current_user.role }}
+    </div>
+  </div>
+
+  <nav class="sidebar-nav">
+
+    <div class="nav-section-label">Command Center</div>
+    <a href="{{ url_for('dashboard.index') }}"
+       class="nav-link-custom {% if request.endpoint == 'dashboard.index' %}active{% endif %}">
+      <i class="bi bi-grid-1x2-fill nav-icon"></i> Dashboard
+    </a>
+
+    {# ── Stakeholders: Admin / Owner / Accountant ── #}
+    {% if current_user.role in ['Admin', 'Owner', 'Accountant'] %}
+    <div class="nav-section-label">Stakeholders</div>
+    <a href="{{ url_for('crm.list_customers') }}"
+       class="nav-link-custom {% if request.blueprint == 'crm' %}active{% endif %}">
+      <i class="bi bi-people-fill nav-icon"></i> Customers (CRM)
+    </a>
+    <a href="{{ url_for('scm.list_suppliers') }}"
+       class="nav-link-custom {% if request.blueprint == 'scm' %}active{% endif %}">
+      <i class="bi bi-truck nav-icon"></i> Suppliers (SCM)
+    </a>
+    {% endif %}
+
+    {# ── Warehouse: Admin / Owner / Store Manager ── #}
+    {% if current_user.role in ['Admin', 'Owner', 'Store Manager'] %}
+    <div class="nav-section-label">Warehouse</div>
+    <a href="{{ url_for('inventory.list_products') }}"
+       class="nav-link-custom {% if request.blueprint == 'inventory' %}active{% endif %}">
+      <i class="bi bi-box-seam-fill nav-icon"></i> Inventory Master
+    </a>
+    <a href="{{ url_for('manufacturing.production_logs') }}"
+       class="nav-link-custom {% if request.blueprint == 'manufacturing' %}active{% endif %}">
+      <i class="bi bi-gear-wide-connected nav-icon"></i> Manufacturing
+    </a>
+    {% endif %}
+
+    {# ── Transactions: Admin / Owner / Accountant ── #}
+    {% if current_user.role in ['Admin', 'Owner', 'Accountant'] %}
+    <div class="nav-section-label">Transactions</div>
+    <a href="{{ url_for('purchases.register') }}"
+       class="nav-link-custom {% if request.blueprint == 'purchases' %}active{% endif %}">
+      <i class="bi bi-cart-plus-fill nav-icon"></i> Purchase Register
+    </a>
+    <a href="{{ url_for('sales.register') }}"
+       class="nav-link-custom {% if request.blueprint == 'sales' %}active{% endif %}">
+      <i class="bi bi-receipt-cutoff nav-icon"></i> Sales Invoicing
+    </a>
+    {% endif %}
+
+    {# ── Finance: Admin / Owner / Accountant ── #}
+    {% if current_user.role in ['Admin', 'Owner', 'Accountant'] %}
+    <div class="nav-section-label">Finance & Banking</div>
+    <a href="{{ url_for('banking.dashboard') }}"
+       class="nav-link-custom {% if request.blueprint == 'banking' %}active{% endif %}">
+      <i class="bi bi-bank nav-icon"></i> Banking Systems
+    </a>
+    <a href="{{ url_for('accounting.general_ledgers') }}"
+       class="nav-link-custom {% if request.endpoint == 'accounting.general_ledgers' %}active{% endif %}">
+      <i class="bi bi-journal-bookmark-fill nav-icon"></i> General Ledger
+    </a>
+    <a href="{{ url_for('accounting.factory_expenses') }}"
+       class="nav-link-custom {% if request.endpoint == 'accounting.factory_expenses' %}active{% endif %}">
+      <i class="bi bi-cash-stack nav-icon"></i> Expense Log
+    </a>
+    <a href="{{ url_for('accounting.cash_flow_statement') }}"
+       class="nav-link-custom {% if request.endpoint == 'accounting.cash_flow_statement' %}active{% endif %}">
+      <i class="bi bi-bar-chart-line-fill nav-icon"></i> Cash Flow
+    </a>
+    {% endif %}
+
+    {# ── Intelligence: Admin / Owner / Accountant ── #}
+    {% if current_user.role in ['Admin', 'Owner', 'Accountant'] %}
+    <div class="nav-section-label">Intelligence</div>
+    <a href="{{ url_for('reports.analytics_hub') }}"
+       class="nav-link-custom {% if request.blueprint == 'reports' %}active{% endif %}">
+      <i class="bi bi-graph-up-arrow nav-icon"></i> Reports Hub
+    </a>
+    {% endif %}
+
+    {# ── Admin-only ── #}
+    {% if current_user.role == 'Admin' %}
+    <div class="nav-section-label">System Admin</div>
+    <a href="{{ url_for('auth.manage_users') }}"
+       class="nav-link-custom {% if request.endpoint == 'auth.manage_users' %}active{% endif %}">
+      <i class="bi bi-shield-lock-fill nav-icon"></i> User Matrix
+    </a>
+    <a href="{{ url_for('settings.index') }}"
+       class="nav-link-custom {% if request.blueprint == 'settings' %}active{% endif %}">
+      <i class="bi bi-gear-fill nav-icon"></i> Settings
+    </a>
+    {% endif %}
+
+  </nav>
+
+  <div class="sidebar-footer">
+    <a href="{{ url_for('auth.logout') }}" class="nav-link-custom">
+      <i class="bi bi-box-arrow-left nav-icon"></i> Sign Out
+    </a>
+  </div>
+
+</aside>
+
+<!-- ════════════════════════════════════ MAIN CONTENT ════════════════════════════════════ -->
+<div class="main-content">
+
+  <!-- Top Bar -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <h4>{% block page_title %}{{ company_full }}{% endblock %}</h4>
+      <p>{% block page_subtitle %}{{ industry_segment }}{% endblock %}</p>
+    </div>
+    <div class="topbar-right">
+      <button id="theme-toggle" class="btn btn-ghost btn-sm" aria-label="Toggle Theme" style="padding: 6px 10px; font-size: 14px; margin-right: 8px;">
+        <i id="theme-icon" class="bi bi-moon-fill"></i>
+      </button>
+      <span class="status-pill">
+        <span class="status-dot"></span>
+        System Live
+      </span>
+    </div>
+  </header>
+
+  <!-- Page Body -->
+  <main class="page-body">
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flash-container">
+          {% for category, message in messages %}
+            <div class="flash-msg flash-{{ category }}">
+              {% if category == 'success' %}<i class="bi bi-check-circle-fill"></i>
+              {% elif category == 'danger' %}<i class="bi bi-x-circle-fill"></i>
+              {% elif category == 'warning' %}<i class="bi bi-exclamation-triangle-fill"></i>
+              {% else %}<i class="bi bi-info-circle-fill"></i>{% endif %}
+              {{ message }}
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    {% block content %}{% endblock %}
+  </main>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const toggleBtn = document.getElementById('theme-toggle');
+    const themeIcon = document.getElementById('theme-icon');
+    
+    function updateIcon(theme) {
+      if (theme === 'light') {
+        themeIcon.className = 'bi bi-sun-fill';
+      } else {
+        themeIcon.className = 'bi bi-moon-fill';
+      }
+    }
+    
+    const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
+    updateIcon(currentTheme);
+    
+    if (toggleBtn) {
+      toggleBtn.addEventListener('click', function() {
+        const activeTheme = document.documentElement.getAttribute('data-theme') || 'dark';
+        const newTheme = activeTheme === 'dark' ? 'light' : 'dark';
+        
+        document.documentElement.setAttribute('data-theme', newTheme);
+        localStorage.setItem('theme', newTheme);
+        updateIcon(newTheme);
+        
+        const event = new CustomEvent('themeChanged', { detail: { theme: newTheme } });
+        document.dispatchEvent(event);
+      });
+    }
+  });
+
+  // Universal Table Search
+  function searchTable(inputId, tableId) {
+    const input = document.getElementById(inputId);
+    const filter = input.value.toUpperCase();
+    const table = document.getElementById(tableId);
+    const tr = table.getElementsByTagName("tr");
+
+    for (let i = 1; i < tr.length; i++) {
+      if (tr[i].getElementsByTagName("td").length === 1 && tr[i].getElementsByClassName("empty-state").length > 0) continue;
+      
+      let display = false;
+      const td = tr[i].getElementsByTagName("td");
+      for (let j = 0; j < td.length; j++) {
+        if (td[j]) {
+          const txtValue = td[j].textContent || td[j].innerText;
+          if (txtValue.toUpperCase().indexOf(filter) > -1) {
+            display = true;
+            break;
+          }
+        }
+      }
+      tr[i].style.display = display ? "" : "none";
+    }
+  }
+
+  // Universal CSV Export
+  function exportTableToCSV(tableId, filename) {
+      const table = document.getElementById(tableId);
+      let csv = [];
+      const rows = table.querySelectorAll("tr");
+      
+      for (let i = 0; i < rows.length; i++) {
+          if (rows[i].style.display === 'none') continue;
+          if (rows[i].querySelector('.empty-state')) continue;
+          
+          let row = [], cols = rows[i].querySelectorAll("td, th");
+          
+          for (let j = 0; j < cols.length; j++) {
+              if (cols[j].innerText.includes('Actions') || (i>0 && j===cols.length-1 && cols[j].querySelector('a, button'))) {
+                  continue;
+              }
+              let data = cols[j].innerText.replace(/(\r\n|\n|\r)/gm, " ").trim();
+              data = data.replace(/"/g, '""');
+              row.push('"' + data + '"');
+          }
+          csv.push(row.join(","));
+      }
+
+      const csvFile = new Blob([csv.join("\n")], {type: "text/csv"});
+      const downloadLink = document.createElement("a");
+      downloadLink.download = filename;
+      downloadLink.href = window.URL.createObjectURL(csvFile);
+      downloadLink.style.display = "none";
+      document.body.appendChild(downloadLink);
+      downloadLink.click();
+      document.body.removeChild(downloadLink);
+  }
+</script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% block title %}Purchase Register{% endblock %}
+{% block page_title %}Purchase Register{% endblock %}
+{% block page_subtitle %}All raw material procurement bills and GRNs{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <div class="page-header-left">
+    <h2>Purchase Register</h2>
+    <p>{{ purchases|length }} bills recorded</p>
+  </div>
+  <div class="page-actions">
+    <a href="{{ url_for('purchases.create_entry') }}" class="btn btn-primary">
+      <i class="bi bi-plus-lg"></i> New Purchase Bill
+    </a>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
+    <div style="display:flex; gap:10px; align-items:center;">
+      <div class="card-title"><i class="bi bi-cart-plus-fill" style="color:var(--accent-blue);"></i> All Purchase Bills</div>
+      <span class="badge badge-blue">{{ purchases|length }} records</span>
+    </div>
+    <div style="display:flex; gap:10px;">
+      <input type="text" id="purchasesSearch" onkeyup="searchTable('purchasesSearch', 'purchasesTable')" placeholder="Search bills..." class="form-control" style="width:200px; height:32px; padding:4px 10px; border-radius:6px; border:1px solid var(--border); background:var(--bg-card); color:var(--text-main);">
+      <button onclick="exportTableToCSV('purchasesTable', 'Purchase_Bills.csv')" class="btn btn-ghost btn-sm" title="Export to CSV">
+        <i class="bi bi-download"></i> Export
+      </button>
+    </div>
+  </div>
+  <div class="table-wrap">
+    <table id="purchasesTable">
+      <thead>
+        <tr>
+          <th>Bill #</th>
+          <th>Date</th>
+          <th>Supplier</th>
+          <th>Payment Mode</th>
+          <th class="text-right">Total (₹)</th>
+          <th class="text-right">Paid (₹)</th>
+          <th class="text-right">Balance (₹)</th>
+          <th>Status</th>
+          <th class="text-right">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in purchases %}
+        <tr>
+          <td class="mono fw-bold" style="color:var(--accent-blue);">#{{ p.id }}</td>
+          <td class="td-muted" style="white-space:nowrap;">{{ p.date.strftime('%d %b %Y') }}</td>
+          <td>{{ p.supplier.name if p.supplier else '—' }}</td>
+          <td>
+            {% if p.payment_mode == 'Cash' %}
+              <span class="badge badge-green">Cash</span>
+            {% elif p.payment_mode == 'Bank' %}
+              <span class="badge badge-blue">Bank</span>
+            {% else %}
+              <span class="badge badge-red">Credit</span>
+            {% endif %}
+          </td>
+          <td class="text-right fw-bold">₹{{ "{:,.0f}".format(p.total_amount) }}</td>
+          <td class="text-right text-green">₹{{ "{:,.0f}".format(p.paid_amount) }}</td>
+          <td class="text-right">
+            {% if p.balance_amount > 0 %}
+              <span class="text-amber fw-bold">₹{{ "{:,.0f}".format(p.balance_amount) }}</span>
+            {% else %}
+              <span class="text-green">—</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if p.balance_amount <= 0 %}
+              <span class="badge badge-green">Paid</span>
+            {% elif p.balance_amount == p.total_amount %}
+              <span class="badge badge-red">Unpaid</span>
+            {% else %}
+              <span class="badge badge-amber">Partial</span>
+            {% endif %}
+          </td>
+          <td class="text-right">
+            <a href="{{ url_for('purchases.delete_purchase', id=p.id) }}" class="btn btn-ghost btn-xs text-red" title="Delete Purchase Bill"
+               onclick="return confirm('Are you sure you want to delete and void Purchase Bill #{{ p.id }}? This will revert raw material inventory quantities and ledger entries.');">
+              <i class="bi bi-trash-fill"></i> Delete
+            </a>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="9">
+          <div class="empty-state">
+            <div class="empty-state-icon">🛒</div>
+            <h5>No purchase bills yet</h5>
+            <p>Record your first raw material procurement bill.</p>
+            <a href="{{ url_for('purchases.create_entry') }}" class="btn btn-primary" style="margin-top:12px;">
+              <i class="bi bi-plus-lg"></i> New Purchase Bill
+            </a>
+          </div>
+        </td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}

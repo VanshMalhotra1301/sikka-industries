@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}{{ ledger.name }} - Ledger Account{% endblock %}
+{% block page_title %}{{ ledger.name }}{% endblock %}
+{% block page_subtitle %}Ledger Transactions{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <div class="page-header-left">
+    <h2>{{ ledger.name }}</h2>
+    <p>Group: {{ ledger.group.name }} | Nature: {{ ledger.group.nature }}</p>
+  </div>
+  <div class="page-actions">
+    <a href="{{ url_for('accounting.general_ledgers') }}" class="btn btn-ghost">
+      <i class="bi bi-arrow-left"></i> Back to Chart of Accounts
+    </a>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <div class="card-title"><i class="bi bi-journal-text" style="color:var(--accent-blue);"></i> Transactions</div>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Voucher #</th>
+          <th>Type</th>
+          <th>Narration</th>
+          <th class="text-right">Debit (Dr)</th>
+          <th class="text-right">Credit (Cr)</th>
+          <th class="text-right">Balance</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td colspan="4" class="fw-bold text-right">Opening Balance</td>
+          <td class="text-right">{% if ledger.opening_balance_type == 'Dr' %}₹{{ "{:,.2f}".format(ledger.opening_balance) }}{% endif %}</td>
+          <td class="text-right">{% if ledger.opening_balance_type == 'Cr' %}₹{{ "{:,.2f}".format(ledger.opening_balance) }}{% endif %}</td>
+          <td class="text-right fw-bold">₹{{ "{:,.2f}".format(ledger.opening_balance) }} <span class="td-muted">{{ ledger.opening_balance_type }}</span></td>
+        </tr>
+        {% for r in records %}
+        <tr>
+          <td class="td-muted" style="white-space:nowrap;">{{ r.date.strftime('%d %b %Y') }}</td>
+          <td class="mono fw-bold">{{ r.voucher_number }}</td>
+          <td><span class="badge badge-blue">{{ r.voucher_type }}</span></td>
+          <td class="td-muted" style="max-width:250px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="{{ r.narration }}">{{ r.narration }}</td>
+          <td class="text-right">{% if r.debit > 0 %}₹{{ "{:,.2f}".format(r.debit) }}{% endif %}</td>
+          <td class="text-right">{% if r.credit > 0 %}₹{{ "{:,.2f}".format(r.credit) }}{% endif %}</td>
+          <td class="text-right fw-bold">₹{{ "{:,.2f}".format(r.balance) }} <span class="td-muted">{{ r.balance_type }}</span></td>
+        </tr>
+        {% else %}
+        <tr><td colspan="7" class="text-center">No transactions found for this ledger.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}

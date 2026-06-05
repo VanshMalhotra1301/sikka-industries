@@ -1,0 +1,551 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block page_title %}
+  {% if role in ['Admin', 'Owner'] %}
+    Command Centre
+  {% elif role == 'Accountant' %}
+    Finance Dashboard
+  {% elif role == 'Store Manager' %}
+    Warehouse Dashboard
+  {% else %}
+    Dashboard
+  {% endif %}
+{% endblock %}
+{% block page_subtitle %}
+  {% if role in ['Admin', 'Owner'] %}
+    Full-access overview — all modules &amp; metrics
+  {% elif role == 'Accountant' %}
+    Financial KPIs, cash flow &amp; invoice activity
+  {% elif role == 'Store Manager' %}
+    Inventory levels, low-stock alerts &amp; production activity
+  {% else %}
+    Welcome, {{ current_user.username }}
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+
+{# ═══════════════════════════════════════════════
+   WELCOME BANNER
+   ═══════════════════════════════════════════════ #}
+<div class="card" style="margin-bottom:22px; background: linear-gradient(135deg,
+  {% if role in ['Admin','Owner'] %}
+    rgba(79,142,247,0.08), rgba(167,139,250,0.08)
+  {% elif role == 'Accountant' %}
+    rgba(16,185,129,0.08), rgba(6,182,212,0.08)
+  {% else %}
+    rgba(245,158,11,0.08), rgba(239,68,68,0.08)
+  {% endif %}
+);">
+  <div class="card-body" style="padding: 16px 22px;">
+    <div style="display:flex; align-items:center; gap:14px; flex-wrap:wrap;">
+      <div style="width:46px;height:46px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;
+        background: linear-gradient(135deg,
+        {% if role in ['Admin','Owner'] %}#4f8ef7,#a78bfa
+        {% elif role == 'Accountant' %}#10b981,#06b6d4
+        {% else %}#f59e0b,#ef4444{% endif %});">
+        {% if role in ['Admin','Owner'] %}👑
+        {% elif role == 'Accountant' %}📊
+        {% else %}🏭{% endif %}
+      </div>
+      <div>
+        <div style="font-size:15px;font-weight:800;color:var(--text-primary);">
+          Welcome back, {{ current_user.username }}
+        </div>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">
+          {% if role == 'Admin' %}Full administrator access — all modules unlocked
+          {% elif role == 'Owner' %}Owner view — complete business visibility
+          {% elif role == 'Accountant' %}Accountant access — financial modules only
+          {% elif role == 'Store Manager' %}Store Manager access — warehouse &amp; production modules
+          {% else %}{{ role }} access
+          {% endif %}
+        </div>
+      </div>
+      <div style="margin-left:auto;">
+        <span class="badge
+          {% if role in ['Admin','Owner'] %}badge-blue
+          {% elif role == 'Accountant' %}badge-green
+          {% else %}badge-amber{% endif %}"
+          style="font-size:10px;">
+          <i class="bi bi-shield-fill-check"></i>&nbsp;{{ role }}
+        </span>
+      </div>
+    </div>
+  </div>
+</div>
+
+{# ═══════════════════════════════════════════════
+   FINANCE KPIs  —  Admin | Owner | Accountant
+   ═══════════════════════════════════════════════ #}
+{% if role in ['Admin', 'Owner', 'Accountant'] %}
+
+<div class="stats-grid" style="grid-template-columns: repeat(4,1fr);">
+
+  <div class="stat-card stat-green">
+    <i class="bi bi-graph-up-arrow stat-icon"></i>
+    <div class="stat-label"><i class="bi bi-circle-fill" style="color:var(--accent-green);font-size:7px;"></i> Today's Sales</div>
+    <div class="stat-value text-green">₹{{ "{:,.0f}".format(today_sales) }}</div>
+    <div class="stat-sub">Revenue generated today</div>
+  </div>
+
+  <div class="stat-card stat-red">
+    <i class="bi bi-arrow-down-circle-fill stat-icon"></i>
+    <div class="stat-label"><i class="bi bi-circle-fill" style="color:var(--accent-red);font-size:7px;"></i> Today's Expenses</div>
+    <div class="stat-value text-red">₹{{ "{:,.0f}".format(today_expenses) }}</div>
+    <div class="stat-sub">Overhead &amp; purchases</div>
+  </div>
+
+  <div class="stat-card stat-cyan">
+    <i class="bi bi-wallet2 stat-icon"></i>
+    <div class="stat-label"><i class="bi bi-circle-fill" style="color:var(--accent-cyan);font-size:7px;"></i> Cash in Hand</div>
+    <div class="stat-value text-cyan">₹{{ "{:,.0f}".format(cash_in_hand) }}</div>
+    <div class="stat-sub">Physical cash balance</div>
+  </div>
+
+  <div class="stat-card {% if yearly_net_profit >= 0 %}stat-green{% else %}stat-red{% endif %}">
+    <i class="bi bi-currency-rupee stat-icon"></i>
+    <div class="stat-label"><i class="bi bi-circle-fill" style="font-size:7px;"></i> Net Profit (YTD)</div>
+    <div class="stat-value {% if yearly_net_profit >= 0 %}text-green{% else %}text-red{% endif %}">
+      ₹{{ "{:,.0f}".format(yearly_net_profit) }}
+    </div>
+    <div class="stat-sub">Gross Profit − Total Expenses</div>
+  </div>
+
+</div>
+
+<div class="stats-grid" style="grid-template-columns: repeat(4,1fr); margin-top:-8px;">
+
+  <div class="stat-card stat-blue">
+    <i class="bi bi-bank2 stat-icon"></i>
+    <div class="stat-label">Bank Balance</div>
+    <div class="stat-value text-blue">₹{{ "{:,.0f}".format(bank_balance) }}</div>
+    <div class="stat-sub">Net bank position</div>
+  </div>
+
+  <div class="stat-card stat-amber">
+    <i class="bi bi-hourglass-split stat-icon"></i>
+    <div class="stat-label">Receivables</div>
+    <div class="stat-value text-amber">₹{{ "{:,.0f}".format(outstanding_receivables) }}</div>
+    <div class="stat-sub">Outstanding from customers</div>
+  </div>
+
+  <div class="stat-card stat-red">
+    <i class="bi bi-credit-card-fill stat-icon"></i>
+    <div class="stat-label">Payables</div>
+    <div class="stat-value text-red">₹{{ "{:,.0f}".format(outstanding_payables) }}</div>
+    <div class="stat-sub">Due to suppliers</div>
+  </div>
+
+  {% if role in ['Admin', 'Owner'] %}
+  <div class="stat-card stat-purple">
+    <i class="bi bi-boxes stat-icon"></i>
+    <div class="stat-label">Stock Valuation</div>
+    <div class="stat-value text-purple">₹{{ "{:,.0f}".format(current_stock_value) }}</div>
+    <div class="stat-sub">Total inventory at cost</div>
+  </div>
+  {% else %}
+  {# Placeholder to keep 4-col grid balanced for Accountant #}
+  <div class="stat-card" style="opacity:0.4; cursor:default;">
+    <i class="bi bi-lock-fill stat-icon" style="opacity:0.4;"></i>
+    <div class="stat-label">Stock Valuation</div>
+    <div class="stat-value" style="font-size:14px;color:var(--text-muted);">— Restricted —</div>
+    <div class="stat-sub">Warehouse access required</div>
+  </div>
+  {% endif %}
+
+</div>
+
+{# Monthly Sales Chart #}
+<div class="grid-8-4" style="margin-top:8px;">
+
+  <div class="chart-container">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+      <div>
+        <div class="card-title"><i class="bi bi-graph-up-arrow" style="color:var(--accent-blue);"></i> Sales & Profit Performance</div>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:3px;">Current financial year trend</div>
+      </div>
+      <span class="badge badge-blue">{{ current_year }}</span>
+    </div>
+    <div style="height:260px;position:relative;">
+      <canvas id="salesChart"></canvas>
+    </div>
+  </div>
+
+  {# Low Stock — Admin/Owner see it here. Accountant sees a finance summary instead #}
+  {% if role in ['Admin', 'Owner'] %}
+  <div class="chart-container">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <div class="card-title"><i class="bi bi-exclamation-triangle-fill" style="color:var(--accent-amber);"></i> Stock Alerts</div>
+      {% if low_stock_alerts %}<span class="badge badge-red">{{ low_stock_alerts|length }} items</span>{% endif %}
+    </div>
+    {% if low_stock_alerts %}
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Item</th><th class="text-right">Qty</th></tr></thead>
+          <tbody>
+            {% for item in low_stock_alerts %}
+            <tr>
+              <td>
+                <div style="font-size:12px;font-weight:600;">{{ item.name }}</div>
+                <div style="font-size:10px;color:var(--text-muted);">[{{ item.code }}]</div>
+              </td>
+              <td class="text-right"><span class="badge badge-red">{{ item.stock_quantity|int }}</span></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div style="margin-top:14px;text-align:center;">
+        <a href="{{ url_for('inventory.list_products') }}" class="btn btn-ghost btn-sm">
+          <i class="bi bi-box-seam"></i> View All Stock
+        </a>
+      </div>
+    {% else %}
+      <div class="empty-state" style="padding:32px 12px;">
+        <div class="empty-state-icon">✅</div>
+        <h5>All Clear</h5>
+        <p>All items meet minimum stock thresholds.</p>
+      </div>
+    {% endif %}
+  </div>
+  {% else %}
+  {# Accountant: Quick Ledger summary panel instead #}
+  <div class="chart-container">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <div class="card-title"><i class="bi bi-journal-bookmark-fill" style="color:var(--accent-green);"></i> Finance Summary</div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:14px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:rgba(16,185,129,0.07);border-radius:10px;border:1px solid rgba(16,185,129,0.15);">
+        <span style="font-size:12px;color:var(--text-secondary);">💰 Cash Balance</span>
+        <span style="font-size:14px;font-weight:700;color:var(--accent-green);">₹{{ "{:,.0f}".format(cash_in_hand) }}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:rgba(79,142,247,0.07);border-radius:10px;border:1px solid rgba(79,142,247,0.15);">
+        <span style="font-size:12px;color:var(--text-secondary);">🏦 Bank Balance</span>
+        <span style="font-size:14px;font-weight:700;color:var(--accent-blue);">₹{{ "{:,.0f}".format(bank_balance) }}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:rgba(245,158,11,0.07);border-radius:10px;border:1px solid rgba(245,158,11,0.15);">
+        <span style="font-size:12px;color:var(--text-secondary);">⏳ Receivables</span>
+        <span style="font-size:14px;font-weight:700;color:var(--accent-amber);">₹{{ "{:,.0f}".format(outstanding_receivables) }}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:rgba(239,68,68,0.07);border-radius:10px;border:1px solid rgba(239,68,68,0.15);">
+        <span style="font-size:12px;color:var(--text-secondary);">💳 Payables</span>
+        <span style="font-size:14px;font-weight:700;color:var(--accent-red);">₹{{ "{:,.0f}".format(outstanding_payables) }}</span>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+
+{# ═══════════════════════════════════════════════
+   DUE DATE REMINDERS
+   ═══════════════════════════════════════════════ #}
+<div class="grid-8-4" style="margin-top:8px;">
+  <div class="chart-container">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <div class="card-title"><i class="bi bi-bell-fill" style="color:var(--accent-amber);"></i> Upcoming Receivables (Sales)</div>
+    </div>
+    {% if pending_sales_dues %}
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Customer</th><th>Invoice</th><th>Due Date</th><th class="text-right">Balance Due</th></tr></thead>
+          <tbody>
+            {% for sale in pending_sales_dues %}
+            <tr>
+              <td class="fw-bold">{{ sale.customer.name }}</td>
+              <td class="td-muted">INV-{{ sale.id }}</td>
+              <td>
+                {% if sale.due_date.date() < today_date %}
+                  <span class="badge badge-red"><i class="bi bi-exclamation-circle-fill"></i> OVERDUE: {{ sale.due_date.strftime('%d %b %Y') }}</span>
+                {% elif (sale.due_date.date() - today_date).days <= 3 %}
+                  <span class="badge badge-amber"><i class="bi bi-clock-history"></i> DUE SOON: {{ sale.due_date.strftime('%d %b %Y') }}</span>
+                {% else %}
+                  <span class="badge badge-gray">{{ sale.due_date.strftime('%d %b %Y') }}</span>
+                {% endif %}
+              </td>
+              <td class="text-right" style="color:var(--accent-amber);font-weight:bold;">₹{{ "{:,.2f}".format(sale.balance_amount) }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="empty-state" style="padding:16px 12px;">
+        <div class="empty-state-icon">✅</div>
+        <h5>No Pending Receivables</h5>
+      </div>
+    {% endif %}
+  </div>
+
+  <div class="chart-container">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <div class="card-title"><i class="bi bi-bell-fill" style="color:var(--accent-red);"></i> Upcoming Payables (Purchases)</div>
+    </div>
+    {% if pending_purchase_dues %}
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Supplier</th><th>Due Date</th><th class="text-right">Balance Due</th></tr></thead>
+          <tbody>
+            {% for pur in pending_purchase_dues %}
+            <tr>
+              <td class="fw-bold">{{ pur.supplier.name }}</td>
+              <td>
+                {% if pur.due_date.date() < today_date %}
+                  <span class="badge badge-red">OVERDUE: {{ pur.due_date.strftime('%d %b %Y') }}</span>
+                {% else %}
+                  <span class="badge badge-gray">{{ pur.due_date.strftime('%d %b %Y') }}</span>
+                {% endif %}
+              </td>
+              <td class="text-right" style="color:var(--accent-red);font-weight:bold;">₹{{ "{:,.2f}".format(pur.balance_amount) }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="empty-state" style="padding:16px 12px;">
+        <div class="empty-state-icon">✅</div>
+        <h5>No Pending Payables</h5>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
+
+{# ═══════════════════════════════════════════════
+   WAREHOUSE KPIs  —  Store Manager  (pure WH view)
+   Admin/Owner see their warehouse section above inside the full grid
+   ═══════════════════════════════════════════════ #}
+{% if role == 'Store Manager' %}
+
+<div class="stats-grid" style="grid-template-columns: repeat(2,1fr);">
+  <div class="stat-card stat-purple">
+    <i class="bi bi-boxes stat-icon"></i>
+    <div class="stat-label"><i class="bi bi-circle-fill" style="color:var(--accent-purple);font-size:7px;"></i> Total Stock Value</div>
+    <div class="stat-value text-purple">₹{{ "{:,.0f}".format(current_stock_value) }}</div>
+    <div class="stat-sub">All products at purchase cost</div>
+  </div>
+  <div class="stat-card {% if low_stock_alerts %}stat-red{% else %}stat-green{% endif %}">
+    <i class="bi bi-exclamation-triangle-fill stat-icon"></i>
+    <div class="stat-label">Low Stock Alerts</div>
+    <div class="stat-value {% if low_stock_alerts %}text-red{% else %}text-green{% endif %}">
+      {{ low_stock_alerts|length }}
+    </div>
+    <div class="stat-sub">{% if low_stock_alerts %}Items below threshold{% else %}All levels healthy{% endif %}</div>
+  </div>
+</div>
+
+<div class="grid-8-4" style="margin-top:8px;">
+
+  {# Low Stock Detail #}
+  <div class="chart-container">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <div class="card-title"><i class="bi bi-exclamation-triangle-fill" style="color:var(--accent-amber);"></i> Stock Alerts</div>
+      {% if low_stock_alerts %}<span class="badge badge-red">{{ low_stock_alerts|length }} items</span>{% endif %}
+    </div>
+    {% if low_stock_alerts %}
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Item</th><th>Category</th><th class="text-right">Stock Qty</th><th class="text-right">Min. Level</th></tr></thead>
+          <tbody>
+            {% for item in low_stock_alerts %}
+            <tr>
+              <td>
+                <div style="font-size:12px;font-weight:600;">{{ item.name }}</div>
+                <div style="font-size:10px;color:var(--text-muted);">[{{ item.code }}]</div>
+              </td>
+              <td><span class="badge {% if item.category == 'Raw Material' %}badge-amber{% else %}badge-blue{% endif %}">{{ item.category }}</span></td>
+              <td class="text-right"><span class="badge badge-red">{{ item.stock_quantity|int }}</span></td>
+              <td class="text-right td-muted">{{ item.low_stock_threshold|int }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div style="margin-top:14px;display:flex;gap:8px;justify-content:center;">
+        <a href="{{ url_for('inventory.list_products') }}" class="btn btn-ghost btn-sm">
+          <i class="bi bi-box-seam"></i> Inventory Master
+        </a>
+      </div>
+    {% else %}
+      <div class="empty-state" style="padding:32px 12px;">
+        <div class="empty-state-icon">✅</div>
+        <h5>All Clear</h5>
+        <p>All items meet minimum stock thresholds.</p>
+      </div>
+    {% endif %}
+  </div>
+
+  {# Recent Production Runs #}
+  <div class="chart-container">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <div class="card-title"><i class="bi bi-gear-wide-connected" style="color:var(--accent-purple);"></i> Recent Production</div>
+    </div>
+    {% if recent_production %}
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        {% for run in recent_production %}
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 12px;background:var(--bg-card-hover);border-radius:10px;border:1px solid var(--border);">
+          <div>
+            <div style="font-size:12px;font-weight:600;color:var(--text-primary);">{{ run.finished_product.name }}</div>
+            <div style="font-size:10px;color:var(--text-muted);">{{ run.date.strftime('%d %b %Y') }}</div>
+          </div>
+          <span class="badge badge-purple">{{ run.quantity_produced|int }} units</span>
+        </div>
+        {% endfor %}
+      </div>
+      <div style="margin-top:14px;text-align:center;">
+        <a href="{{ url_for('manufacturing.production_logs') }}" class="btn btn-ghost btn-sm">
+          <i class="bi bi-gear-wide-connected"></i> All Production Logs
+        </a>
+      </div>
+    {% else %}
+      <div class="empty-state" style="padding:24px 12px;">
+        <div class="empty-state-icon">🏭</div>
+        <h5>No Runs Yet</h5>
+        <p>Log your first production batch.</p>
+      </div>
+    {% endif %}
+  </div>
+
+</div>
+{% endif %}
+
+{# ═══════════════════════════════════════════════
+   QUICK ACTIONS — role-filtered
+   ═══════════════════════════════════════════════ #}
+<div class="card" style="margin-top:20px;">
+  <div class="card-header">
+    <div class="card-title"><i class="bi bi-lightning-fill" style="color:var(--accent-amber);"></i> Quick Actions</div>
+    <span class="badge badge-gray">{{ role }}</span>
+  </div>
+  <div class="card-body">
+    <div style="display:flex;gap:12px;flex-wrap:wrap;">
+
+      {% if role in ['Admin', 'Owner', 'Accountant'] %}
+      <a href="{{ url_for('sales.create_entry') }}" class="btn btn-success">
+        <i class="bi bi-plus-lg"></i> New Sales Invoice
+      </a>
+      <a href="{{ url_for('purchases.create_entry') }}" class="btn btn-primary">
+        <i class="bi bi-plus-lg"></i> New Purchase Bill
+      </a>
+      <a href="{{ url_for('accounting.factory_expenses') }}" class="btn btn-amber">
+        <i class="bi bi-plus-lg"></i> Log Expense
+      </a>
+      {% endif %}
+
+      {% if role in ['Admin', 'Owner', 'Store Manager'] %}
+      <a href="{{ url_for('manufacturing.production_logs') }}" class="btn btn-ghost">
+        <i class="bi bi-gear-wide-connected"></i> Production Log
+      </a>
+      <a href="{{ url_for('inventory.list_products') }}" class="btn btn-ghost">
+        <i class="bi bi-box-seam"></i> Inventory
+      </a>
+      {% endif %}
+
+      {% if role in ['Admin', 'Owner', 'Accountant'] %}
+      <a href="{{ url_for('reports.analytics_hub') }}" class="btn btn-ghost">
+        <i class="bi bi-graph-up-arrow"></i> View Reports
+      </a>
+      {% endif %}
+
+      {% if role in ['Admin', 'Owner'] %}
+      <a href="{{ url_for('auth.manage_users') }}" class="btn btn-ghost" style="border-color:rgba(239,68,68,0.3);color:var(--accent-red);">
+        <i class="bi bi-shield-lock-fill"></i> User Management
+      </a>
+      {% endif %}
+
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+{% if role in ['Admin', 'Owner', 'Accountant'] %}
+<script>
+const ctx = document.getElementById('salesChart').getContext('2d');
+const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
+const isLightInit = currentTheme === 'light';
+
+const salesChart = new Chart(ctx, {
+  type: 'line',
+  data: {
+    labels: {{ months_labels | tojson }},
+    datasets: [{
+      label: 'Sales (₹)',
+      data: {{ sales_trend_data | tojson }},
+      borderColor: '#4f8ef7',
+      backgroundColor: 'rgba(79, 142, 247, 0.08)',
+      borderWidth: 2.5,
+      pointBackgroundColor: '#4f8ef7',
+      pointBorderColor: isLightInit ? '#ffffff' : '#080d1a',
+      pointBorderWidth: 2,
+      pointRadius: 5,
+      pointHoverRadius: 7,
+      fill: true,
+      tension: 0.4
+    },
+    {
+      label: 'Gross Profit (₹)',
+      data: {{ profit_trend_data | tojson }},
+      borderColor: '#10b981',
+      backgroundColor: 'rgba(16, 185, 129, 0.08)',
+      borderWidth: 2.5,
+      pointBackgroundColor: '#10b981',
+      pointBorderColor: isLightInit ? '#ffffff' : '#080d1a',
+      pointBorderWidth: 2,
+      pointRadius: 5,
+      pointHoverRadius: 7,
+      fill: true,
+      tension: 0.4
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    interaction: { mode: 'index', intersect: false },
+    plugins: {
+      legend: { display: true, labels: { color: isLightInit ? '#64748b' : '#94a3b8' } },
+      tooltip: {
+        backgroundColor: isLightInit ? '#ffffff' : '#0f1929',
+        borderColor: isLightInit ? '#e2e8f0' : 'rgba(255,255,255,0.1)',
+        borderWidth: 1,
+        titleColor: isLightInit ? '#475569' : '#94a3b8',
+        bodyColor: isLightInit ? '#0f172a' : '#f1f5f9',
+        callbacks: {
+          label: ctx => ' ₹' + ctx.raw.toLocaleString('en-IN', {minimumFractionDigits: 0})
+        }
+      }
+    },
+    scales: {
+      x: {
+        grid: { color: isLightInit ? 'rgba(15,23,42,0.05)' : 'rgba(255,255,255,0.04)' },
+        ticks: { color: '#64748b', font: { size: 11 } }
+      },
+      y: {
+        grid: { color: isLightInit ? 'rgba(15,23,42,0.05)' : 'rgba(255,255,255,0.04)' },
+        ticks: {
+          color: '#64748b', font: { size: 11 },
+          callback: v => '₹' + (v >= 1000 ? (v/1000).toFixed(0)+'K' : v)
+        }
+      }
+    }
+  }
+});
+
+document.addEventListener('themeChanged', function(e) {
+  const isLight = e.detail.theme === 'light';
+  salesChart.data.datasets[0].pointBorderColor = isLight ? '#ffffff' : '#080d1a';
+  salesChart.data.datasets[1].pointBorderColor = isLight ? '#ffffff' : '#080d1a';
+  salesChart.options.plugins.legend.labels.color = isLight ? '#64748b' : '#94a3b8';
+  salesChart.options.scales.x.grid.color = isLight ? 'rgba(15,23,42,0.05)' : 'rgba(255,255,255,0.04)';
+  salesChart.options.scales.y.grid.color = isLight ? 'rgba(15,23,42,0.05)' : 'rgba(255,255,255,0.04)';
+  salesChart.options.plugins.tooltip.backgroundColor = isLight ? '#ffffff' : '#0f1929';
+  salesChart.options.plugins.tooltip.borderColor = isLight ? '#e2e8f0' : 'rgba(255,255,255,0.1)';
+  salesChart.options.plugins.tooltip.titleColor = isLight ? '#475569' : '#94a3b8';
+  salesChart.options.plugins.tooltip.bodyColor = isLight ? '#0f172a' : '#f1f5f9';
+  salesChart.update();
+});
+</script>
+{% endif %}
+{% endblock %}

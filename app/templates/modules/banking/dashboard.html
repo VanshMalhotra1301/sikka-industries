@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block title %}Banking Systems{% endblock %}
+{% block page_title %}Banking Systems{% endblock %}
+{% block page_subtitle %}Manage all bank accounts and liquidity{% endblock %}
+
+{% block content %}
+<div class="grid-8-4">
+    <div>
+        <div class="card" style="margin-bottom: 24px;">
+            <div class="card-header">
+                <div class="card-title"><i class="bi bi-bank" style="color:var(--accent-blue);"></i> Bank Accounts</div>
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Bank Name</th>
+                            <th class="text-right">Current Balance (₹)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for bank in bank_ledgers %}
+                        <tr>
+                            <td class="fw-bold">{{ bank.name }}</td>
+                            <td class="text-right" style="color:{% if bank.current_balance < 0 %}var(--accent-red){% else %}var(--accent-green){% endif %};">
+                                {{ "{:,.2f}".format(bank.current_balance) }}
+                                {% if bank.current_balance < 0 %}(OD){% endif %}
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr><td colspan="2" class="text-center">No bank accounts configured yet.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title"><i class="bi bi-cash-coin" style="color:var(--accent-green);"></i> Cash-in-Hand</div>
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Ledger Name</th>
+                            <th class="text-right">Current Balance (₹)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for cash in cash_ledgers %}
+                        <tr>
+                            <td class="fw-bold">{{ cash.name }}</td>
+                            <td class="text-right" style="color:{% if cash.current_balance < 0 %}var(--accent-red){% else %}var(--accent-green){% endif %};">
+                                {{ "{:,.2f}".format(cash.current_balance) }}
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr><td colspan="2" class="text-center">No cash ledgers found.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div>
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title"><i class="bi bi-plus-circle" style="color:var(--accent-amber);"></i> Add Bank Account</div>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('banking.add_bank') }}">
+                    <div class="form-group">
+                        <label>Bank Name *</label>
+                        <input type="text" name="name" required placeholder="e.g. HDFC Current A/c">
+                    </div>
+                    <button type="submit" class="btn btn-primary w-full">Add Bank</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

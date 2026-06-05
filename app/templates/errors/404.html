@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>404 — Page Not Found</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}">
+  <script>
+    (function() {
+      const savedTheme = localStorage.getItem('theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', savedTheme);
+    })();
+  </script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+</head>
+<body>
+<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--bg-base);">
+  <div style="text-align:center;">
+    <div style="font-size:80px;font-weight:800;color:var(--accent-blue);line-height:1;">404</div>
+    <div style="font-size:20px;font-weight:700;color:var(--text-primary);margin:12px 0 8px;">Page Not Found</div>
+    <div style="font-size:13px;color:var(--text-muted);margin-bottom:24px;">The page you're looking for doesn't exist or has been moved.</div>
+    <a href="/" class="btn btn-primary"><i class="bi bi-arrow-left"></i> Go to Dashboard</a>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}{{ product.name }} — Inventory Ledger{% endblock %}
+{% block page_title %}Inventory Ledger{% endblock %}
+{% block page_subtitle %}Complete movement history for {{ product.name }}{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <div class="page-header-left">
+    <h2><span class="mono" style="color:var(--accent-blue);">[{{ product.code }}]</span> {{ product.name }}</h2>
+    <p>
+      {% if product.category == 'Finished Goods' %}
+        <span class="badge badge-green">Finished Goods</span>
+      {% else %}
+        <span class="badge badge-purple">Raw Material</span>
+      {% endif %}
+      &nbsp; Current Stock:
+      <strong style="color:var(--accent-amber);">{{ product.stock_quantity|int }} units</strong>
+    </p>
+  </div>
+  <div class="page-actions">
+    <a href="{{ url_for('inventory.list_products') }}" class="btn btn-ghost">
+      <i class="bi bi-arrow-left"></i> Back to Inventory
+    </a>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <div class="card-title"><i class="bi bi-list-ul" style="color:var(--accent-blue);"></i> Movement History</div>
+    <span class="badge badge-blue">{{ logs|length }} transactions</span>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th class="text-right">Quantity</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for log in logs %}
+        <tr>
+          <td class="td-muted" style="white-space:nowrap;">{{ log.date.strftime('%d %b %Y, %H:%M') }}</td>
+          <td>
+            {% if log.transaction_type == 'Purchase' %}
+              <span class="badge badge-blue">Purchase</span>
+            {% elif log.transaction_type == 'Sale' %}
+              <span class="badge badge-red">Sale</span>
+            {% elif log.transaction_type == 'Production' %}
+              <span class="badge badge-green">Production</span>
+            {% elif log.transaction_type == 'Consumption' %}
+              <span class="badge badge-amber">Consumed</span>
+            {% else %}
+              <span class="badge badge-gray">{{ log.transaction_type }}</span>
+            {% endif %}
+          </td>
+          <td class="td-muted">{{ log.description or '—' }}</td>
+          <td class="text-right fw-bold">
+            {% if log.quantity > 0 %}
+              <span class="text-green">+{{ log.quantity|int }}</span>
+            {% else %}
+              <span class="text-red">{{ log.quantity|int }}</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="4">
+          <div class="empty-state">
+            <div class="empty-state-icon">📋</div>
+            <h5>No movement history</h5>
+            <p>No transactions recorded for this product.</p>
+          </div>
+        </td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}

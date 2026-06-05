@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ledger Statement - {{ customer.name }}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --border-color: #000;
+    }
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background: #f4f4f4;
+      font-size: 11px;
+      color: #000;
+    }
+    .no-print {
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    .btn {
+      padding: 8px 16px;
+      background: #0056b3;
+      color: white;
+      border: none;
+      cursor: pointer;
+      border-radius: 4px;
+      font-weight: bold;
+    }
+    .btn-secondary {
+      background: #666;
+    }
+    
+    @media print {
+      .no-print { display: none !important; }
+      body { background: #fff; padding: 0; }
+      @page { margin: 10mm; }
+    }
+    
+    .invoice-wrapper {
+      max-width: 900px;
+      margin: 0 auto;
+      background: #fff;
+    }
+    
+    .invoice-title {
+      text-align: center;
+      font-weight: bold;
+      font-size: 16px;
+      margin-bottom: 5px;
+      text-decoration: underline;
+    }
+    
+    .company-name {
+      text-align: center;
+      font-weight: bold;
+      font-size: 20px;
+      margin-bottom: 5px;
+    }
+    
+    .ledger-meta {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 15px;
+      margin-bottom: 10px;
+      font-size: 13px;
+    }
+    
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    
+    .main-table {
+      border: 1px solid var(--border-color);
+    }
+    
+    .main-table th {
+      border: 1px solid var(--border-color);
+      padding: 6px;
+      text-align: center;
+      font-weight: bold;
+      background: #f9f9f9;
+    }
+    
+    .main-table td {
+      border-right: 1px solid var(--border-color);
+      border-left: 1px solid var(--border-color);
+      padding: 4px 6px;
+      vertical-align: top;
+    }
+    
+    .bottom-border td {
+      border-bottom: 1px solid var(--border-color);
+    }
+    
+    .text-center { text-align: center; }
+    .text-right { text-align: right; }
+    .fw-bold { font-weight: bold; }
+    
+  </style>
+</head>
+<body>
+
+<div class="no-print">
+  <button onclick="window.print()" class="btn">🖨️ Download PDF / Print</button>
+  <a href="{{ url_for('crm.statement', id=customer.id) }}"><button class="btn btn-secondary">Back to Statement</button></a>
+</div>
+
+<div class="invoice-wrapper">
+  <div class="company-name">{{ company_full }}</div>
+  <div class="invoice-title">Ledger Account</div>
+  
+  <div class="ledger-meta">
+    <div>
+      <span class="fw-bold">Particulars:</span> {{ customer.name }}<br>
+      <span class="fw-bold">GSTIN/UIN:</span> {{ customer.gst_number or 'Unregistered' }}<br>
+      <span class="fw-bold">Contact:</span> {{ customer.phone or 'N/A' }}
+    </div>
+    <div class="text-right">
+      <span class="fw-bold">Period:</span> All Time<br>
+      <span class="fw-bold">Closing Balance:</span> 
+      {% if current_balance > 0 %}
+        ₹{{ "{:,.2f}".format(current_balance) }} Dr
+      {% elif current_balance < 0 %}
+        ₹{{ "{:,.2f}".format(current_balance|abs) }} Cr
+      {% else %}
+        Nil
+      {% endif %}
+    </div>
+  </div>
+  <div style="font-size:12px; margin-bottom:15px; border-top:1px dashed #ccc; padding-top:10px; display:flex; justify-content:space-between;">
+    <div><strong>Total Transactions:</strong> {{ records|length }}</div>
+    <div><strong>Total Discounts Given:</strong> ₹{{ "{:,.2f}".format(total_discount) }}</div>
+    <div><strong>Total Profit (Est.):</strong> ₹{{ "{:,.2f}".format(total_profit) }}</div>
+  </div>
+  
+  <table class="main-table">
+    <thead>
+      <tr>
+        <th style="width: 10%;">Date</th>
+        <th style="width: 35%;">Particulars</th>
+        <th style="width: 10%;">Vch Type</th>
+        <th style="width: 15%;">Vch No.</th>
+        <th style="width: 10%;">Debit</th>
+        <th style="width: 10%;">Credit</th>
+        <th style="width: 10%;">Balance</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% set total_dr = namespace(value=0) %}
+      {% set total_cr = namespace(value=0) %}
+      
+      {% if op_type == 'Dr' %}{% set total_dr.value = total_dr.value + op_balance %}{% endif %}
+      {% if op_type == 'Cr' %}{% set total_cr.value = total_cr.value + op_balance %}{% endif %}
+      <tr class="bottom-border" style="background:#fcfcfc;">
+        <td class="text-center">—</td>
+        <td><strong>Opening Balance</strong></td>
+        <td class="text-center">—</td>
+        <td class="text-center">—</td>
+        <td class="text-right">
+          {% if op_type == 'Dr' and op_balance > 0 %}{{ "{:,.2f}".format(op_balance) }}{% else %}—{% endif %}
+        </td>
+        <td class="text-right">
+          {% if op_type == 'Cr' and op_balance > 0 %}{{ "{:,.2f}".format(op_balance) }}{% else %}—{% endif %}
+        </td>
+        <td class="text-right fw-bold">
+          {% if op_balance > 0 %}
+            {{ "{:,.2f}".format(op_balance) }} {{ op_type }}
+          {% else %}
+            0.00
+          {% endif %}
+        </td>
+      </tr>
+      
+      {% for r in records %}
+        {% set total_dr.value = total_dr.value + r.debit %}
+        {% set total_cr.value = total_cr.value + r.credit %}
+        
+        <tr class="bottom-border">
+          <td class="text-center">{{ r.date.strftime('%d-%b-%y') }}</td>
+          <td>{{ r.description|safe }}</td>
+          <td class="text-center">{{ r.vch_type }}</td>
+          <td class="text-center">{{ r.vch_no }}</td>
+          <td class="text-right">
+            {% if r.debit > 0 %}{{ "{:,.2f}".format(r.debit) }}{% else %}—{% endif %}
+          </td>
+          <td class="text-right">
+            {% if r.credit > 0 %}{{ "{:,.2f}".format(r.credit) }}{% else %}—{% endif %}
+          </td>
+          <td class="text-right fw-bold">
+            {{ "{:,.2f}".format(r.running_balance|abs) }}
+            {% if r.running_balance < 0 %}Cr{% elif r.running_balance > 0 %}Dr{% endif %}
+          </td>
+        </tr>
+      {% else %}
+        <tr>
+          <td colspan="7" class="text-center" style="padding: 20px;">No transactions found.</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  
+  <div class="text-center" style="margin-top: 20px; font-style: italic; font-size: 10px;">
+    This is a Computer Generated Statement
+  </div>
+</div>
+
+</body>
+</html>

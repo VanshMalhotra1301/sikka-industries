@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% block title %}Sales Register{% endblock %}
+{% block page_title %}Sales Register{% endblock %}
+{% block page_subtitle %}All issued sales invoices and dealer dispatches{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <div class="page-header-left">
+    <h2>Sales Register</h2>
+    <p>{{ sales|length }} invoices issued</p>
+  </div>
+  <div class="page-actions">
+    <a href="{{ url_for('sales.create_entry') }}" class="btn btn-success">
+      <i class="bi bi-plus-lg"></i> New Sales Invoice
+    </a>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
+    <div style="display:flex; gap:10px; align-items:center;">
+      <div class="card-title"><i class="bi bi-receipt-cutoff" style="color:var(--accent-green);"></i> All Invoices</div>
+      <span class="badge badge-green">{{ sales|length }} records</span>
+    </div>
+    <div style="display:flex; gap:10px;">
+      <input type="text" id="salesSearch" onkeyup="searchTable('salesSearch', 'salesTable')" placeholder="Search invoices..." class="form-control" style="width:200px; height:32px; padding:4px 10px; border-radius:6px; border:1px solid var(--border); background:var(--bg-card); color:var(--text-main);">
+      <button onclick="exportTableToCSV('salesTable', 'Sales_Invoices.csv')" class="btn btn-ghost btn-sm" title="Export to CSV">
+        <i class="bi bi-download"></i> Export
+      </button>
+    </div>
+  </div>
+  <div class="table-wrap">
+    <table id="salesTable">
+      <thead>
+        <tr>
+          <th>Invoice #</th>
+          <th>Date</th>
+          <th>Customer</th>
+          <th>Payment Mode</th>
+          <th class="text-right">Total (₹)</th>
+          <th class="text-right">Paid (₹)</th>
+          <th class="text-right">Balance (₹)</th>
+          <th>Status</th>
+          <th class="text-right">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in sales %}
+        <tr>
+          <td class="mono fw-bold" style="color:var(--accent-green);">#{{ s.id }}</td>
+          <td class="td-muted" style="white-space:nowrap;">{{ s.date.strftime('%d %b %Y') }}</td>
+          <td>{{ s.customer.name if s.customer else '—' }}</td>
+          <td>
+            {% if s.payment_mode == 'Cash' %}
+              <span class="badge badge-green">Cash</span>
+            {% elif s.payment_mode == 'Bank' %}
+              <span class="badge badge-blue">Bank</span>
+            {% else %}
+              <span class="badge badge-amber">Credit</span>
+            {% endif %}
+          </td>
+          <td class="text-right fw-bold">₹{{ "{:,.0f}".format(s.total_amount) }}</td>
+          <td class="text-right text-green">₹{{ "{:,.0f}".format(s.paid_amount) }}</td>
+          <td class="text-right">
+            {% if s.balance_amount > 0 %}
+              <span class="text-amber fw-bold">₹{{ "{:,.0f}".format(s.balance_amount) }}</span>
+            {% else %}
+              <span class="text-green">—</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if s.balance_amount <= 0 %}
+              <span class="badge badge-green">Paid</span>
+            {% elif s.balance_amount == s.total_amount %}
+              <span class="badge badge-red">Unpaid</span>
+            {% else %}
+              <span class="badge badge-amber">Partial</span>
+            {% endif %}
+          </td>
+          <td class="text-right">
+            <div style="display:inline-flex; gap:6px;">
+              <a href="{{ url_for('sales.view_invoice', id=s.id) }}" class="btn btn-ghost btn-xs" target="_blank" title="Print Invoice">
+                <i class="bi bi-printer"></i> Print
+              </a>
+              <a href="{{ url_for('sales.delete_sale', id=s.id) }}" class="btn btn-ghost btn-xs text-red" title="Delete Invoice"
+                 onclick="return confirm('Are you sure you want to delete and void Sales Invoice #{{ s.id }}? This will revert inventory quantities and ledger entries.');">
+                <i class="bi bi-trash-fill"></i> Delete
+              </a>
+            </div>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="9">
+          <div class="empty-state">
+            <div class="empty-state-icon">🧾</div>
+            <h5>No invoices yet</h5>
+            <p>Issue your first sales invoice to a customer.</p>
+            <a href="{{ url_for('sales.create_entry') }}" class="btn btn-success" style="margin-top:12px;">
+              <i class="bi bi-plus-lg"></i> New Invoice
+            </a>
+          </div>
+        </td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}

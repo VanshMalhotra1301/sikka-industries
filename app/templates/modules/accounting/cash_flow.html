@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+{% block title %}Cash Flow Statement{% endblock %}
+{% block page_title %}Cash Flow Statement{% endblock %}
+{% block page_subtitle %}Capital inflows vs outflows across all transaction types{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <div class="page-header-left">
+    <h2>Cash Flow Statement</h2>
+    <p>Consolidated view of all Cash & Bank movements</p>
+  </div>
+</div>
+
+<!-- Summary KPIs -->
+<div class="stats-grid" style="grid-template-columns: repeat(3,1fr); margin-bottom:24px;">
+  <div class="stat-card stat-green">
+    <i class="bi bi-arrow-down-circle-fill stat-icon"></i>
+    <div class="stat-label">Total Inflows</div>
+    <div class="stat-value text-green">₹{{ "{:,.0f}".format(total_in) }}</div>
+    <div class="stat-sub">Cash & bank receipts</div>
+  </div>
+  <div class="stat-card stat-red">
+    <i class="bi bi-arrow-up-circle-fill stat-icon"></i>
+    <div class="stat-label">Total Outflows</div>
+    <div class="stat-value text-red">₹{{ "{:,.0f}".format(total_out) }}</div>
+    <div class="stat-sub">Payments & expenses</div>
+  </div>
+  <div class="stat-card {% if net_position >= 0 %}stat-green{% else %}stat-red{% endif %}">
+    <i class="bi bi-activity stat-icon"></i>
+    <div class="stat-label">Net Liquidity Position</div>
+    <div class="stat-value {% if net_position >= 0 %}text-green{% else %}text-red{% endif %}">
+      ₹{{ "{:,.0f}".format(net_position|abs) }}
+      {% if net_position >= 0 %}<small style="font-size:14px;"> Surplus</small>
+      {% else %}<small style="font-size:14px;"> Deficit</small>{% endif %}
+    </div>
+  </div>
+</div>
+
+<div class="grid-2">
+
+  <!-- Inflows -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title"><i class="bi bi-arrow-down-circle-fill" style="color:var(--accent-green);"></i> Cash Inflows</div>
+      <span class="badge badge-green">₹{{ "{:,.0f}".format(total_in) }}</span>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Source Type</th>
+            <th class="text-right">Amount (₹)</th>
+            <th class="text-right">% Share</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for ref_type, amount in inflows %}
+          <tr>
+            <td>
+              <div style="font-weight:600;">{{ ref_type or 'Other' }}</div>
+              <div style="height:4px;background:rgba(16,185,129,0.15);border-radius:99px;margin-top:6px;">
+                <div style="height:4px;background:var(--accent-green);border-radius:99px;width:{{ (amount/total_in*100)|int if total_in > 0 else 0 }}%;"></div>
+              </div>
+            </td>
+            <td class="text-right text-green fw-bold">₹{{ "{:,.0f}".format(amount) }}</td>
+            <td class="text-right td-muted">{{ "%.1f"|format(amount/total_in*100) if total_in > 0 else 0 }}%</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="3">
+            <div class="empty-state" style="padding:28px;">
+              <div class="empty-state-icon">📥</div>
+              <h5>No inflows recorded</h5>
+            </div>
+          </td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Outflows -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title"><i class="bi bi-arrow-up-circle-fill" style="color:var(--accent-red);"></i> Cash Outflows</div>
+      <span class="badge badge-red">₹{{ "{:,.0f}".format(total_out) }}</span>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Category</th>
+            <th class="text-right">Amount (₹)</th>
+            <th class="text-right">% Share</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for ref_type, amount in outflows %}
+          <tr>
+            <td>
+              <div style="font-weight:600;">{{ ref_type or 'Other' }}</div>
+              <div style="height:4px;background:rgba(239,68,68,0.15);border-radius:99px;margin-top:6px;">
+                <div style="height:4px;background:var(--accent-red);border-radius:99px;width:{{ (amount/total_out*100)|int if total_out > 0 else 0 }}%;"></div>
+              </div>
+            </td>
+            <td class="text-right text-red fw-bold">₹{{ "{:,.0f}".format(amount) }}</td>
+            <td class="text-right td-muted">{{ "%.1f"|format(amount/total_out*100) if total_out > 0 else 0 }}%</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="3">
+            <div class="empty-state" style="padding:28px;">
+              <div class="empty-state-icon">📤</div>
+              <h5>No outflows recorded</h5>
+            </div>
+          </td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+{% endblock %}

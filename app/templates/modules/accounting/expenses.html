@@ -1,0 +1,224 @@
+{% extends "base.html" %}
+{% block title %}Factory Expenses{% endblock %}
+{% block page_title %}Expense Log{% endblock %}
+{% block page_subtitle %}Operational overhead tracking — electricity, labour, transport & more{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <div class="page-header-left">
+    <h2>Expense Log</h2>
+    <p>{{ logs|length }} expenses recorded</p>
+  </div>
+</div>
+
+<div class="grid-8-4">
+
+  <!-- Expense Entry Form -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title"><i class="bi bi-plus-circle-fill" style="color:var(--accent-red);"></i> Log New Expense</div>
+    </div>
+    <div class="card-body">
+      <form method="POST" action="{{ url_for('accounting.factory_expenses') }}">
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Category *</label>
+            <select name="category" required>
+              <option value="">— Select category —</option>
+              <option value="Electricity">⚡ Electricity</option>
+              <option value="Labour">👷 Labour / Wages</option>
+              <option value="Transport">🚚 Transport</option>
+              <option value="Office Expense">🖨️ Office Expense</option>
+              <option value="Maintenance">🔧 Maintenance</option>
+              <option value="Miscellaneous">📋 Miscellaneous</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Payment Mode *</label>
+            <select name="payment_mode" required>
+              <option value="Cash">💵 Cash</option>
+              <option value="Bank">🏦 Bank Transfer</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Amount (₹) *</label>
+          <input type="number" name="amount" step="0.01" min="0.01" placeholder="e.g. 15000" required>
+        </div>
+
+        <div class="form-group">
+          <label>Description / Notes</label>
+          <textarea name="description" rows="3" placeholder="Brief description of the expense..."></textarea>
+        </div>
+
+        <button type="submit" class="btn btn-danger w-full">
+          <i class="bi bi-check-circle-fill"></i> Record Expense
+        </button>
+        <div style="font-size:10px;color:var(--text-muted);text-align:center;margin-top:8px;">
+          Ledger debited & Cash/Bank credited automatically.
+        </div>
+
+      </form>
+    </div>
+  </div>
+
+  <!-- Category Summary -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title"><i class="bi bi-pie-chart-fill" style="color:var(--accent-amber);"></i> Category Totals</div>
+    </div>
+    <div class="card-body" style="padding:12px;">
+      {% set categories = ['Electricity','Labour','Transport','Office Expense','Maintenance','Miscellaneous'] %}
+      {% for cat in categories %}
+        {% set cat_total = logs | selectattr('category','eq',cat) | sum(attribute='amount') %}
+        {% if cat_total > 0 %}
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:8px;border-bottom:1px solid var(--border);">
+          <span style="font-size:12px;color:var(--text-secondary);">{{ cat }}</span>
+          <span style="font-size:13px;font-weight:700;color:var(--accent-amber);">₹{{ "{:,.0f}".format(cat_total) }}</span>
+        </div>
+        {% endif %}
+      {% endfor %}
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 8px;margin-top:4px;">
+        <span style="font-size:12px;font-weight:700;color:var(--text-primary);">TOTAL</span>
+        <span style="font-size:15px;font-weight:800;color:var(--accent-red);">
+          ₹{{ "{:,.0f}".format(logs | sum(attribute='amount')) }}
+        </span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Expense History -->
+<div class="card">
+  <div class="card-header">
+    <div class="card-title"><i class="bi bi-clock-history" style="color:var(--text-muted);"></i> Expense History</div>
+    <span class="badge badge-red">{{ logs|length }} entries</span>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Category</th>
+          <th>Description</th>
+          <th>Paid Via</th>
+          <th class="text-right">Amount (₹)</th>
+          <th class="text-right">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for e in logs %}
+        <tr>
+          <td class="td-muted" style="white-space:nowrap;">{{ e.date.strftime('%d %b %Y') }}</td>
+          <td>
+            {% if e.category == 'Electricity' %}
+              <span class="badge badge-amber">⚡ {{ e.category }}</span>
+            {% elif e.category == 'Labour' %}
+              <span class="badge badge-blue">👷 {{ e.category }}</span>
+            {% elif e.category == 'Transport' %}
+              <span class="badge badge-purple">🚚 {{ e.category }}</span>
+            {% else %}
+              <span class="badge badge-gray">{{ e.category }}</span>
+            {% endif %}
+          </td>
+          <td class="td-muted">{{ e.description or '—' }}</td>
+          <td>
+            {% if e.payment_mode == 'Cash' %}
+              <span class="badge badge-green">Cash</span>
+            {% else %}
+              <span class="badge badge-blue">Bank</span>
+            {% endif %}
+          </td>
+          <td class="text-right fw-bold text-red">₹{{ "{:,.0f}".format(e.amount) }}</td>
+          <td class="text-right">
+            <div style="display:inline-flex; gap:6px;">
+              <button class="btn btn-ghost btn-xs text-blue" title="Edit Expense"
+                      onclick="openEditModal('{{ e.id }}', '{{ e.category|escape }}', '{{ e.amount }}', '{{ e.payment_mode|escape }}', '{{ e.description|escape or '' }}')">
+                <i class="bi bi-pencil-fill"></i> Edit
+              </button>
+              <a href="{{ url_for('accounting.delete_expense', id=e.id) }}" class="btn btn-ghost btn-xs text-red" title="Delete Expense"
+                 onclick="return confirm('Are you sure you want to delete this expense?');">
+                <i class="bi bi-trash-fill"></i> Delete
+              </a>
+            </div>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="6">
+          <div class="empty-state">
+            <div class="empty-state-icon">💸</div>
+            <h5>No expenses logged</h5>
+            <p>Record factory overheads to track operational costs.</p>
+          </div>
+        </td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Edit Expense Modal -->
+<div class="modal-overlay" id="editModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <span class="modal-title"><i class="bi bi-pencil-square" style="color:var(--accent-red);"></i> &nbsp; Edit Expense Record</span>
+      <button class="modal-close" onclick="document.getElementById('editModal').classList.remove('open')">×</button>
+    </div>
+    <div class="modal-body">
+      <form id="editForm" method="POST" action="">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Category *</label>
+            <select name="category" id="edit_category" required>
+              <option value="Electricity">⚡ Electricity</option>
+              <option value="Labour">👷 Labour / Wages</option>
+              <option value="Transport">🚚 Transport</option>
+              <option value="Office Expense">🖨️ Office Expense</option>
+              <option value="Maintenance">🔧 Maintenance</option>
+              <option value="Miscellaneous">📋 Miscellaneous</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Payment Mode *</label>
+            <select name="payment_mode" id="edit_payment_mode" required>
+              <option value="Cash">💵 Cash</option>
+              <option value="Bank">🏦 Bank Transfer</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Amount (₹) *</label>
+          <input type="number" name="amount" id="edit_amount" step="0.01" min="0.01" required>
+        </div>
+
+        <div class="form-group">
+          <label>Description / Notes</label>
+          <textarea name="description" id="edit_description" rows="3"></textarea>
+        </div>
+
+        <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:16px;">
+          <button type="button" class="btn btn-ghost" onclick="document.getElementById('editModal').classList.remove('open')">Cancel</button>
+          <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> Update Expense</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+function openEditModal(id, category, amount, paymentMode, description) {
+  document.getElementById('editForm').action = "/accounting/expenses/edit/" + id;
+  document.getElementById('edit_category').value = category;
+  document.getElementById('edit_amount').value = amount;
+  document.getElementById('edit_payment_mode').value = paymentMode;
+  document.getElementById('edit_description').value = description;
+  document.getElementById('editModal').classList.add('open');
+}
+</script>
+
+{% endblock %}

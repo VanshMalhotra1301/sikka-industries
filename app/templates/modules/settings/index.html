@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}System Settings{% endblock %}
+{% block page_title %}System Settings{% endblock %}
+{% block page_subtitle %}Developer tools & administrative functions{% endblock %}
+
+{% block content %}
+<div class="grid-8-4">
+    <div>
+        <div class="card" style="border: 1px solid var(--accent-red);">
+            <div class="card-header" style="background: rgba(239, 68, 68, 0.05);">
+                <div class="card-title text-red">
+                    <i class="bi bi-exclamation-triangle-fill"></i> DANGER ZONE: Factory Reset
+                </div>
+            </div>
+            <div class="card-body">
+                <p style="font-weight: 500; margin-bottom: 15px;">
+                    Warning: Executing a factory reset will permanently delete all data in the database.
+                </p>
+                <ul style="color: var(--text-secondary); margin-bottom: 20px; padding-left: 20px;">
+                    <li>All Sales Invoices and Purchase Bills will be destroyed.</li>
+                    <li>All Customers, Suppliers, and Products will be deleted.</li>
+                    <li>All Vouchers, Ledgers, and financial records will be wiped.</li>
+                    <li>The default Tally Prime chart of accounts will be re-seeded.</li>
+                    <li>Your admin account will be preserved so you can log back in.</li>
+                </ul>
+                
+                <form method="POST" action="{{ url_for('settings.factory_reset') }}" onsubmit="return confirm('Are you absolutely sure you want to wipe the entire database? This cannot be undone.');">
+                    <div class="form-group">
+                        <label>Confirm Admin Password *</label>
+                        <input type="password" name="password" required placeholder="Enter your password to confirm">
+                    </div>
+                    <button type="submit" class="btn btn-red w-full">
+                        <i class="bi bi-trash-fill"></i> WIPE DATABASE
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div>
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title">
+                    <i class="bi bi-info-circle-fill" style="color: var(--accent-blue);"></i> System Information
+                </div>
+            </div>
+            <div class="card-body">
+                <p><strong>Environment:</strong> Development</p>
+                <p><strong>Database:</strong> SQLite Local</p>
+                <p><strong>Version:</strong> v1.0.0 (Tally Prime Architecture)</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

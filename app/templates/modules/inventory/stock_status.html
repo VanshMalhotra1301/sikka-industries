@@ -1,0 +1,263 @@
+{% extends "base.html" %}
+{% block title %}Inventory Master{% endblock %}
+{% block page_title %}Inventory Master{% endblock %}
+{% block page_subtitle %}Product catalog, stock levels and warehouse management{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <div class="page-header-left">
+    <h2>Inventory Master</h2>
+    <p>{{ products|length }} products in catalog</p>
+  </div>
+  <div class="page-actions">
+    <a href="{{ url_for('inventory.adjust_stock') }}" class="btn btn-ghost">
+      <i class="bi bi-sliders"></i> Stock Adjustment
+    </a>
+    <button class="btn btn-primary" onclick="document.getElementById('addModal').classList.add('open')">
+      <i class="bi bi-plus-lg"></i> Add Product
+    </button>
+  </div>
+</div>
+
+<!-- Stock Summary -->
+<div class="stats-grid" style="grid-template-columns: repeat(4,1fr); margin-bottom:20px;">
+  <div class="stat-card stat-blue">
+    <div class="stat-label">Total Products</div>
+    <div class="stat-value text-blue">{{ products|length }}</div>
+  </div>
+  <div class="stat-card stat-purple">
+    <div class="stat-label">Raw Materials</div>
+    <div class="stat-value text-purple">{{ products|selectattr('category','eq','Raw Material')|list|length }}</div>
+  </div>
+  <div class="stat-card stat-green">
+    <div class="stat-label">Finished Goods</div>
+    <div class="stat-value text-green">{{ products|selectattr('category','eq','Finished Goods')|list|length }}</div>
+  </div>
+  <div class="stat-card stat-amber">
+    <div class="stat-label">Low Stock Items</div>
+    <div class="stat-value text-amber">{{ products|selectattr('stock_quantity','le',10)|list|length }}</div>
+  </div>
+</div>
+
+<!-- Product Table -->
+<div class="card">
+  <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
+    <div style="display:flex; gap:10px; align-items:center;">
+      <div class="card-title"><i class="bi bi-box-seam-fill" style="color:var(--accent-blue);"></i> Product Catalog</div>
+      <span class="badge badge-blue">{{ products|length }} items</span>
+    </div>
+    <div style="display:flex; gap:10px;">
+      <input type="text" id="inventorySearch" onkeyup="searchTable('inventorySearch', 'inventoryTable')" placeholder="Search inventory..." class="form-control" style="width:200px; height:32px; padding:4px 10px; border-radius:6px; border:1px solid var(--border); background:var(--bg-card); color:var(--text-main);">
+      <button onclick="exportTableToCSV('inventoryTable', 'Inventory.csv')" class="btn btn-ghost btn-sm" title="Export to CSV">
+        <i class="bi bi-download"></i> Export
+      </button>
+    </div>
+  </div>
+  <div class="table-wrap">
+    <table id="inventoryTable">
+      <thead>
+        <tr>
+          <th>Code</th>
+          <th>Product Name</th>
+          <th>Category</th>
+          <th class="text-right">Purchase Cost</th>
+          <th class="text-right">Selling Price</th>
+          <th class="text-right">Stock Qty</th>
+          <th class="text-right">Stock Value</th>
+          <th class="text-right">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in products %}
+        <tr>
+          <td class="mono" style="font-weight:700; color:var(--accent-blue);">{{ p.code }}</td>
+          <td>
+            <div style="font-weight:600;">{{ p.name }}</div>
+          </td>
+          <td>
+            {% if p.category == 'Finished Goods' %}
+              <span class="badge badge-green">Finished Goods</span>
+            {% else %}
+              <span class="badge badge-purple">Raw Material</span>
+            {% endif %}
+          </td>
+          <td class="text-right td-muted">₹{{ "{:,.2f}".format(p.purchase_cost) }}</td>
+          <td class="text-right">₹{{ "{:,.2f}".format(p.selling_price) }}</td>
+          <td class="text-right">
+            {% if p.stock_quantity <= p.low_stock_threshold %}
+              <span class="badge badge-red">{{ p.stock_quantity|int }}</span>
+            {% else %}
+              <span style="font-weight:700; color:var(--accent-green);">{{ p.stock_quantity|int }}</span>
+            {% endif %}
+          </td>
+          <td class="text-right" style="color:var(--accent-amber); font-weight:600;">
+            ₹{{ "{:,.0f}".format(p.stock_quantity * p.purchase_cost) }}
+          </td>
+          <td class="text-right">
+            <div style="display:inline-flex; gap:6px;">
+              <a href="{{ url_for('inventory.view_ledger', product_id=p.id) }}" class="btn btn-ghost btn-xs" title="View History Log">
+                <i class="bi bi-list-ul"></i> History
+              </a>
+              <button class="btn btn-ghost btn-xs text-blue" title="Edit Product"
+                      onclick="openEditModal('{{ p.id }}', '{{ p.code|escape }}', '{{ p.name|escape }}', '{{ p.category|escape }}', '{{ p.purchase_cost }}', '{{ p.selling_price }}', '{{ p.low_stock_threshold }}')">
+                <i class="bi bi-pencil-fill"></i> Edit
+              </button>
+              <a href="{{ url_for('inventory.delete_product', id=p.id) }}" class="btn btn-ghost btn-xs text-red" title="Delete Product"
+                 onclick="return confirm('Are you sure you want to delete product [{{ p.code|escape }}] {{ p.name|escape }}?');">
+                <i class="bi bi-trash-fill"></i> Delete
+              </a>
+            </div>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="8">
+          <div class="empty-state">
+            <div class="empty-state-icon">📦</div>
+            <h5>No products yet</h5>
+            <p>Add your first raw material or finished goods item.</p>
+          </div>
+        </td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Add Product Modal -->
+<div class="modal-overlay" id="addModal">
+  <div class="modal-box" style="max-width:600px;">
+    <div class="modal-header">
+      <span class="modal-title"><i class="bi bi-box-seam-fill" style="color:var(--accent-blue);"></i> &nbsp; Add New Product</span>
+      <button class="modal-close" onclick="document.getElementById('addModal').classList.remove('open')">×</button>
+    </div>
+    <div class="modal-body">
+      <form method="POST" action="{{ url_for('inventory.list_products') }}">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Product Code *</label>
+            <input type="text" name="code" placeholder="e.g. RM-001 or FG-001" required>
+          </div>
+          <div class="form-group">
+            <label>Category *</label>
+            <select name="category" id="add_category" required onchange="toggleSellingPrice('add')">
+              <option value="">— Select Category —</option>
+              <option value="Raw Material">Raw Material</option>
+              <option value="Finished Goods">Finished Goods</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Product Name *</label>
+          <input type="text" name="name" placeholder="e.g. 5HP Single Phase Motor" required>
+        </div>
+        <div class="form-row-3">
+          <div class="form-group">
+            <label>Purchase Cost (₹)</label>
+            <input type="number" name="purchase_cost" step="0.01" placeholder="0.00" min="0">
+          </div>
+          <div class="form-group" id="add_selling_price_group">
+            <label>Selling Price (₹)</label>
+            <input type="number" name="selling_price" id="add_selling_price" step="0.01" placeholder="0.00" min="0">
+          </div>
+          <div class="form-group">
+            <label>Initial Stock Qty</label>
+            <input type="number" name="initial_stock" step="0.01" placeholder="0" min="0">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Low Stock Alert Threshold</label>
+          <input type="number" name="low_stock_threshold" step="0.01" placeholder="10" min="0" value="10">
+        </div>
+        <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:16px;">
+          <button type="button" class="btn btn-ghost" onclick="document.getElementById('addModal').classList.remove('open')">Cancel</button>
+          <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> Add Product</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Product Modal -->
+<div class="modal-overlay" id="editModal">
+  <div class="modal-box" style="max-width:600px;">
+    <div class="modal-header">
+      <span class="modal-title"><i class="bi bi-pencil-square" style="color:var(--accent-blue);"></i> &nbsp; Edit Product Profile</span>
+      <button class="modal-close" onclick="document.getElementById('editModal').classList.remove('open')">×</button>
+    </div>
+    <div class="modal-body">
+      <form id="editForm" method="POST" action="">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Product Code *</label>
+            <input type="text" name="code" id="edit_code" required>
+          </div>
+          <div class="form-group">
+            <label>Category *</label>
+            <select name="category" id="edit_category" required onchange="toggleSellingPrice('edit')">
+              <option value="Raw Material">Raw Material</option>
+              <option value="Finished Goods">Finished Goods</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Product Name *</label>
+          <input type="text" name="name" id="edit_name" required>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Purchase Cost (₹)</label>
+            <input type="number" name="purchase_cost" id="edit_purchase_cost" step="0.01" min="0">
+          </div>
+          <div class="form-group" id="edit_selling_price_group">
+            <label>Selling Price (₹)</label>
+            <input type="number" name="selling_price" id="edit_selling_price" step="0.01" min="0">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Low Stock Alert Threshold</label>
+          <input type="number" name="low_stock_threshold" id="edit_low_stock_threshold" step="0.01" min="0">
+        </div>
+        <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:16px;">
+          <button type="button" class="btn btn-ghost" onclick="document.getElementById('editModal').classList.remove('open')">Cancel</button>
+          <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> Update Product</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+function toggleSellingPrice(mode) {
+  const cat = document.getElementById(mode + '_category').value;
+  const spGroup = document.getElementById(mode + '_selling_price_group');
+  const spInput = document.getElementById(mode + '_selling_price');
+  
+  if (cat === 'Raw Material') {
+    spGroup.style.display = 'none';
+    spInput.value = '0';
+  } else {
+    spGroup.style.display = 'block';
+  }
+}
+
+function openEditModal(id, code, name, category, cost, price, threshold) {
+  document.getElementById('editForm').action = "/inventory/products/edit/" + id;
+  document.getElementById('edit_code').value = code;
+  document.getElementById('edit_name').value = name;
+  document.getElementById('edit_category').value = category;
+  document.getElementById('edit_purchase_cost').value = cost;
+  document.getElementById('edit_selling_price').value = price;
+  document.getElementById('edit_low_stock_threshold').value = threshold;
+  
+  toggleSellingPrice('edit');
+  document.getElementById('editModal').classList.add('open');
+}
+
+// Initialize on page load for Add modal if needed
+document.addEventListener('DOMContentLoaded', function() {
+  toggleSellingPrice('add');
+});
+</script>
+
+{% endblock %}

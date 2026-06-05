@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tax Invoice - {{ sale.id }}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --border-color: #000;
+    }
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background: #f4f4f4;
+      font-size: 11px;
+      color: #000;
+    }
+    .no-print {
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    .btn {
+      padding: 8px 16px;
+      background: #0056b3;
+      color: white;
+      border: none;
+      cursor: pointer;
+      border-radius: 4px;
+      font-weight: bold;
+    }
+    .btn-secondary {
+      background: #666;
+    }
+    
+    @media print {
+      .no-print { display: none !important; }
+      body { background: #fff; padding: 0; }
+      @page { margin: 10mm; }
+    }
+    
+    .invoice-wrapper {
+      max-width: 800px;
+      margin: 0 auto;
+      background: #fff;
+    }
+    
+    .invoice-title {
+      text-align: center;
+      font-weight: bold;
+      font-size: 14px;
+      margin-bottom: 5px;
+    }
+    
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    
+    .main-table {
+      border: 1px solid var(--border-color);
+    }
+    
+    .main-table td, .main-table th {
+      border: 1px solid var(--border-color);
+      padding: 4px 6px;
+      vertical-align: top;
+    }
+    
+    .w-50 { width: 50%; }
+    .text-center { text-align: center; }
+    .text-right { text-align: right; }
+    .fw-bold { font-weight: bold; }
+    .fs-12 { font-size: 12px; }
+    .fs-14 { font-size: 14px; }
+    
+    .header-grid {
+      display: flex;
+      width: 100%;
+    }
+    .company-details {
+      padding: 6px;
+      width: 50%;
+      border-right: 1px solid var(--border-color);
+      border-bottom: 1px solid var(--border-color);
+    }
+    .invoice-meta {
+      width: 50%;
+      display: flex;
+      flex-direction: column;
+    }
+    .meta-row {
+      display: flex;
+      border-bottom: 1px solid var(--border-color);
+    }
+    .meta-cell {
+      padding: 4px 6px;
+      width: 50%;
+      border-right: 1px solid var(--border-color);
+    }
+    .meta-cell:last-child {
+      border-right: none;
+    }
+    
+    .items-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .items-table th {
+      border-bottom: 1px solid var(--border-color);
+      border-right: 1px solid var(--border-color);
+      text-align: center;
+      background: #f9f9f9;
+      padding: 6px;
+    }
+    .items-table td {
+      border-right: 1px solid var(--border-color);
+      padding: 4px 6px;
+      height: 250px; /* Force minimum height for tally look */
+      vertical-align: top;
+    }
+    .items-table th:last-child, .items-table td:last-child {
+      border-right: none;
+    }
+    
+    .totals-row td {
+      height: auto;
+      border-top: 1px solid var(--border-color);
+      border-bottom: 1px solid var(--border-color);
+      font-weight: bold;
+      padding: 6px;
+    }
+    
+    .amount-words {
+      padding: 6px;
+      border-bottom: 1px solid var(--border-color);
+      font-style: italic;
+    }
+    
+    .footer-grid {
+      display: flex;
+      width: 100%;
+    }
+    .declaration {
+      width: 50%;
+      padding: 6px;
+      border-right: 1px solid var(--border-color);
+    }
+    .signature {
+      width: 50%;
+      padding: 6px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      text-align: right;
+    }
+    
+  </style>
+</head>
+<body>
+
+<div class="no-print">
+  <button onclick="window.print()" class="btn">🖨️ Print Invoice</button>
+  <a href="{{ url_for('sales.register') }}"><button class="btn btn-secondary">Back to Register</button></a>
+</div>
+
+<div class="invoice-wrapper">
+  <div class="invoice-title">TAX INVOICE</div>
+  
+  <div class="main-table">
+    <div class="header-grid">
+      <!-- Left side: Company & Buyer -->
+      <div class="company-details">
+        <div class="fw-bold fs-14">{{ company_full }}</div>
+        <div>{{ industry_segment }}</div>
+        <div>Delhi, India</div>
+        <div>State Name: Delhi, Code: 07</div>
+        <br>
+        <div>Buyer (Bill to)</div>
+        <div class="fw-bold fs-12">{{ sale.customer.name }}</div>
+        {% if sale.customer.address %}<div>{{ sale.customer.address }}</div>{% endif %}
+        <div>State Name: {{ sale.customer.state }}, Code: {% if sale.customer.state == 'Delhi' %}07{% else %}--{% endif %}</div>
+      </div>
+      
+      <!-- Right side: Invoice Meta -->
+      <div class="invoice-meta">
+        <div class="meta-row">
+          <div class="meta-cell">
+            <div>Invoice No.</div>
+            <div class="fw-bold">INV-{{ sale.id }}</div>
+          </div>
+          <div class="meta-cell">
+            <div>Dated</div>
+            <div class="fw-bold">{{ sale.date.strftime('%d-%b-%Y') }}</div>
+          </div>
+        </div>
+        <div class="meta-row">
+          <div class="meta-cell">
+            <div>Delivery Note</div>
+            <div class="fw-bold">--</div>
+          </div>
+          <div class="meta-cell">
+            <div>Mode/Terms of Payment</div>
+            <div class="fw-bold">{{ sale.payment_mode }}</div>
+          </div>
+        </div>
+        <div class="meta-row">
+          <div class="meta-cell">
+            <div>Reference No. & Date.</div>
+            <div class="fw-bold">--</div>
+          </div>
+          <div class="meta-cell">
+            <div>Other References</div>
+            <div class="fw-bold">--</div>
+          </div>
+        </div>
+        <div class="meta-row" style="flex-grow: 1; border-bottom: none;">
+          <div class="meta-cell">
+            <div>Despatch Document No.</div>
+            <div class="fw-bold">--</div>
+          </div>
+          <div class="meta-cell">
+            <div>Due Date</div>
+            <div class="fw-bold">{% if sale.due_date %}{{ sale.due_date.strftime('%d-%b-%Y') }}{% else %}--{% endif %}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <table class="items-table" style="border-top: 1px solid var(--border-color);">
+      <thead>
+        <tr>
+          <th style="width: 5%;">Sl<br>No.</th>
+          <th style="width: 40%;">Description of Goods</th>
+          <th style="width: 10%;">HSN/SAC</th>
+          <th style="width: 10%;">Quantity</th>
+          <th style="width: 10%;">Rate</th>
+          <th style="width: 5%;">per</th>
+          <th style="width: 20%;">Amount</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <!-- Sl No -->
+          <td class="text-center">
+            {% for item in sale.items %}{{ loop.index }}<br>{% endfor %}
+            <br>
+            {% if sale.total_cgst > 0 %}<br>{% endif %}
+            {% if sale.total_sgst > 0 %}<br>{% endif %}
+            {% if sale.total_igst > 0 %}<br>{% endif %}
+            {% if sale.discount_amount > 0 %}<br>{% endif %}
+          </td>
+          <!-- Description -->
+          <td>
+            {% for item in sale.items %}
+              <span class="fw-bold">{{ item.product.name }}</span><br>
+            {% endfor %}
+            <br>
+            {% if sale.total_cgst > 0 %}<span class="text-right" style="display:block;">Output CGST</span>{% endif %}
+            {% if sale.total_sgst > 0 %}<span class="text-right" style="display:block;">Output SGST</span>{% endif %}
+            {% if sale.total_igst > 0 %}<span class="text-right" style="display:block;">Output IGST</span>{% endif %}
+            {% if sale.discount_amount > 0 %}<span class="text-right" style="display:block; color: red;">Less: Discount ({{ sale.discount_percentage }}%)</span>{% endif %}
+          </td>
+          <!-- HSN -->
+          <td class="text-center">
+            {% for item in sale.items %}{{ item.product.hsn_code }}<br>{% endfor %}
+          </td>
+          <!-- Quantity -->
+          <td class="text-right fw-bold">
+            {% for item in sale.items %}{{ item.quantity|int }} Nos<br>{% endfor %}
+          </td>
+          <!-- Rate -->
+          <td class="text-right">
+            {% for item in sale.items %}{{ "{:,.2f}".format(item.unit_price) }}<br>{% endfor %}
+          </td>
+          <!-- Per -->
+          <td class="text-center">
+            {% for item in sale.items %}Nos<br>{% endfor %}
+          </td>
+          <!-- Amount -->
+          <td class="text-right fw-bold">
+            {% for item in sale.items %}{{ "{:,.2f}".format(item.subtotal) }}<br>{% endfor %}
+            <br>
+            {% if sale.total_cgst > 0 %}{{ "{:,.2f}".format(sale.total_cgst) }}<br>{% endif %}
+            {% if sale.total_sgst > 0 %}{{ "{:,.2f}".format(sale.total_sgst) }}<br>{% endif %}
+            {% if sale.total_igst > 0 %}{{ "{:,.2f}".format(sale.total_igst) }}<br>{% endif %}
+            {% if sale.discount_amount > 0 %}-{{ "{:,.2f}".format(sale.discount_amount) }}<br>{% endif %}
+          </td>
+        </tr>
+        <tr class="totals-row">
+          <td></td>
+          <td class="text-right">Total</td>
+          <td></td>
+          <td class="text-right">{{ sale.items|sum(attribute='quantity')|int }} Nos</td>
+          <td></td>
+          <td></td>
+          <td class="text-right">₹ {{ "{:,.2f}".format(sale.total_amount) }}</td>
+        </tr>
+      </tbody>
+    </table>
+    
+    <div class="amount-words">
+      Amount Chargeable (in words)<br>
+      <span class="fw-bold">Indian Rupees (As per calculation) Only</span>
+    </div>
+    
+    <div class="footer-grid">
+      <div class="declaration">
+        <u>Declaration</u><br>
+        We declare that this invoice shows the actual price of the goods described and that all particulars are true and correct.
+      </div>
+      <div class="signature">
+        <div class="fw-bold">for {{ company_full }}</div>
+        <div style="margin-top: 50px;">Authorised Signatory</div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="text-center" style="margin-top: 5px;">
+    SUBJECT TO DELHI JURISDICTION<br>
+    This is a Computer Generated Invoice
+  </div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,200 @@
+{% extends "base.html" %}
+{% block title %}Manufacturing Logs{% endblock %}
+{% block page_title %}Manufacturing{% endblock %}
+{% block page_subtitle %}Factory floor production runs — raw material to finished goods conversion{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <div class="page-header-left">
+    <h2>Production Log</h2>
+    <p>{{ runs|length }} batch runs recorded</p>
+  </div>
+</div>
+
+<div class="grid-8-4">
+
+  <!-- Log Production Run Form -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title"><i class="bi bi-gear-wide-connected" style="color:var(--accent-blue);"></i> Log New Production Run</div>
+    </div>
+    <div class="card-body">
+      <form method="POST" action="{{ url_for('manufacturing.production_logs') }}" id="mfgForm">
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Finished Product *</label>
+            <select name="finished_product_id" required>
+              <option value="">— Select motor model —</option>
+              {% for p in finished_goods %}
+              <option value="{{ p.id }}">[{{ p.code }}] {{ p.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Quantity Produced *</label>
+            <input type="number" name="quantity_produced" step="0.01" min="0.01" placeholder="e.g. 50" required>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+          <label style="margin:0;">Raw Materials Consumed</label>
+          <button type="button" class="btn btn-ghost btn-sm" onclick="addRMRow()">
+            <i class="bi bi-plus-lg"></i> Add Material
+          </button>
+        </div>
+
+        <div id="rmContainer">
+          <div class="item-row-grid" id="rm-0" style="grid-template-columns: 2fr 1fr auto;">
+            <select name="raw_material_id[]" required>
+              <option value="">— Select raw material —</option>
+              {% for r in raw_materials %}
+              <option value="{{ r.id }}">[{{ r.code }}] {{ r.name }} (Stock: {{ r.stock_quantity|int }})</option>
+              {% endfor %}
+            </select>
+            <input type="number" name="quantity_consumed[]" step="0.01" min="0.01" placeholder="Qty used" required>
+            <button type="button" class="remove-row-btn" onclick="removeRM(0)"><i class="bi bi-x"></i></button>
+          </div>
+        </div>
+
+        <div style="margin-top:20px;">
+          <button type="submit" class="btn btn-primary w-full">
+            <i class="bi bi-play-circle-fill"></i> Log Production Run
+          </button>
+          <div style="font-size:10px;color:var(--text-muted);text-align:center;margin-top:8px;">
+            Raw stock consumed & finished goods added automatically.
+          </div>
+        </div>
+
+      </form>
+    </div>
+  </div>
+
+  <!-- Raw Material Stock Quick-View -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title"><i class="bi bi-box-seam" style="color:var(--accent-amber);"></i> Raw Stock Status</div>
+    </div>
+    <div class="card-body" style="padding:12px;">
+      {% for r in raw_materials %}
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 8px;border-bottom:1px solid var(--border);">
+        <div>
+          <div style="font-size:12px;font-weight:600;">{{ r.name }}</div>
+          <div style="font-size:10px;color:var(--text-muted);">[{{ r.code }}]</div>
+        </div>
+        <span class="badge {% if r.stock_quantity <= r.low_stock_threshold %}badge-red{% else %}badge-green{% endif %}">
+          {{ r.stock_quantity|int }}
+        </span>
+      </div>
+      {% else %}
+      <div class="empty-state" style="padding:20px;">
+        <div class="empty-state-icon">📦</div>
+        <h5>No raw materials</h5>
+        <p>Add raw materials in Inventory first.</p>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+</div>
+
+<!-- Production Run History -->
+<div class="card">
+  <div class="card-header">
+    <div class="card-title"><i class="bi bi-clock-history" style="color:var(--accent-purple);"></i> Production History</div>
+    <span class="badge badge-purple">{{ runs|length }} batches</span>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Batch #</th>
+          <th>Date</th>
+          <th>Finished Product</th>
+          <th class="text-right">Qty Produced</th>
+          <th>Logged By</th>
+          <th>Components Used</th>
+          <th class="text-right">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for run in runs %}
+        <tr>
+          <td class="mono fw-bold" style="color:var(--accent-purple);">#{{ run.id }}</td>
+          <td class="td-muted" style="white-space:nowrap;">{{ run.date.strftime('%d %b %Y') }}</td>
+          <td>
+            <div style="font-weight:600;">{{ run.finished_product.name }}</div>
+            <div class="td-muted" style="font-size:11px;">[{{ run.finished_product.code }}]</div>
+          </td>
+          <td class="text-right">
+            <span class="badge badge-green">{{ run.quantity_produced|int }} units</span>
+          </td>
+          <td class="td-muted">{{ run.logger.username if run.logger else 'System' }}</td>
+          <td>
+            {% for c in run.consumptions %}
+              <span class="badge badge-gray" style="margin:2px;">
+                {{ c.raw_material.code }}: {{ c.quantity_consumed|int }}
+              </span>
+            {% endfor %}
+          </td>
+          <td class="text-right">
+            <a href="{{ url_for('manufacturing.delete_production_run', id=run.id) }}" class="btn btn-ghost btn-xs text-red" title="Delete Production Run"
+               onclick="return confirm('Are you sure you want to delete Production Run #{{ run.id }}? This will subtract finished goods stock and return raw components.');">
+              <i class="bi bi-trash-fill"></i> Delete
+            </a>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="7">
+          <div class="empty-state">
+            <div class="empty-state-icon">⚙️</div>
+            <h5>No production runs yet</h5>
+            <p>Log your first motor assembly batch.</p>
+          </div>
+        </td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+let rmCount = 1;
+const rawMaterials = {
+  {% for r in raw_materials %}
+  {{ r.id }}: { code: '{{ r.code }}', name: '{{ r.name }}', stock: {{ r.stock_quantity }} }{% if not loop.last %},{% endif %}
+  {% endfor %}
+};
+
+function addRMRow() {
+  const idx = rmCount++;
+  const container = document.getElementById('rmContainer');
+  const div = document.createElement('div');
+  div.className = 'item-row-grid';
+  div.id = 'rm-' + idx;
+  div.style.gridTemplateColumns = '2fr 1fr auto';
+  div.innerHTML = `
+    <select name="raw_material_id[]" required>
+      <option value="">— Select raw material —</option>
+      ${Object.entries(rawMaterials).map(([id,r]) =>
+        `<option value="${id}">[${r.code}] ${r.name} (Stock: ${Math.floor(r.stock)})</option>`
+      ).join('')}
+    </select>
+    <input type="number" name="quantity_consumed[]" step="0.01" min="0.01" placeholder="Qty used" required>
+    <button type="button" class="remove-row-btn" onclick="removeRM(${idx})"><i class="bi bi-x"></i></button>
+  `;
+  container.appendChild(div);
+}
+
+function removeRM(idx) {
+  const el = document.getElementById('rm-' + idx);
+  if (el && document.querySelectorAll('.item-row-grid[id^="rm-"]').length > 1) el.remove();
+}
+</script>
+{% endblock %}

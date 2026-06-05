@@ -1,0 +1,195 @@
+{% extends "base.html" %}
+{% block title %}Vouchers{% endblock %}
+{% block page_title %}Accounting Vouchers{% endblock %}
+{% block page_subtitle %}Double-entry Journal, Payment, Receipt, and Contra Vouchers{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <div class="page-header-left">
+    <h2>Vouchers</h2>
+  </div>
+</div>
+
+<div class="card" style="margin-bottom: 24px;">
+  <div class="card-header">
+    <div class="card-title"><i class="bi bi-file-earmark-plus" style="color:var(--accent-green);"></i> New Voucher</div>
+  </div>
+  <div class="card-body">
+    <form method="POST" action="{{ url_for('accounting.vouchers') }}" id="voucherForm">
+      <div style="display: flex; gap: 16px; margin-bottom: 24px;">
+        <div class="form-group" style="flex: 1;">
+          <label>Voucher Type</label>
+          <select name="voucher_type" class="form-control" required id="voucherType">
+            <option value="Journal">Journal</option>
+            <option value="Payment">Payment</option>
+            <option value="Receipt">Receipt</option>
+            <option value="Contra">Contra</option>
+          </select>
+        </div>
+        <div class="form-group" style="flex: 1;">
+          <label>Date</label>
+          <input type="date" name="date" class="form-control" required value="{{ current_date }}">
+        </div>
+        <div class="form-group" style="flex: 2;">
+          <label>Reference #</label>
+          <input type="text" name="reference" class="form-control" placeholder="Optional Ref / Bill No.">
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px;">
+        <!-- Debits -->
+        <div>
+          <h5 style="margin-bottom: 12px; color: var(--accent-blue);">Debits (Dr)</h5>
+          <div id="dr-container">
+            <div class="dr-row" style="display: flex; gap: 8px; margin-bottom: 8px;">
+              <select name="dr_ledger[]" class="form-control" style="flex: 2;" required>
+                <option value="">-- Select Ledger --</option>
+                {% for l in ledgers %}
+                  <option value="{{ l.id }}">{{ l.name }} ({{ l.group.name }})</option>
+                {% endfor %}
+              </select>
+              <input type="number" step="0.01" name="dr_amount[]" class="form-control dr-input" style="flex: 1;" placeholder="Amount" required>
+            </div>
+          </div>
+          <button type="button" class="btn btn-ghost btn-xs" onclick="addRow('dr-container', 'dr_ledger[]', 'dr_amount[]', 'dr-input')">+ Add Debit Row</button>
+        </div>
+
+        <!-- Credits -->
+        <div>
+          <h5 style="margin-bottom: 12px; color: var(--accent-green);">Credits (Cr)</h5>
+          <div id="cr-container">
+            <div class="cr-row" style="display: flex; gap: 8px; margin-bottom: 8px;">
+              <select name="cr_ledger[]" class="form-control" style="flex: 2;" required>
+                <option value="">-- Select Ledger --</option>
+                {% for l in ledgers %}
+                  <option value="{{ l.id }}">{{ l.name }} ({{ l.group.name }})</option>
+                {% endfor %}
+              </select>
+              <input type="number" step="0.01" name="cr_amount[]" class="form-control cr-input" style="flex: 1;" placeholder="Amount" required>
+            </div>
+          </div>
+          <button type="button" class="btn btn-ghost btn-xs" onclick="addRow('cr-container', 'cr_ledger[]', 'cr_amount[]', 'cr-input')">+ Add Credit Row</button>
+        </div>
+      </div>
+      
+      <div style="display: flex; justify-content: space-between; background: var(--bg-surface); padding: 16px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 24px;">
+        <div class="fw-bold">Total Debit: ₹<span id="total-dr">0.00</span></div>
+        <div id="balance-status" class="fw-bold" style="color: var(--accent-red);">Unbalanced</div>
+        <div class="fw-bold">Total Credit: ₹<span id="total-cr">0.00</span></div>
+      </div>
+
+      <div class="form-group" style="margin-bottom: 24px;">
+        <label>Narration</label>
+        <textarea name="narration" class="form-control" rows="2" placeholder="Being amount paid for..."></textarea>
+      </div>
+
+      <button type="submit" class="btn btn-primary" id="submitBtn" disabled>Save Voucher</button>
+    </form>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <div class="card-title"><i class="bi bi-clock-history"></i> Recent Vouchers</div>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Voucher #</th>
+          <th>Type</th>
+          <th>Narration</th>
+          <th class="text-right">Amount (₹)</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for v in vouchers %}
+        <tr>
+          <td class="td-muted">{{ v.date.strftime('%d %b %Y') }}</td>
+          <td class="fw-bold">{{ v.voucher_number }}</td>
+          <td><span class="badge badge-blue">{{ v.voucher_type }}</span></td>
+          <td class="td-muted" style="max-width:300px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ v.narration }}</td>
+          <td class="text-right fw-bold">
+            {% set total = namespace(value=0) %}
+            {% for e in v.entries %}
+              {% if e.entry_type == 'Dr' %}
+                {% set total.value = total.value + e.amount %}
+              {% endif %}
+            {% endfor %}
+            ₹{{ "{:,.2f}".format(total.value) }}
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="5" class="text-center">No vouchers found.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+  function addRow(containerId, ledgerName, amountName, inputClass) {
+    const container = document.getElementById(containerId);
+    const row = document.createElement('div');
+    row.style.display = 'flex';
+    row.style.gap = '8px';
+    row.style.marginBottom = '8px';
+    
+    // Copy options from existing select
+    const existingSelect = document.querySelector(`select[name="${ledgerName}"]`).innerHTML;
+    
+    row.innerHTML = `
+      <select name="${ledgerName}" class="form-control" style="flex: 2;">
+        ${existingSelect}
+      </select>
+      <input type="number" step="0.01" name="${amountName}" class="form-control ${inputClass}" style="flex: 1;" placeholder="Amount">
+      <button type="button" class="btn btn-ghost btn-xs text-red" onclick="this.parentElement.remove(); calculateTotals();"><i class="bi bi-trash"></i></button>
+    `;
+    container.appendChild(row);
+    
+    // Add event listener to new input
+    const inputs = document.querySelectorAll(`.${inputClass}`);
+    inputs.forEach(input => {
+      input.removeEventListener('input', calculateTotals);
+      input.addEventListener('input', calculateTotals);
+    });
+  }
+
+  function calculateTotals() {
+    let drTotal = 0;
+    let crTotal = 0;
+    
+    document.querySelectorAll('.dr-input').forEach(input => {
+      if(input.value) drTotal += parseFloat(input.value);
+    });
+    
+    document.querySelectorAll('.cr-input').forEach(input => {
+      if(input.value) crTotal += parseFloat(input.value);
+    });
+    
+    document.getElementById('total-dr').textContent = drTotal.toFixed(2);
+    document.getElementById('total-cr').textContent = crTotal.toFixed(2);
+    
+    const status = document.getElementById('balance-status');
+    const submitBtn = document.getElementById('submitBtn');
+    
+    if (drTotal > 0 && Math.abs(drTotal - crTotal) < 0.01) {
+      status.textContent = "Balanced";
+      status.style.color = "var(--accent-green)";
+      submitBtn.disabled = false;
+    } else {
+      status.textContent = "Unbalanced";
+      status.style.color = "var(--accent-red)";
+      submitBtn.disabled = true;
+    }
+  }
+
+  // Initial event listeners
+  document.querySelectorAll('.dr-input, .cr-input').forEach(input => {
+    input.addEventListener('input', calculateTotals);
+  });
+</script>
+
+{% endblock %}

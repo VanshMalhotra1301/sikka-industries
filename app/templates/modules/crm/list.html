@@ -1,0 +1,227 @@
+{% extends "base.html" %}
+{% block title %}Customers (CRM){% endblock %}
+{% block page_title %}Customer Management{% endblock %}
+{% block page_subtitle %}Dealer profiles, outstanding balances & account statements{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <div class="page-header-left">
+    <h2>Customers <span style="color:var(--text-muted); font-weight:400;">CRM</span></h2>
+    <p>{{ customers|length }} active dealer accounts</p>
+  </div>
+  <div class="page-actions">
+    <button class="btn btn-primary" onclick="document.getElementById('addModal').classList.add('open')">
+      <i class="bi bi-plus-lg"></i> Add Customer
+    </button>
+  </div>
+</div>
+
+<!-- Customer Table -->
+<div class="card">
+  <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
+    <div style="display:flex; gap:10px; align-items:center;">
+      <div class="card-title"><i class="bi bi-people-fill" style="color:var(--accent-blue);"></i> All Customers</div>
+      <span class="badge badge-blue">{{ customers|length }} records</span>
+    </div>
+    <div style="display:flex; gap:10px;">
+      <input type="text" id="crmSearch" onkeyup="searchTable('crmSearch', 'crmTable')" placeholder="Search customers..." class="form-control" style="width:200px; height:32px; padding:4px 10px; border-radius:6px; border:1px solid var(--border); background:var(--bg-card); color:var(--text-main);">
+      <button onclick="exportTableToCSV('crmTable', 'Customers.csv')" class="btn btn-ghost btn-sm" title="Export to CSV">
+        <i class="bi bi-download"></i> Export
+      </button>
+    </div>
+  </div>
+  <div class="table-wrap">
+    <table id="crmTable">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Customer Name</th>
+          <th>Phone</th>
+          <th>GST Number</th>
+          <th>Address</th>
+          <th class="text-right">Outstanding (₹)</th>
+          <th class="text-right">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in customers %}
+        <tr>
+          <td class="td-muted mono">{{ loop.index }}</td>
+          <td>
+            <div style="font-weight:600;">{{ item.profile.name }}</div>
+            {% if item.profile.email %}
+            <div class="td-muted" style="font-size:11px;">{{ item.profile.email }}</div>
+            {% endif %}
+          </td>
+          <td class="td-muted">{{ item.profile.phone or '—' }}</td>
+          <td class="mono td-muted" style="font-size:12px;">{{ item.profile.gst_number or '—' }}</td>
+          <td class="td-muted" style="max-width:200px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+            {{ item.profile.address or '—' }}
+          </td>
+          <td class="text-right">
+            {% if item.outstanding > 0 %}
+              <span class="badge badge-red">₹{{ "{:,.0f}".format(item.outstanding) }}</span>
+            {% elif item.outstanding < 0 %}
+              <span class="badge badge-green">₹{{ "{:,.0f}".format(item.outstanding|abs) }} Advance</span>
+            {% else %}
+              <span class="badge badge-gray">Settled</span>
+            {% endif %}
+          </td>
+          <td class="text-right">
+            <div style="display:inline-flex; gap:6px;">
+              <a href="{{ url_for('crm.statement', id=item.profile.id) }}" class="btn btn-ghost btn-xs" title="View Statement">
+                <i class="bi bi-journal-text"></i> Statement
+              </a>
+              <button class="btn btn-ghost btn-xs text-blue" title="Edit Customer"
+                      onclick="openEditModal('{{ item.profile.id }}', '{{ item.profile.name|escape }}', '{{ item.profile.phone|escape or '' }}', '{{ item.profile.email|escape or '' }}', '{{ item.profile.gst_number|escape or '' }}', '{{ item.profile.address|escape or '' }}', '{{ item.op_bal }}', '{{ item.op_type }}')">
+                <i class="bi bi-pencil-fill"></i> Edit
+              </button>
+              <a href="{{ url_for('crm.delete_customer', id=item.profile.id) }}" class="btn btn-ghost btn-xs text-red" title="Delete Customer"
+                 onclick="return confirm('Are you sure you want to delete customer {{ item.profile.name|escape }}?');">
+                <i class="bi bi-trash-fill"></i> Delete
+              </a>
+            </div>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="7">
+            <div class="empty-state">
+              <div class="empty-state-icon">👥</div>
+              <h5>No customers yet</h5>
+              <p>Add your first dealer or customer account to get started.</p>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Add Customer Modal -->
+<div class="modal-overlay" id="addModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <span class="modal-title"><i class="bi bi-person-plus-fill" style="color:var(--accent-blue);"></i> &nbsp; Add New Customer</span>
+      <button class="modal-close" onclick="document.getElementById('addModal').classList.remove('open')">×</button>
+    </div>
+    <div class="modal-body">
+      <form method="POST" action="{{ url_for('crm.list_customers') }}">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Customer Name *</label>
+            <input type="text" name="name" placeholder="e.g. Sharma Motors" required>
+          </div>
+          <div class="form-group">
+            <label>Phone Number</label>
+            <input type="text" name="phone" placeholder="+91 98765 43210">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Email Address</label>
+            <input type="email" name="email" placeholder="dealer@example.com">
+          </div>
+          <div class="form-group">
+            <label>GST Number</label>
+            <input type="text" name="gst_number" placeholder="22AAAAA0000A1Z5">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Opening Balance (₹)</label>
+            <input type="number" step="0.01" name="opening_balance" placeholder="0.00">
+          </div>
+          <div class="form-group">
+            <label>Balance Type</label>
+            <select name="opening_balance_type">
+              <option value="Dr" selected>Dr (To Receive)</option>
+              <option value="Cr">Cr (Advance Paid)</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Business Address</label>
+          <textarea name="address" rows="2" placeholder="Full billing address..."></textarea>
+        </div>
+        <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:16px;">
+          <button type="button" class="btn btn-ghost" onclick="document.getElementById('addModal').classList.remove('open')">Cancel</button>
+          <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> Save Customer</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Customer Modal -->
+<div class="modal-overlay" id="editModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <span class="modal-title"><i class="bi bi-pencil-square" style="color:var(--accent-blue);"></i> &nbsp; Edit Customer Profile</span>
+      <button class="modal-close" onclick="document.getElementById('editModal').classList.remove('open')">×</button>
+    </div>
+    <div class="modal-body">
+      <form id="editForm" method="POST" action="">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Customer Name *</label>
+            <input type="text" name="name" id="edit_name" required>
+          </div>
+          <div class="form-group">
+            <label>Phone Number</label>
+            <input type="text" name="phone" id="edit_phone">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Email Address</label>
+            <input type="email" name="email" id="edit_email">
+          </div>
+          <div class="form-group">
+            <label>GST Number</label>
+            <input type="text" name="gst_number" id="edit_gst_number">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Opening Balance (₹)</label>
+            <input type="number" step="0.01" name="opening_balance" id="edit_opening_balance" placeholder="0.00">
+          </div>
+          <div class="form-group">
+            <label>Balance Type</label>
+            <select name="opening_balance_type" id="edit_opening_balance_type">
+              <option value="Dr">Dr (To Receive)</option>
+              <option value="Cr">Cr (Advance Paid)</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Business Address</label>
+          <textarea name="address" id="edit_address" rows="2"></textarea>
+        </div>
+        <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:16px;">
+          <button type="button" class="btn btn-ghost" onclick="document.getElementById('editModal').classList.remove('open')">Cancel</button>
+          <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> Update Customer</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+function openEditModal(id, name, phone, email, gst, address, op_bal, op_type) {
+  document.getElementById('editForm').action = "/crm/customers/edit/" + id;
+  document.getElementById('edit_name').value = name;
+  document.getElementById('edit_phone').value = phone;
+  document.getElementById('edit_email').value = email;
+  document.getElementById('edit_gst_number').value = gst;
+  document.getElementById('edit_address').value = address;
+  document.getElementById('edit_opening_balance').value = op_bal;
+  document.getElementById('edit_opening_balance_type').value = op_type;
+  document.getElementById('editModal').classList.add('open');
+}
+</script>
+
+{% endblock %}

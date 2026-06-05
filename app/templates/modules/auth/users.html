@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+{% block title %}User Access Management{% endblock %}
+{% block page_title %}User Access Controls{% endblock %}
+{% block page_subtitle %}Provision and manage staff login credentials and role permissions{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <div class="page-header-left">
+    <h2>User Management</h2>
+    <p>{{ staff|length }} staff accounts configured</p>
+  </div>
+  <div class="page-actions">
+    <button class="btn btn-primary" onclick="document.getElementById('addModal').classList.add('open')">
+      <i class="bi bi-person-plus-fill"></i> Provision Account
+    </button>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <div class="card-title"><i class="bi bi-shield-lock-fill" style="color:var(--accent-blue);"></i> Staff Accounts</div>
+    <span class="badge badge-blue">{{ staff|length }} users</span>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Username</th>
+          <th>Role</th>
+          <th>Status</th>
+          <th>Created</th>
+          <th class="text-right">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for u in staff %}
+        <tr>
+          <td class="td-muted mono">{{ loop.index }}</td>
+          <td>
+            <div style="font-weight:700;">{{ u.username }}</div>
+            {% if u.id == current_user.id %}
+              <span class="badge badge-blue" style="font-size:9px;">You</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if u.role == 'Admin' %}
+              <span class="badge badge-red">Admin</span>
+            {% elif u.role == 'Owner' %}
+              <span class="badge badge-amber">Owner</span>
+            {% elif u.role == 'Accountant' %}
+              <span class="badge badge-blue">Accountant</span>
+            {% else %}
+              <span class="badge badge-purple">{{ u.role }}</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if u.is_active %}
+              <span class="badge badge-green"><span class="status-dot" style="width:5px;height:5px;display:inline-block;"></span> Active</span>
+            {% else %}
+              <span class="badge badge-gray">Suspended</span>
+            {% endif %}
+          </td>
+          <td class="td-muted">{{ u.created_at.strftime('%d %b %Y') if u.created_at else '—' }}</td>
+          <td class="text-right">
+            {% if u.id != current_user.id %}
+            <form method="POST" action="{{ url_for('auth.toggle_user_status', user_id=u.id) }}"
+                  style="display:inline;" onsubmit="return confirm('Toggle access for {{ u.username }}?')">
+              <button type="submit" class="btn {% if u.is_active %}btn-danger{% else %}btn-success{% endif %} btn-xs">
+                {% if u.is_active %}<i class="bi bi-lock-fill"></i> Suspend
+                {% else %}<i class="bi bi-unlock-fill"></i> Activate{% endif %}
+              </button>
+            </form>
+            {% endif %}
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="6">
+          <div class="empty-state">
+            <div class="empty-state-icon">👤</div>
+            <h5>No staff accounts</h5>
+          </div>
+        </td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Add User Modal -->
+<div class="modal-overlay" id="addModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <span class="modal-title"><i class="bi bi-person-plus-fill" style="color:var(--accent-blue);"></i> &nbsp; Provision Staff Account</span>
+      <button class="modal-close" onclick="document.getElementById('addModal').classList.remove('open')">×</button>
+    </div>
+    <div class="modal-body">
+      <form method="POST" action="{{ url_for('auth.manage_users') }}">
+        <div class="form-group">
+          <label>Username *</label>
+          <input type="text" name="username" placeholder="e.g. rajesh.kumar" required>
+        </div>
+        <div class="form-group">
+          <label>Password *</label>
+          <input type="password" name="password" placeholder="Strong password" required>
+        </div>
+        <div class="form-group">
+          <label>Role *</label>
+          <select name="role" required>
+            <option value="">— Assign Role —</option>
+            <option value="Admin">Admin (Full Access)</option>
+            <option value="Owner">Owner (View + Reports)</option>
+            <option value="Accountant">Accountant (Finance)</option>
+            <option value="Store Manager">Store Manager (Inventory + Mfg)</option>
+          </select>
+        </div>
+        <div style="font-size:11px;color:var(--text-muted);margin-bottom:16px;padding:10px;background:rgba(79,142,247,0.05);border-radius:8px;border:1px solid rgba(79,142,247,0.1);">
+          <strong>Role Permissions:</strong><br>
+          Admin — Full system access · Owner — View-only + Reports · Accountant — Invoicing & finance · Store Manager — Inventory & manufacturing
+        </div>
+        <div style="display:flex;gap:10px;justify-content:flex-end;">
+          <button type="button" class="btn btn-ghost" onclick="document.getElementById('addModal').classList.remove('open')">Cancel</button>
+          <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> Create Account</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

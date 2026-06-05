@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% block title %}{{ supplier.name }} — Statement{% endblock %}
+{% block page_title %}Supplier Statement{% endblock %}
+{% block page_subtitle %}Account ledger for {{ supplier.name }}{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <div class="page-header-left">
+    <h2>{{ supplier.name }}</h2>
+    <p>{{ supplier.phone or '' }} {% if supplier.gst_number %}· GST: {{ supplier.gst_number }}{% endif %}</p>
+  </div>
+  <div class="page-actions">
+    <a href="{{ url_for('scm.list_suppliers') }}" class="btn btn-ghost">
+      <i class="bi bi-arrow-left"></i> Back to Suppliers
+    </a>
+  </div>
+</div>
+
+<div class="stats-grid" style="grid-template-columns: repeat(3,1fr); margin-bottom:20px;">
+  <div class="stat-card stat-red">
+    <div class="stat-label">Total Transactions</div>
+    <div class="stat-value text-red">{{ records|length }}</div>
+  </div>
+  <div class="stat-card stat-amber">
+    <div class="stat-label">Supplier</div>
+    <div style="font-size:15px;font-weight:700;color:var(--accent-amber);margin:8px 0 4px;">{{ supplier.name }}</div>
+  </div>
+  <div class="stat-card {% if current_balance > 0 %}stat-amber{% else %}stat-green{% endif %}">
+    <div class="stat-label">Outstanding Payable</div>
+    <div class="stat-value {% if current_balance > 0 %}text-amber{% else %}text-green{% endif %}">
+      ₹{{ "{:,.0f}".format(current_balance|abs) }}
+      {% if current_balance <= 0 %}<small style="font-size:14px;"> (Settled)</small>{% endif %}
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <div class="card-title"><i class="bi bi-journal-text" style="color:var(--accent-amber);"></i> Ledger Entries</div>
+    <span class="badge badge-amber">{{ records|length }} entries</span>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Description</th>
+          <th>Reference</th>
+          <th class="text-right">Credit (₹)</th>
+          <th class="text-right">Debit (₹)</th>
+          <th class="text-right">Balance (₹)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="bottom-border" style="background:#fcfcfc;">
+          <td class="text-center">—</td>
+          <td><strong>Opening Balance</strong></td>
+          <td class="text-center">—</td>
+          <td class="text-right">
+            {% if op_type == 'Dr' and op_balance > 0 %}₹{{ "{:,.0f}".format(op_balance) }}{% else %}—{% endif %}
+          </td>
+          <td class="text-right">
+            {% if op_type == 'Cr' and op_balance > 0 %}₹{{ "{:,.0f}".format(op_balance) }}{% else %}—{% endif %}
+          </td>
+          <td class="text-right {% if op_type == 'Cr' and op_balance > 0 %}bal-negative{% else %}bal-positive{% endif %}">
+            ₹{{ "{:,.0f}".format(op_balance) }}
+            {% if op_balance > 0 %}<span class="bal-label">{% if op_type == 'Cr' %}Cr{% else %}Dr{% endif %}</span>{% endif %}
+          </td>
+        </tr>
+        {% for r in records %}
+        <tr>
+          <td class="td-muted" style="white-space:nowrap;">{{ r.date.strftime('%d %b %Y') }}</td>
+          <td>{{ r.description|safe }}</td>
+          <td class="td-muted mono">{{ r.reference }}</td>
+          <td class="text-right {% if r.credit > 0 %}text-red fw-bold{% else %}td-muted{% endif %}">
+            {% if r.credit > 0 %}₹{{ "{:,.0f}".format(r.credit) }}{% else %}—{% endif %}
+          </td>
+          <td class="text-right {% if r.debit > 0 %}text-green fw-bold{% else %}td-muted{% endif %}">
+            {% if r.debit > 0 %}₹{{ "{:,.0f}".format(r.debit) }}{% else %}—{% endif %}
+          </td>
+          <td class="text-right {% if r.running_balance > 0 %}bal-negative{% else %}bal-positive{% endif %}">
+            ₹{{ "{:,.0f}".format(r.running_balance|abs) }}
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="6">
+          <div class="empty-state">
+            <div class="empty-state-icon">📋</div>
+            <h5>No entries</h5>
+            <p>No transactions recorded for this supplier.</p>
+          </div>
+        </td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}

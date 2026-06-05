@@ -1,0 +1,295 @@
+{% extends "base.html" %}
+{% block title %}New Purchase Bill{% endblock %}
+{% block page_title %}New Purchase Bill{% endblock %}
+{% block page_subtitle %}Record raw material procurement — stock and ledgers auto-updated{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <div class="page-header-left">
+    <h2>New Purchase Bill</h2>
+    <p>Multi-line item entry with automatic inventory & accounting updates</p>
+  </div>
+  <div class="page-actions">
+    <a href="{{ url_for('purchases.register') }}" class="btn btn-ghost">
+      <i class="bi bi-arrow-left"></i> Back to Register
+    </a>
+  </div>
+</div>
+
+<form method="POST" action="{{ url_for('purchases.create_entry') }}" id="purchaseForm">
+<div class="grid-8-4">
+
+  <!-- Line Items -->
+  <div>
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title"><i class="bi bi-list-check" style="color:var(--accent-blue);"></i> Material Line Items</div>
+        <button type="button" class="btn btn-primary btn-sm" onclick="addRow()">
+          <i class="bi bi-plus-lg"></i> Add Row
+        </button>
+      </div>
+      <div class="card-body">
+
+        <div id="itemsContainer">
+          <!-- Header labels -->
+          <div class="item-row-grid" style="padding:8px 14px; background:transparent; border-color:transparent; margin-bottom:4px;">
+            <label style="margin:0; font-size:10px;">Product / Material</label>
+            <label style="margin:0; font-size:10px; text-align:right;">Quantity</label>
+            <label style="margin:0; font-size:10px; text-align:right;">Unit Cost (₹)</label>
+            <label style="margin:0; font-size:10px; text-align:right;">Subtotal (₹)</label>
+            <span></span>
+          </div>
+          <!-- First row -->
+          <div class="item-row-grid" id="row-0">
+            <select name="product_id[]" required onchange="calcRow(0)">
+              <option value="">— Select material —</option>
+              {% for m in materials %}
+              <option value="{{ m.id }}">[{{ m.code }}] {{ m.name }}</option>
+              {% endfor %}
+            </select>
+            <input type="number" name="quantity[]" step="0.01" min="0.01" placeholder="Qty"
+                   required oninput="calcRow(0)">
+            <input type="number" name="unit_cost[]" step="0.01" min="0" placeholder="₹ Cost"
+                   required oninput="calcRow(0)">
+            <div class="item-subtotal-display" id="sub-0">₹ 0.00</div>
+            <button type="button" class="remove-row-btn" onclick="removeRow(0)" title="Remove">
+              <i class="bi bi-x"></i>
+            </button>
+          </div>
+        </div>
+
+        <div style="margin-top:16px; padding-top:16px; border-top:1px solid var(--border);
+                    display:flex; justify-content:flex-end; align-items:center; gap:16px;">
+          <span style="font-size:12px; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.06em;">
+            Grand Total
+          </span>
+          <span id="grandTotal" style="font-size:22px; font-weight:800; color:var(--accent-blue);">₹ 0.00</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bill Details -->
+  <div>
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title"><i class="bi bi-file-earmark-text" style="color:var(--accent-amber);"></i> Bill Details</div>
+      </div>
+      <div class="card-body">
+
+        <div class="form-group">
+          <label>Supplier (Vendor) *</label>
+          <select name="supplier_id" required>
+            <option value="">— Select supplier —</option>
+            {% for s in suppliers %}
+            <option value="{{ s.id }}">{{ s.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Date & Time *</label>
+          <input type="datetime-local" name="purchase_date" id="purchase_date" required>
+          <div style="font-size:11px; color:var(--text-muted); margin-top:5px;">
+            Defaults to current time if left blank.
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Payment Mode *</label>
+          <select name="payment_mode" id="payment_mode" required onchange="togglePaymentFields()">
+            <option value="Cash">Cash</option>
+            <option value="Bank">Bank Transfer</option>
+            <option value="Credit">Credit (Pay Later)</option>
+          </select>
+        </div>
+
+        <div class="form-group" id="bank_div" style="display: none;">
+          <label>Select Bank *</label>
+          <select name="bank_ledger_id" id="bank_ledger_id">
+            <option value="">— Select bank —</option>
+            {% for b in bank_ledgers %}
+            <option value="{{ b.id }}">{{ b.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="form-group" id="due_date_div" style="display: none;">
+          <label>Due Date *</label>
+          <input type="date" name="due_date" id="due_date">
+          <div style="font-size:11px; color:var(--text-muted); margin-top:5px;">
+            Reminders will be triggered based on this date.
+          </div>
+        </div>
+
+        <div class="form-group" id="paid_amount_div">
+          <label>Amount Paid Now (₹)</label>
+          <input type="number" name="paid_amount" step="0.01" min="0" placeholder="0.00" id="paid_amount">
+          <div style="font-size:11px; color:var(--text-muted); margin-top:5px;">
+            Leave 0 if fully on credit.
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>GST Treatment *</label>
+          <select name="gst_treatment" id="gst_treatment" required onchange="toggleGST()">
+            <option value="none">Without GST (0%)</option>
+            <option value="manual">With GST (Manual Entry)</option>
+            <option value="auto">Auto-Calculate GST</option>
+          </select>
+        </div>
+        
+        <div id="manual_gst_div" style="display: none; padding: 10px; background: #f9f9f9; border: 1px dashed #ccc; margin-bottom: 15px;">
+          <div class="form-group">
+            <label>Manual CGST (₹)</label>
+            <input type="number" name="manual_cgst" id="manual_cgst" step="0.01" min="0" placeholder="0.00" oninput="calcGrand()">
+          </div>
+          <div class="form-group">
+            <label>Manual SGST (₹)</label>
+            <input type="number" name="manual_sgst" id="manual_sgst" step="0.01" min="0" placeholder="0.00" oninput="calcGrand()">
+          </div>
+          <div class="form-group">
+            <label>Manual IGST (₹)</label>
+            <input type="number" name="manual_igst" id="manual_igst" step="0.01" min="0" placeholder="0.00" oninput="calcGrand()">
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <button type="submit" class="btn btn-success w-full">
+          <i class="bi bi-check-circle-fill"></i> Post Purchase Bill
+        </button>
+        <div style="font-size:10px; color:var(--text-muted); text-align:center; margin-top:8px;">
+          Stock levels and accounting ledgers will update automatically.
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+</div>
+</form>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+let rowCount = 1;
+const materialsData = {
+  {% for m in materials %}
+  {{ m.id }}: { code: '{{ m.code }}', name: '{{ m.name }}' }{% if not loop.last %},{% endif %}
+  {% endfor %}
+};
+
+function addRow() {
+  const idx = rowCount++;
+  const container = document.getElementById('itemsContainer');
+  const div = document.createElement('div');
+  div.className = 'item-row-grid';
+  div.id = 'row-' + idx;
+  div.innerHTML = `
+    <select name="product_id[]" required onchange="calcRow(${idx})">
+      <option value="">— Select material —</option>
+      ${Object.entries(materialsData).map(([id, m]) =>
+        `<option value="${id}">[${m.code}] ${m.name}</option>`
+      ).join('')}
+    </select>
+    <input type="number" name="quantity[]" step="0.01" min="0.01" placeholder="Qty"
+           required oninput="calcRow(${idx})">
+    <input type="number" name="unit_cost[]" step="0.01" min="0" placeholder="₹ Cost"
+           required oninput="calcRow(${idx})">
+    <div class="item-subtotal-display" id="sub-${idx}">₹ 0.00</div>
+    <button type="button" class="remove-row-btn" onclick="removeRow(${idx})">
+      <i class="bi bi-x"></i>
+    </button>
+  `;
+  container.appendChild(div);
+}
+
+function removeRow(idx) {
+  const el = document.getElementById('row-' + idx);
+  if (el && document.querySelectorAll('.item-row-grid[id^="row-"]').length > 1) {
+    el.remove();
+    calcGrand();
+  }
+}
+
+function calcRow(idx) {
+  const row = document.getElementById('row-' + idx);
+  if (!row) return;
+  const qty = parseFloat(row.querySelector('[name="quantity[]"]').value) || 0;
+  const cost = parseFloat(row.querySelector('[name="unit_cost[]"]').value) || 0;
+  const sub = qty * cost;
+  row.querySelector('#sub-' + idx).textContent = '₹ ' + sub.toLocaleString('en-IN', {minimumFractionDigits: 2});
+  calcGrand();
+}
+
+function calcGrand() {
+  let subtotal = 0;
+  document.querySelectorAll('.item-subtotal-display').forEach(el => {
+    subtotal += parseFloat(el.textContent.replace('₹ ', '').replace(/,/g, '')) || 0;
+  });
+  
+  let total = subtotal;
+  const gstTreatment = document.getElementById('gst_treatment').value;
+  if (gstTreatment === 'manual') {
+    const cgst = parseFloat(document.getElementById('manual_cgst').value) || 0;
+    const sgst = parseFloat(document.getElementById('manual_sgst').value) || 0;
+    const igst = parseFloat(document.getElementById('manual_igst').value) || 0;
+    total += cgst + sgst + igst;
+  }
+  
+  document.getElementById('grandTotal').textContent = '₹ ' + total.toLocaleString('en-IN', {minimumFractionDigits: 2});
+}
+
+function toggleGST() {
+  const gst = document.getElementById('gst_treatment').value;
+  const manualDiv = document.getElementById('manual_gst_div');
+  if (gst === 'manual') {
+    manualDiv.style.display = 'block';
+  } else {
+    manualDiv.style.display = 'none';
+  }
+  calcGrand();
+}
+
+function togglePaymentFields() {
+  const pm = document.getElementById('payment_mode').value;
+  const bankDiv = document.getElementById('bank_div');
+  const dueDiv = document.getElementById('due_date_div');
+  const paidDiv = document.getElementById('paid_amount_div');
+  const bankSelect = document.getElementById('bank_ledger_id');
+  const dueDateInput = document.getElementById('due_date');
+  const paidInput = document.getElementById('paid_amount');
+
+  if (pm === 'Bank') {
+    bankDiv.style.display = 'block';
+    bankSelect.required = true;
+    dueDiv.style.display = 'none';
+    dueDateInput.required = false;
+    paidDiv.style.display = 'block';
+  } else if (pm === 'Credit') {
+    bankDiv.style.display = 'none';
+    bankSelect.required = false;
+    dueDiv.style.display = 'block';
+    dueDateInput.required = true;
+    paidDiv.style.display = 'block';
+  } else {
+    bankDiv.style.display = 'none';
+    bankSelect.required = false;
+    dueDiv.style.display = 'none';
+    dueDateInput.required = false;
+    paidDiv.style.display = 'block';
+  }
+}
+
+// Set default datetime to now
+document.addEventListener('DOMContentLoaded', () => {
+  const now = new Date();
+  now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+  document.getElementById('purchase_date').value = now.toISOString().slice(0,16);
+  togglePaymentFields();
+});
+</script>
+{% endblock %}

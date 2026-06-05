@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}Stock Adjustment{% endblock %}
+{% block page_title %}Stock Adjustment{% endblock %}
+{% block page_subtitle %}Manual inventory reconciliation with full audit logging{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <div class="page-header-left">
+    <h2>Stock Adjustment</h2>
+    <p>Correct inventory discrepancies — all changes are audit logged</p>
+  </div>
+  <div class="page-actions">
+    <a href="{{ url_for('inventory.list_products') }}" class="btn btn-ghost">
+      <i class="bi bi-arrow-left"></i> Back to Inventory
+    </a>
+  </div>
+</div>
+
+<div style="max-width: 580px;">
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title"><i class="bi bi-sliders" style="color:var(--accent-amber);"></i> Adjustment Entry</div>
+    </div>
+    <div class="card-body">
+      <form method="POST" action="{{ url_for('inventory.adjust_stock') }}">
+
+        <div class="form-group">
+          <label>Select Product *</label>
+          <select name="product_id" required onchange="updateCurrentStock(this)">
+            <option value="">— Select a product —</option>
+            {% for p in products %}
+            <option value="{{ p.id }}" data-stock="{{ p.stock_quantity }}">
+              [{{ p.code }}] {{ p.name }} — Stock: {{ p.stock_quantity|int }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Adjustment Quantity *</label>
+          <input type="number" name="quantity" step="0.01" id="adj-qty"
+                 placeholder="Positive = add stock, Negative = remove stock" required>
+          <div style="font-size:11px; color:var(--text-muted); margin-top:6px;">
+            💡 Use positive values to add stock, negative values to reduce stock.
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Reason / Description *</label>
+          <textarea name="description" rows="3" placeholder="e.g. Physical count correction, Damage write-off, Opening balance..."></textarea>
+        </div>
+
+        <div style="display:flex; gap:10px; margin-top:20px;">
+          <button type="submit" class="btn btn-amber">
+            <i class="bi bi-check-circle-fill"></i> Apply Adjustment
+          </button>
+          <a href="{{ url_for('inventory.list_products') }}" class="btn btn-ghost">Cancel</a>
+        </div>
+
+      </form>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+function updateCurrentStock(sel) {
+  const opt = sel.options[sel.selectedIndex];
+  const stock = opt.getAttribute('data-stock');
+  document.getElementById('adj-qty').setAttribute('title', 'Current stock: ' + stock);
+}
+</script>
+{% endblock %}

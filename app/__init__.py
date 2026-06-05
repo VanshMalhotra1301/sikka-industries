@@ -1,0 +1,84 @@
+import os
+from flask import Flask
+from flask_sqlalchemy import SQLAlchemy
+from flask_migrate import Migrate
+from flask_login import LoginManager
+from flask_bcrypt import Bcrypt
+from config import config_map
+
+db = SQLAlchemy()
+migrate = Migrate()
+login_manager = LoginManager()
+bcrypt = Bcrypt()
+
+login_manager.login_view = 'auth.login'
+login_manager.login_message = 'Please log in to access this page.'
+login_manager.login_message_category = 'warning'
+
+
+def create_app(config_name: str = 'default') -> Flask:
+    app = Flask(__name__, instance_relative_config=True)
+    cfg = config_map.get(config_name, config_map['default'])
+    app.config.from_object(cfg)
+    os.makedirs(app.instance_path, exist_ok=True)
+
+    db.init_app(app)
+    migrate.init_app(app, db)
+    login_manager.init_app(app)
+    bcrypt.init_app(app)
+
+    with app.app_context():
+        from app import models  # noqa: F401
+
+        # Register Blueprints
+        from app.modules.auth import auth_bp
+        from app.modules.dashboard import dashboard_bp
+        from app.modules.crm import crm_bp
+        from app.modules.scm import scm_bp
+        from app.modules.inventory import inventory_bp
+        from app.modules.purchases import purchases_bp
+        from app.modules.sales import sales_bp
+        from app.modules.manufacturing import manufacturing_bp
+        from app.modules.accounting import accounting_bp
+        from app.modules.reports import reports_bp
+        from app.modules.banking import banking_bp
+        from app.modules.settings import settings_bp
+
+        app.register_blueprint(auth_bp)
+        app.register_blueprint(dashboard_bp)
+        app.register_blueprint(crm_bp)
+        app.register_blueprint(scm_bp)
+        app.register_blueprint(inventory_bp)
+        app.register_blueprint(purchases_bp)
+        app.register_blueprint(sales_bp)
+        app.register_blueprint(manufacturing_bp)
+        app.register_blueprint(accounting_bp)
+        app.register_blueprint(reports_bp)
+        app.register_blueprint(banking_bp, url_prefix='/banking')
+        app.register_blueprint(settings_bp, url_prefix='/settings')
+
+        db.create_all()
+
+    # ── Global template context ──────────────────────────────
+    @app.context_processor
+    def inject_globals():
+        from datetime import datetime
+        return {
+            'company_name': 'SIKKA GROUPS OF INDUSTRIES',
+            'company_full': 'SIKKA GROUPS OF INDUSTRIES',
+            'industry_segment': 'Electric Motor Manufacturing',
+            'current_year': datetime.utcnow().year,
+        }
+
+    # ── Error handlers ───────────────────────────────────────
+    @app.errorhandler(403)
+    def forbidden(e):
+        from flask import render_template
+        return render_template('errors/403.html'), 403
+
+    @app.errorhandler(404)
+    def not_found(e):
+        from flask import render_template
+        return render_template('errors/404.html'), 404
+
+    return app
