@@ -54,8 +54,9 @@ def index():
         outstanding_payables    = db.session.query(func.sum(Purchase.balance_amount)).scalar() or 0.0
 
         # Monthly sales trend and profit trend (current year)
+        from sqlalchemy import extract
         current_year = datetime.utcnow().year
-        monthly_sales_objs = Sale.query.filter(func.strftime('%Y', Sale.date) == str(current_year)).all()
+        monthly_sales_objs = Sale.query.filter(extract('year', Sale.date) == current_year).all()
         yearly_gross_profit = 0.0
         
         for s in monthly_sales_objs:
@@ -69,7 +70,7 @@ def index():
                     
         yearly_expenses = (
             db.session.query(func.sum(Expense.amount))
-            .filter(func.strftime('%Y', Expense.date) == str(current_year)).scalar() or 0.0
+            .filter(extract('year', Expense.date) == current_year).scalar() or 0.0
         )
         yearly_net_profit = yearly_gross_profit - yearly_expenses
 
