@@ -1,7 +1,6 @@
 import os
 
-# We don't need to load_dotenv in production, Vercel provides env vars.
-# If we're local, we can try to load it.
+# Try to load dotenv for local development, ignore in production (Vercel)
 try:
     from dotenv import load_dotenv
     load_dotenv()
@@ -10,4 +9,5 @@ except ImportError:
 
 from app import create_app
 
+# Vercel will look for this 'app' variable
 app = create_app('production')
