@@ -71,8 +71,8 @@ def create_app(config_name: str = None) -> Flask:
         app.register_blueprint(banking_bp, url_prefix='/banking')
         app.register_blueprint(settings_bp, url_prefix='/settings')
 
-        # Auto-create tables (safe for both SQLite and PostgreSQL)
-        db.create_all()
+        # Tables are managed via Flask-Migrate / init_db.py
+        # Do NOT call db.create_all() here — it causes Vercel cold-start timeouts
 
     # ── Global template context ──────────────────────────────
     @app.context_processor

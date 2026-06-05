@@ -3,7 +3,10 @@
   "builds": [
     {
       "src": "api/index.py",
-      "use": "@vercel/python"
+      "use": "@vercel/python",
+      "config": {
+        "maxLambdaSize": "50mb"
+      }
     }
   ],
   "routes": [
@@ -16,6 +19,11 @@
       "dest": "api/index.py"
     }
   ],
+  "functions": {
+    "api/index.py": {
+      "maxDuration": 30
+    }
+  },
   "env": {
     "FLASK_ENV": "production"
   }
