@@ -3,7 +3,7 @@ from flask_login import login_required, current_user
 from sqlalchemy import func, extract, cast, Date
 from datetime import datetime, date
 from app import db
-from app.models import Sale, Purchase, Expense, LedgerEntry, Product, ProductionRun
+from app.models import Sale, Purchase, Expense, LedgerEntry, Product, ProductionRun, AccountGroup, Ledger, Voucher, VoucherEntry
 from app.modules.dashboard import dashboard_bp
 
 # Roles that have full financial visibility
@@ -39,17 +39,53 @@ def index():
             total_purchases = (
                 db.session.query(func.coalesce(func.sum(Purchase.total_amount), 0.0)).scalar()
             )
-            total_expenses = (
-                db.session.query(func.coalesce(func.sum(Expense.amount), 0.0)).scalar()
-            )
+            # Calculate from VoucherEntries based on AccountGroups
+            # 1. Total Expenses
+            expense_groups = AccountGroup.query.filter_by(nature='Expense').all()
+            expense_group_ids = [g.id for g in expense_groups]
+            expense_ledgers = Ledger.query.filter(Ledger.group_id.in_(expense_group_ids)).all()
+            expense_ledger_ids = [l.id for l in expense_ledgers]
+            
+            if expense_ledger_ids:
+                exp_dr = db.session.query(func.coalesce(func.sum(VoucherEntry.amount), 0.0)).filter(
+                    VoucherEntry.ledger_id.in_(expense_ledger_ids), VoucherEntry.entry_type == 'Dr').scalar()
+                exp_cr = db.session.query(func.coalesce(func.sum(VoucherEntry.amount), 0.0)).filter(
+                    VoucherEntry.ledger_id.in_(expense_ledger_ids), VoucherEntry.entry_type == 'Cr').scalar()
+                total_expenses = exp_dr - exp_cr
+            else:
+                total_expenses = 0.0
 
-            cash_debits  = db.session.query(func.coalesce(func.sum(LedgerEntry.debit), 0.0)).filter(LedgerEntry.account_type  == 'Cash').scalar()
-            cash_credits = db.session.query(func.coalesce(func.sum(LedgerEntry.credit), 0.0)).filter(LedgerEntry.account_type == 'Cash').scalar()
-            cash_in_hand = cash_debits - cash_credits
+            # 2. Cash in Hand
+            cash_groups = AccountGroup.query.filter(AccountGroup.name == 'Cash-in-Hand').all()
+            cash_group_ids = [g.id for g in cash_groups]
+            cash_ledgers = Ledger.query.filter(Ledger.group_id.in_(cash_group_ids)).all()
+            cash_ledger_ids = [l.id for l in cash_ledgers]
+            
+            if cash_ledger_ids:
+                cash_dr = db.session.query(func.coalesce(func.sum(VoucherEntry.amount), 0.0)).filter(
+                    VoucherEntry.ledger_id.in_(cash_ledger_ids), VoucherEntry.entry_type == 'Dr').scalar()
+                cash_cr = db.session.query(func.coalesce(func.sum(VoucherEntry.amount), 0.0)).filter(
+                    VoucherEntry.ledger_id.in_(cash_ledger_ids), VoucherEntry.entry_type == 'Cr').scalar()
+            else:
+                cash_dr, cash_cr = 0.0, 0.0
+            cash_ob = sum(l.opening_balance if l.opening_balance_type == 'Dr' else -l.opening_balance for l in cash_ledgers)
+            cash_in_hand = cash_ob + cash_dr - cash_cr
 
-            bank_debits  = db.session.query(func.coalesce(func.sum(LedgerEntry.debit), 0.0)).filter(LedgerEntry.account_type  == 'Bank').scalar()
-            bank_credits = db.session.query(func.coalesce(func.sum(LedgerEntry.credit), 0.0)).filter(LedgerEntry.account_type == 'Bank').scalar()
-            bank_balance = bank_debits - bank_credits
+            # 3. Bank Balance
+            bank_groups = AccountGroup.query.filter(AccountGroup.name == 'Bank Accounts').all()
+            bank_group_ids = [g.id for g in bank_groups]
+            bank_ledgers = Ledger.query.filter(Ledger.group_id.in_(bank_group_ids)).all()
+            bank_ledger_ids = [l.id for l in bank_ledgers]
+            
+            if bank_ledger_ids:
+                bank_dr = db.session.query(func.coalesce(func.sum(VoucherEntry.amount), 0.0)).filter(
+                    VoucherEntry.ledger_id.in_(bank_ledger_ids), VoucherEntry.entry_type == 'Dr').scalar()
+                bank_cr = db.session.query(func.coalesce(func.sum(VoucherEntry.amount), 0.0)).filter(
+                    VoucherEntry.ledger_id.in_(bank_ledger_ids), VoucherEntry.entry_type == 'Cr').scalar()
+            else:
+                bank_dr, bank_cr = 0.0, 0.0
+            bank_ob = sum(l.opening_balance if l.opening_balance_type == 'Dr' else -l.opening_balance for l in bank_ledgers)
+            bank_balance = bank_ob + bank_dr - bank_cr
 
             outstanding_receivables = db.session.query(func.coalesce(func.sum(Sale.balance_amount), 0.0)).scalar()
             outstanding_payables    = db.session.query(func.coalesce(func.sum(Purchase.balance_amount), 0.0)).scalar()
@@ -68,10 +104,19 @@ def index():
                         profit_trend_data[m - 1] += profit
                         yearly_gross_profit += profit
                         
-            yearly_expenses = (
-                db.session.query(func.coalesce(func.sum(Expense.amount), 0.0))
-                .filter(extract('year', Expense.date) == current_year).scalar()
-            )
+            if expense_ledger_ids:
+                yearly_expenses = (
+                    db.session.query(func.coalesce(func.sum(
+                        db.case((VoucherEntry.entry_type == 'Dr', VoucherEntry.amount),
+                                else_=-VoucherEntry.amount)
+                    ), 0.0))
+                    .join(Voucher)
+                    .filter(VoucherEntry.ledger_id.in_(expense_ledger_ids))
+                    .filter(extract('year', Voucher.date) == current_year)
+                    .scalar()
+                )
+            else:
+                yearly_expenses = 0.0
             yearly_net_profit = yearly_gross_profit - yearly_expenses
 
             # Due Date Reminders
