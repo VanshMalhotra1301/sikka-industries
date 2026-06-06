@@ -56,6 +56,7 @@ def create_app(config_name: str = None) -> Flask:
         from app.modules.accounting import accounting_bp
         from app.modules.reports import reports_bp
         from app.modules.banking import banking_bp
+        from app.modules.finance import finance_bp
         from app.modules.settings import settings_bp
 
         app.register_blueprint(auth_bp)
@@ -69,6 +70,7 @@ def create_app(config_name: str = None) -> Flask:
         app.register_blueprint(accounting_bp)
         app.register_blueprint(reports_bp)
         app.register_blueprint(banking_bp, url_prefix='/banking')
+        app.register_blueprint(finance_bp, url_prefix='/finance')
         app.register_blueprint(settings_bp, url_prefix='/settings')
 
         # Tables are managed via Flask-Migrate / init_db.py

@@ -120,8 +120,12 @@
     {% endif %}
 
     {# ── Intelligence: Admin / Owner / Accountant ── #}
-    {% if current_user.role in ['Admin', 'Owner', 'Accountant'] %}
+    {% if current_user.role in ['Admin', 'Owner', 'Accountant', 'CFO'] %}
     <div class="nav-section-label">Intelligence</div>
+    <a href="{{ url_for('finance.hub') }}"
+       class="nav-link-custom {% if request.blueprint == 'finance' %}active{% endif %}" style="background:linear-gradient(135deg, rgba(59,130,246,0.1), transparent); border-left:3px solid var(--accent-blue);">
+      <i class="bi bi-briefcase-fill nav-icon" style="color:var(--accent-blue);"></i> Finance Center
+    </a>
     <a href="{{ url_for('reports.analytics_hub') }}"
        class="nav-link-custom {% if request.blueprint == 'reports' %}active{% endif %}">
       <i class="bi bi-graph-up-arrow nav-icon"></i> Reports Hub
