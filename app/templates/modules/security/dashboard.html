@@ -1,0 +1,116 @@
+{% extends 'base.html' %}
+
+{% block title %}Security Dashboard{% endblock %}
+{% block page_title %}Security & Monitoring{% endblock %}
+{% block page_subtitle %}Activity Intelligence Engine Dashboard{% endblock %}
+
+{% block content %}
+<div class="row" style="margin-bottom: 24px;">
+    <!-- Quick Stats -->
+    <div class="col-12 col-md-3">
+        <div class="dashboard-card" style="border-left: 4px solid var(--accent-blue);">
+            <div class="stat-title">Total Actions Today</div>
+            <div class="stat-value">{{ total_actions }}</div>
+        </div>
+    </div>
+    <div class="col-12 col-md-3">
+        <div class="dashboard-card" style="border-left: 4px solid var(--success-green);">
+            <div class="stat-title">Total Logins Today</div>
+            <div class="stat-value">{{ total_logins }}</div>
+        </div>
+    </div>
+    <div class="col-12 col-md-3">
+        <div class="dashboard-card" style="border-left: 4px solid var(--danger-red);">
+            <div class="stat-title">Failed Logins</div>
+            <div class="stat-value" style="color: var(--danger-red);">{{ failed_logins }}</div>
+        </div>
+    </div>
+    <div class="col-12 col-md-3">
+        <div class="dashboard-card" style="border-left: 4px solid var(--warning-yellow);">
+            <div class="stat-title">Record Modifications</div>
+            <div class="stat-value">{{ record_mods }}</div>
+        </div>
+    </div>
+</div>
+
+<div class="row" style="margin-bottom: 24px;">
+    <!-- Critical Analytics -->
+    <div class="col-12 col-md-6">
+        <div class="card p-4 h-100" style="background: var(--surface-bg); border-radius: var(--border-radius-lg); border: 1px solid var(--border-color);">
+            <h5 style="margin-bottom: 16px; color: var(--text-primary);">High-Risk Activities Today</h5>
+            <div style="display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--border-color);">
+                <span style="color: var(--text-secondary);"><i class="bi bi-trash-fill text-danger"></i> Deletions Performed</span>
+                <span style="font-weight: 600; color: var(--text-primary);">{{ deletions }}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; padding: 12px 0;">
+                <span style="color: var(--text-secondary);"><i class="bi bi-file-earmark-arrow-down-fill text-warning"></i> Reports Exported</span>
+                <span style="font-weight: 600; color: var(--text-primary);">{{ reports_exported }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Active Entities -->
+    <div class="col-12 col-md-6">
+        <div class="card p-4 h-100" style="background: var(--surface-bg); border-radius: var(--border-radius-lg); border: 1px solid var(--border-color);">
+            <h5 style="margin-bottom: 16px; color: var(--text-primary);">Activity Highlights</h5>
+            <div style="display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--border-color);">
+                <span style="color: var(--text-secondary);"><i class="bi bi-person-star text-info"></i> Most Active User</span>
+                <span style="font-weight: 600; color: var(--text-primary);">
+                    {% if most_active %}{{ most_active.username }} ({{ most_active.total }} actions){% else %}N/A{% endif %}
+                </span>
+            </div>
+            <div style="display: flex; justify-content: space-between; padding: 12px 0;">
+                <span style="color: var(--text-secondary);"><i class="bi bi-grid-1x2-fill text-primary"></i> Most Used Module</span>
+                <span style="font-weight: 600; color: var(--text-primary);">
+                    {% if most_used_module %}{{ most_used_module.module }} ({{ most_used_module.total }} actions){% else %}N/A{% endif %}
+                </span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Chart -->
+    <div class="col-12">
+        <div class="card p-4" style="background: var(--surface-bg); border-radius: var(--border-radius-lg); border: 1px solid var(--border-color);">
+            <h5 style="margin-bottom: 20px; color: var(--text-primary);">User Activity Trend (Last 7 Days)</h5>
+            <canvas id="activityTrendChart" style="max-height: 300px;"></canvas>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const ctx = document.getElementById('activityTrendChart').getContext('2d');
+    
+    // Inject variables from server
+    const labels = {{ trend_labels | tojson }};
+    const data = {{ trend_data | tojson }};
+    
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Total Actions',
+                data: data,
+                borderColor: '#3b82f6',
+                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                borderWidth: 2,
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: { beginAtZero: true }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

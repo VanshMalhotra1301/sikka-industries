@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+
+{% block title %}User Sessions & Security{% endblock %}
+{% block page_title %}User Sessions{% endblock %}
+{% block page_subtitle %}Security Center - Monitor active and historical logins{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h5 style="color: var(--text-primary); margin-bottom: 16px;">Active Sessions</h5>
+        <div class="table-container" style="border: 1px solid var(--accent-blue);">
+            <table class="data-table">
+                <thead style="background: rgba(59, 130, 246, 0.1);">
+                    <tr>
+                        <th>User</th>
+                        <th>Login Time</th>
+                        <th>Duration</th>
+                        <th>IP Address</th>
+                        <th>Device Info</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for session in active_sessions %}
+                    <tr>
+                        <td><strong>{{ session.user.username }}</strong> <span class="text-muted">({{ session.user.role }})</span></td>
+                        <td>{{ session.login_time.strftime('%d %b %Y, %H:%M') }}</td>
+                        <td>{{ session.duration_minutes }} mins</td>
+                        <td style="font-family: monospace;">{{ session.ip_address }}</td>
+                        <td style="max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{{ session.device_info }}">{{ session.device_info }}</td>
+                        <td><span class="status-pill"><span class="status-dot"></span> Active</span></td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" class="text-center empty-state py-4">No active sessions.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <h5 style="color: var(--text-primary); margin-bottom: 16px;">Historical Sessions (Recent 50)</h5>
+        <div class="table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>User</th>
+                        <th>Login Time</th>
+                        <th>Logout Time</th>
+                        <th>Duration</th>
+                        <th>IP Address</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for session in historical_sessions %}
+                    <tr>
+                        <td><strong>{{ session.user.username }}</strong></td>
+                        <td>{{ session.login_time.strftime('%d %b %Y, %H:%M') }}</td>
+                        <td>{{ session.logout_time.strftime('%d %b %Y, %H:%M') if session.logout_time else '-' }}</td>
+                        <td>{{ session.duration_minutes }} mins</td>
+                        <td style="font-family: monospace;">{{ session.ip_address }}</td>
+                        <td>
+                            {% if session.status == 'Session Timeout' %}
+                                <span class="badge" style="background: rgba(245, 158, 11, 0.1); color: var(--warning-yellow);">Timeout</span>
+                            {% elif session.status == 'Logged Out' %}
+                                <span class="badge" style="background: rgba(100, 100, 100, 0.1); color: var(--text-secondary);">Logged Out</span>
+                            {% else %}
+                                <span class="badge" style="background: rgba(100, 100, 100, 0.1); color: var(--text-secondary);">{{ session.status }}</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" class="text-center empty-state py-4">No historical sessions.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

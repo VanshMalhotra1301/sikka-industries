@@ -132,6 +132,31 @@
     </a>
     {% endif %}
 
+    {# ── Security & Monitoring: Admin / Owner ── #}
+    {% if current_user.role in ['Admin', 'Owner'] %}
+    <div class="nav-section-label">Security & Monitoring</div>
+    <a href="{{ url_for('security.dashboard') }}"
+       class="nav-link-custom {% if request.blueprint == 'security' and request.endpoint == 'security.dashboard' %}active{% endif %}">
+      <i class="bi bi-shield-check nav-icon"></i> Security Center
+    </a>
+    <a href="{{ url_for('security.notifications') }}"
+       class="nav-link-custom {% if request.endpoint == 'security.notifications' %}active{% endif %}">
+      <i class="bi bi-bell-fill nav-icon"></i> Notification Center
+    </a>
+    <a href="{{ url_for('security.activity_logs') }}"
+       class="nav-link-custom {% if request.endpoint == 'security.activity_logs' %}active{% endif %}">
+      <i class="bi bi-activity nav-icon"></i> Activity Logs
+    </a>
+    <a href="{{ url_for('security.audit_trail') }}"
+       class="nav-link-custom {% if request.endpoint == 'security.audit_trail' %}active{% endif %}">
+      <i class="bi bi-clock-history nav-icon"></i> Audit Trail
+    </a>
+    <a href="{{ url_for('security.sessions') }}"
+       class="nav-link-custom {% if request.endpoint == 'security.sessions' %}active{% endif %}">
+      <i class="bi bi-laptop nav-icon"></i> User Sessions
+    </a>
+    {% endif %}
+
     {# ── Admin-only ── #}
     {% if current_user.role == 'Admin' %}
     <div class="nav-section-label">System Admin</div>
@@ -359,6 +384,83 @@
     </div>
   </div>
 </div>
+
+<!-- Session Timeout Modal -->
+<div class="modal-overlay" id="sessionTimeoutModal">
+  <div class="modal-box" style="max-width:400px; text-align:center;">
+    <div class="modal-body" style="padding: 24px;">
+      <i class="bi bi-exclamation-triangle-fill text-warning" style="font-size: 48px; margin-bottom: 16px; display: inline-block;"></i>
+      <h4 style="margin-bottom: 12px;">Session Inactive</h4>
+      <p style="color: var(--text-secondary); margin-bottom: 24px;">
+        Your session will expire in <strong id="timeoutCountdown" class="text-danger">60</strong> seconds due to inactivity.
+      </p>
+      <div style="display:flex; gap:10px; justify-content:center;">
+        <button type="button" class="btn btn-ghost" onclick="logoutNow()">Logout Now</button>
+        <button type="button" class="btn btn-primary" onclick="continueSession()">Continue Session</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Session Timeout Logic
+  {% if current_user.is_authenticated %}
+  (function() {
+      let inactivityTimeout;
+      let warningTimeout;
+      let countdownInterval;
+      
+      const INACTIVITY_TIME = 5 * 60 * 1000; // 5 minutes
+      const WARNING_TIME = 60; // 60 seconds
+
+      function resetTimers() {
+          clearTimeout(inactivityTimeout);
+          clearTimeout(warningTimeout);
+          clearInterval(countdownInterval);
+          
+          document.getElementById('sessionTimeoutModal').classList.remove('open');
+          
+          inactivityTimeout = setTimeout(showWarning, INACTIVITY_TIME);
+      }
+
+      function showWarning() {
+          document.getElementById('sessionTimeoutModal').classList.add('open');
+          let secondsLeft = WARNING_TIME;
+          document.getElementById('timeoutCountdown').innerText = secondsLeft;
+          
+          countdownInterval = setInterval(() => {
+              secondsLeft--;
+              document.getElementById('timeoutCountdown').innerText = secondsLeft;
+              if (secondsLeft <= 0) {
+                  clearInterval(countdownInterval);
+                  logoutNow();
+              }
+          }, 1000);
+      }
+
+      window.continueSession = function() {
+          resetTimers();
+      };
+
+      window.logoutNow = function() {
+          fetch("{{ url_for('auth.timeout') }}", {
+              method: 'POST',
+              headers: {'Content-Type': 'application/json'}
+          }).then(() => {
+              window.location.href = "{{ url_for('auth.login') }}";
+          });
+      };
+
+      // Listen for interactions
+      ['mousemove', 'keydown', 'click', 'scroll'].forEach(evt => {
+          document.addEventListener(evt, resetTimers, { passive: true });
+      });
+
+      // Start the timer
+      resetTimers();
+  })();
+  {% endif %}
+</script>
 
 {% block scripts %}{% endblock %}
 </body>

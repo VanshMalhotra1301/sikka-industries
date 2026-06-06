@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+
+{% block title %}Audit Trail{% endblock %}
+{% block page_title %}Audit Trail{% endblock %}
+{% block page_subtitle %}Permanent history of data changes{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12 d-flex justify-content-between align-items-center">
+        <div class="search-box">
+            <i class="bi bi-search"></i>
+            <input type="text" id="searchInput" onkeyup="searchTable('searchInput', 'auditTable')" placeholder="Search audit trail...">
+        </div>
+        <button class="btn btn-ghost" onclick="exportTableToCSV('auditTable', 'audit_trail.csv')">
+            <i class="bi bi-download"></i> Export CSV
+        </button>
+    </div>
+</div>
+
+<div class="table-container">
+    <table class="data-table" id="auditTable">
+        <thead>
+            <tr>
+                <th>Date & Time</th>
+                <th>Modified By</th>
+                <th>Model</th>
+                <th>Record ID</th>
+                <th>Field Changed</th>
+                <th>Old Value</th>
+                <th>New Value</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for audit in audits %}
+            <tr>
+                <td style="white-space: nowrap;">{{ audit.date.strftime('%d %b %Y, %H:%M') }}</td>
+                <td>
+                    {% if audit.user %}
+                        {{ audit.user.username }}
+                    {% else %}
+                        <span class="text-muted">System</span>
+                    {% endif %}
+                </td>
+                <td><span class="badge" style="background: rgba(168, 85, 247, 0.1); color: #a855f7;">{{ audit.model_name }}</span></td>
+                <td style="font-family: monospace;">#{{ audit.record_id }}</td>
+                <td style="font-weight: 500;">{{ audit.field_name }}</td>
+                <td>
+                    <div style="max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--danger-red); text-decoration: line-through;">
+                        {{ audit.old_value or '-' }}
+                    </div>
+                </td>
+                <td>
+                    <div style="max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--success-green);">
+                        {{ audit.new_value or '-' }}
+                    </div>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="7" class="text-center empty-state py-4">No audit trails recorded yet.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

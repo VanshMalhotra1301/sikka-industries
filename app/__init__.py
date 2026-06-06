@@ -43,6 +43,8 @@ def create_app(config_name: str = None) -> Flask:
 
     with app.app_context():
         from app import models  # noqa: F401
+        from app.utils.listeners import register_listeners
+        register_listeners(app, db)
 
         # Register Blueprints
         from app.modules.auth import auth_bp
@@ -58,6 +60,7 @@ def create_app(config_name: str = None) -> Flask:
         from app.modules.banking import banking_bp
         from app.modules.finance import finance_bp
         from app.modules.settings import settings_bp
+        from app.modules.security import security_bp
 
         app.register_blueprint(auth_bp)
         app.register_blueprint(dashboard_bp)
@@ -72,6 +75,7 @@ def create_app(config_name: str = None) -> Flask:
         app.register_blueprint(banking_bp, url_prefix='/banking')
         app.register_blueprint(finance_bp, url_prefix='/finance')
         app.register_blueprint(settings_bp, url_prefix='/settings')
+        app.register_blueprint(security_bp, url_prefix='/security')
 
         # Tables are managed via Flask-Migrate / init_db.py
         # Do NOT call db.create_all() here — it causes Vercel cold-start timeouts
