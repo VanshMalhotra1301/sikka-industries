@@ -87,7 +87,15 @@ def create_app(config_name: str = None) -> Flask:
             'current_year': datetime.utcnow().year,
         }
 
-    # ── Error handlers ───────────────────────────────────────
+    # ── Error handlers and request interceptors ──────────────
+    @app.after_request
+    def add_header(response):
+        """Prevent caching of dynamic routes to fix cross-device session leaks on Render."""
+        response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, post-check=0, pre-check=0, max-age=0'
+        response.headers['Pragma'] = 'no-cache'
+        response.headers['Expires'] = '-1'
+        return response
+
     @app.errorhandler(403)
     def forbidden(e):
         from flask import render_template

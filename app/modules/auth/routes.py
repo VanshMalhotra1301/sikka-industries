@@ -22,7 +22,7 @@ def login():
                 flash('This account has been deactivated. Contact Admin.', 'danger')
                 return render_template('modules/auth/login.html')
                 
-            login_user(user, remember=True)
+            login_user(user, remember=False)
             next_page = request.args.get('next')
             return redirect(next_page) if next_page else redirect(url_for('dashboard.index'))
         else:
