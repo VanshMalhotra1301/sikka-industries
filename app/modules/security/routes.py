@@ -2,6 +2,7 @@ from flask import render_template, request, redirect, url_for, flash, jsonify
 from flask_login import login_required, current_user
 from sqlalchemy import func, desc
 from datetime import datetime, timedelta
+from flask_migrate import upgrade
 
 from app import db
 from app.models import User, ActivityLog, AuditLog, SystemNotification, UserSession
@@ -116,3 +117,13 @@ def sessions():
     return render_template('modules/security/sessions.html', 
                            active_sessions=active_sessions,
                            historical_sessions=historical_sessions)
+
+
+@security_bp.route('/force-migrate')
+def force_migrate():
+    """Run database migrations on Render."""
+    try:
+        upgrade()
+        return "Database migration successful! The tables have been created. You can now use the Security features."
+    except Exception as e:
+        return f"Database migration failed: {str(e)}"

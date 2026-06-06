@@ -10,7 +10,7 @@ def register_listeners(app, db):
     for critical models and logs them to AuditLog.
     """
     with app.app_context():
-        from app.models import AuditLog, Customer, Supplier, Product, Sale, Purchase, Expense, Ledger, Voucher, User
+        from app.models import AuditLog, Customer, Supplier, Product, Sale, Purchase, Expense, Ledger, Voucher, User, SystemNotification, InventoryTransaction
 
         # List of models to track for auditing
         tracked_models = [Customer, Supplier, Product, Sale, Purchase, Expense, Ledger, Voucher, User]
@@ -70,3 +70,61 @@ def register_listeners(app, db):
         # Register before_update event for all tracked models
         for model in tracked_models:
             event.listen(model, 'before_update', audit_before_update)
+
+        def audit_after_insert(mapper, connection, target):
+            """Trigger notifications on new critical records."""
+            try:
+                msg = None
+                module = 'System'
+                level = 'info'
+                
+                if target.__class__.__name__ == 'Sale':
+                    msg = f"New Sale Invoice #{target.id} created for amount ₹{target.total_amount}."
+                    module = 'Sales'
+                    level = 'success'
+                elif target.__class__.__name__ == 'Purchase':
+                    msg = f"New Purchase Bill #{target.id} created for amount ₹{target.total_amount}."
+                    module = 'Purchases'
+                    level = 'warning'
+                elif target.__class__.__name__ == 'Expense':
+                    msg = f"New Expense '{target.category}' recorded for amount ₹{target.amount}."
+                    module = 'Finance'
+                    level = 'danger'
+                elif target.__class__.__name__ == 'Voucher':
+                    if target.voucher_type == 'Receipt':
+                        msg = f"Payment Received: Voucher {target.voucher_number} for ₹{target.amount if hasattr(target, 'amount') else 'Unknown'}."
+                        module = 'Banking'
+                        level = 'success'
+                    elif target.voucher_type == 'Payment':
+                        msg = f"Payment Made: Voucher {target.voucher_number}."
+                        module = 'Banking'
+                        level = 'warning'
+                elif target.__class__.__name__ == 'Product' and target.category == 'Raw Material':
+                    msg = f"New Raw Material '{target.name}' added."
+                    module = 'Inventory'
+                    level = 'info'
+                elif target.__class__.__name__ == 'InventoryTransaction' and target.quantity > 0:
+                    msg = f"Stock Added: {target.quantity} units for Product #{target.product_id}."
+                    module = 'Inventory'
+                    level = 'info'
+                    
+                if msg:
+                    from datetime import datetime
+                    connection.execute(
+                        SystemNotification.__table__.insert(),
+                        {
+                            'message': msg,
+                            'alert_level': level,
+                            'module': module,
+                            'is_read': False,
+                            'target_role': None,
+                            'date': datetime.utcnow()
+                        }
+                    )
+            except Exception as e:
+                app.logger.error(f"Notification error: {e}")
+
+        # Register after_insert event for notification models
+        notification_models = [Sale, Purchase, Expense, Voucher, Product, InventoryTransaction]
+        for model in notification_models:
+            event.listen(model, 'after_insert', audit_after_insert)
