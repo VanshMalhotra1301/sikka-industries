@@ -42,7 +42,10 @@ def index():
             )
             # Calculate from VoucherEntries based on AccountGroups
             # 1. Total Expenses
-            expense_groups = AccountGroup.query.filter_by(nature='Expense').all()
+            expense_groups = AccountGroup.query.filter(
+                AccountGroup.nature == 'Expense',
+                AccountGroup.name != 'Purchase Accounts'
+            ).all()
             expense_group_ids = [g.id for g in expense_groups]
             expense_ledgers = Ledger.query.filter(Ledger.group_id.in_(expense_group_ids)).all()
             expense_ledger_ids = [l.id for l in expense_ledgers]
