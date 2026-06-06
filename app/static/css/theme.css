@@ -66,16 +66,21 @@
 /* ── Reset & Base ── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-html { scroll-behavior: smooth; }
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
 
 body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   background: var(--bg-base);
   color: var(--text-primary);
   min-height: 100vh;
+  min-height: 100dvh;
   overflow-x: hidden;
   font-size: 14px;
   line-height: 1.6;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* ── Scrollbar ── */
@@ -85,6 +90,44 @@ body {
 ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.22); }
 
 /* ============================================================
+   HAMBURGER TOGGLE (tablet / mobile)
+   ============================================================ */
+.sidebar-toggle {
+  display: none;
+  position: fixed;
+  top: 12px; left: 12px;
+  z-index: 210;
+  background: var(--bg-sidebar);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  width: 44px; height: 44px;
+  align-items: center; justify-content: center;
+  color: var(--text-primary);
+  font-size: 20px;
+  cursor: pointer;
+  box-shadow: var(--shadow);
+  transition: var(--transition);
+  -webkit-tap-highlight-color: transparent;
+}
+.sidebar-toggle:hover { background: var(--bg-card-hover); }
+.sidebar-toggle:active { transform: scale(0.92); }
+
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.55);
+  backdrop-filter: blur(4px);
+  z-index: 99;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+.sidebar-overlay.active {
+  display: block;
+  opacity: 1;
+}
+
+/* ============================================================
    SIDEBAR
    ============================================================ */
 .sidebar {
@@ -92,6 +135,7 @@ body {
   top: 0; left: 0;
   width: var(--sidebar-w);
   height: 100vh;
+  height: 100dvh;
   background: var(--bg-sidebar);
   border-right: 1px solid var(--border);
   display: flex;
@@ -99,6 +143,8 @@ body {
   z-index: 100;
   overflow-y: auto;
   overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .sidebar-brand {
@@ -181,7 +227,7 @@ body {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 9px 12px;
+  padding: 11px 12px;
   border-radius: 8px;
   color: var(--text-secondary);
   text-decoration: none;
@@ -190,6 +236,8 @@ body {
   transition: var(--transition);
   margin-bottom: 2px;
   white-space: nowrap;
+  min-height: 44px;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .nav-link-custom:hover {
@@ -303,6 +351,7 @@ body {
 .page-body {
   padding: 28px;
   flex: 1;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* ============================================================
@@ -562,7 +611,7 @@ tbody td {
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  padding: 9px 18px;
+  padding: 10px 18px;
   border-radius: 9px;
   font-family: 'Inter', sans-serif;
   font-size: 13px;
@@ -573,6 +622,8 @@ tbody td {
   transition: var(--transition);
   white-space: nowrap;
   letter-spacing: 0.01em;
+  min-height: 44px;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .btn:hover { transform: translateY(-1px); box-shadow: var(--shadow); }
@@ -639,6 +690,7 @@ input[type="email"],
 input[type="number"],
 input[type="password"],
 input[type="date"],
+input[type="datetime-local"],
 select,
 textarea {
   width: 100%;
@@ -648,10 +700,24 @@ textarea {
   border-radius: 9px;
   color: var(--text-primary);
   font-family: 'Inter', sans-serif;
-  font-size: 13px;
+  font-size: 16px;  /* prevents iOS zoom on focus */
   transition: var(--transition);
   outline: none;
   appearance: none;
+  min-height: 44px;
+}
+
+@media (min-width: 1025px) {
+  input[type="text"],
+  input[type="email"],
+  input[type="number"],
+  input[type="password"],
+  input[type="date"],
+  input[type="datetime-local"],
+  select,
+  textarea {
+    font-size: 13px;
+  }
 }
 
 input:focus, select:focus, textarea:focus {
@@ -694,6 +760,10 @@ textarea { resize: vertical; min-height: 80px; }
   border-radius: 9px;
   text-align: right;
   min-width: 120px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
 }
 
 .remove-row-btn {
@@ -701,12 +771,13 @@ textarea { resize: vertical; min-height: 80px; }
   border: 1px solid rgba(239,68,68,0.2);
   color: var(--accent-red);
   border-radius: 8px;
-  width: 36px; height: 36px;
+  width: 44px; height: 44px;
   display: flex; align-items: center; justify-content: center;
   cursor: pointer;
   font-size: 16px;
   transition: var(--transition);
   flex-shrink: 0;
+  -webkit-tap-highlight-color: transparent;
 }
 .remove-row-btn:hover { background: rgba(239,68,68,0.25); }
 
@@ -941,11 +1012,16 @@ textarea { resize: vertical; min-height: 80px; }
 .search-box input::placeholder { color: var(--text-muted); }
 
 /* Scrollable table wrapper */
-.table-scroll { max-height: 480px; overflow-y: auto; }
+.table-scroll {
+  max-height: 480px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
 
 /* Login page specific */
 .login-page {
   min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -955,6 +1031,7 @@ textarea { resize: vertical; min-height: 80px; }
     var(--bg-base);
   position: relative;
   overflow: hidden;
+  padding: 20px;
 }
 
 .login-page::before {
@@ -994,4 +1071,125 @@ textarea { resize: vertical; min-height: 80px; }
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+/* ============================================================
+   RESPONSIVE — TABLET (iPad ~768px – 1024px)
+   ============================================================ */
+@media (max-width: 1024px) {
+  .sidebar-toggle { display: flex; }
+
+  .sidebar {
+    transform: translateX(-100%);
+  }
+  .sidebar.open {
+    transform: translateX(0);
+    box-shadow: var(--shadow-lg);
+  }
+
+  .main-content {
+    margin-left: 0 !important;
+  }
+
+  .topbar {
+    padding: 0 16px 0 64px; /* room for hamburger */
+  }
+
+  .page-body {
+    padding: 20px 16px;
+  }
+
+  /* Stat grids: force 2 cols on tablet */
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  .grid-2, .grid-8-4 { grid-template-columns: 1fr; }
+  .grid-3 { grid-template-columns: 1fr 1fr; }
+
+  /* Item rows: stack for touch usability */
+  .item-row-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .item-row-grid select,
+  .item-row-grid .item-subtotal-display {
+    grid-column: 1 / -1;
+  }
+
+  /* Table: min-width so horizontal scroll kicks in */
+  .table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .table-wrap table {
+    min-width: 600px;
+  }
+
+  /* Page header stacks */
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  /* Form rows go single column */
+  .form-row, .form-row-3 { grid-template-columns: 1fr; }
+
+  /* Buttons wrap nicely */
+  .page-actions { width: 100%; }
+
+  /* Make search box full width */
+  .search-box input { width: 100%; }
+  .search-box { width: 100%; }
+}
+
+/* ============================================================
+   RESPONSIVE — PHONE (< 600px)
+   ============================================================ */
+@media (max-width: 600px) {
+  .stats-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .grid-3 { grid-template-columns: 1fr; }
+
+  .topbar {
+    padding: 0 12px 0 60px;
+    height: 56px;
+  }
+
+  .topbar-left h4 { font-size: 14px; }
+  .topbar-left p { display: none; }
+
+  .page-body { padding: 16px 12px; }
+
+  .stat-value { font-size: 22px; }
+
+  .card-body { padding: 16px; }
+
+  .item-row-grid {
+    grid-template-columns: 1fr;
+  }
+  .item-row-grid select,
+  .item-row-grid input,
+  .item-row-grid .item-subtotal-display {
+    grid-column: 1 / -1;
+  }
+  .remove-row-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .login-card {
+    padding: 32px 24px;
+    border-radius: 18px;
+  }
+
+  .btn { padding: 12px 16px; font-size: 14px; }
+  .btn-sm { padding: 8px 14px; font-size: 12px; }
+
+  .page-header-left h2 { font-size: 18px; }
+
+  /* Quick actions wrap */
+  .card-body > div[style*="flex"] { gap: 8px !important; }
 }
