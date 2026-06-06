@@ -12,30 +12,37 @@ from app.utils.decorators import roles_required
 def list_suppliers():
     """Renders supplier profile list entries and captures procurement vendors."""
     if request.method == 'POST':
-        name = request.form.get('name').strip()
-        phone = request.form.get('phone').strip()
-        gst_number = request.form.get('gst_number').strip()
-        address = request.form.get('address').strip()
+        name        = (request.form.get('name')        or '').strip()
+        phone       = (request.form.get('phone')       or '').strip()
+        gst_number  = (request.form.get('gst_number')  or '').strip()
+        address     = (request.form.get('address')     or '').strip()
+        state       = (request.form.get('state')       or 'Delhi').strip()
 
         if not name:
-            flash('Supplier baseline name cannot evaluate to empty structural strings.', 'danger')
+            flash('Supplier name cannot be empty.', 'danger')
             return redirect(url_for('scm.list_suppliers'))
 
-        new_supplier = Supplier(name=name, phone=phone, gst_number=gst_number, address=address)
+        new_supplier = Supplier(name=name, phone=phone, gst_number=gst_number,
+                                address=address, state=state)
         db.session.add(new_supplier)
         db.session.flush()
 
-        op_bal = float(request.form.get('opening_balance') or 0.0)
+        op_bal  = float(request.form.get('opening_balance') or 0.0)
         op_type = request.form.get('opening_balance_type', 'Cr')
-        
+
         from app.models import AccountGroup, Ledger
-        sc_group = AccountGroup.query.filter_by(name="Sundry Creditors").first()
+        sc_group = AccountGroup.query.filter_by(name='Sundry Creditors').first()
         if sc_group:
-            supp_ledger = Ledger(name=name, group_id=sc_group.id, opening_balance=op_bal, opening_balance_type=op_type)
-            db.session.add(supp_ledger)
+            # Guard against duplicate ledger name (unique constraint)
+            existing_ledger = Ledger.query.filter_by(name=name).first()
+            if not existing_ledger:
+                supp_ledger = Ledger(name=name, group_id=sc_group.id,
+                                    opening_balance=op_bal,
+                                    opening_balance_type=op_type)
+                db.session.add(supp_ledger)
 
         db.session.commit()
-        flash(f'Supplier Profile for "{name}" added successfully.', 'success')
+        flash(f'Supplier "{name}" added successfully.', 'success')
         return redirect(url_for('scm.list_suppliers'))
 
     suppliers = Supplier.query.order_by(Supplier.name.asc()).all()
@@ -113,38 +120,45 @@ def statement(id):
 @login_required
 @roles_required(['Admin', 'Accountant', 'Owner'])
 def edit_supplier(id):
-    supplier = Supplier.query.get_or_404(id)
-    name = request.form.get('name').strip()
-    phone = request.form.get('phone').strip()
-    gst_number = request.form.get('gst_number').strip()
-    address = request.form.get('address').strip()
-    op_bal = float(request.form.get('opening_balance') or 0.0)
-    op_type = request.form.get('opening_balance_type', 'Cr')
+    supplier    = Supplier.query.get_or_404(id)
+    name        = (request.form.get('name')        or '').strip()
+    phone       = (request.form.get('phone')       or '').strip()
+    gst_number  = (request.form.get('gst_number')  or '').strip()
+    address     = (request.form.get('address')     or '').strip()
+    op_bal      = float(request.form.get('opening_balance') or 0.0)
+    op_type     = request.form.get('opening_balance_type', 'Cr')
 
     if not name:
         flash('Supplier Name is required.', 'danger')
         return redirect(url_for('scm.list_suppliers'))
 
-    old_name = supplier.name
-    supplier.name = name
-    supplier.phone = phone
+    old_name        = supplier.name
+    supplier.name   = name
+    supplier.phone  = phone
     supplier.gst_number = gst_number
-    supplier.address = address
-    
+    supplier.address    = address
+
     from app.models import Ledger, AccountGroup
     ledger = Ledger.query.filter_by(name=old_name).first()
     if ledger:
-        ledger.name = name
-        ledger.opening_balance = op_bal
+        # Only rename if the new name isn't already taken by another ledger
+        conflict = Ledger.query.filter(
+            Ledger.name == name, Ledger.id != ledger.id
+        ).first()
+        if not conflict:
+            ledger.name = name
+        ledger.opening_balance      = op_bal
         ledger.opening_balance_type = op_type
     else:
-        sc_group = AccountGroup.query.filter_by(name="Sundry Creditors").first()
-        if sc_group:
-            new_ledger = Ledger(name=name, group_id=sc_group.id, opening_balance=op_bal, opening_balance_type=op_type)
+        sc_group = AccountGroup.query.filter_by(name='Sundry Creditors').first()
+        if sc_group and not Ledger.query.filter_by(name=name).first():
+            new_ledger = Ledger(name=name, group_id=sc_group.id,
+                                opening_balance=op_bal,
+                                opening_balance_type=op_type)
             db.session.add(new_ledger)
 
     db.session.commit()
-    flash(f'Supplier profile for "{name}" updated successfully.', 'success')
+    flash(f'Supplier "{name}" updated successfully.', 'success')
     return redirect(url_for('scm.list_suppliers'))
 
 @scm_bp.route('/suppliers/delete/<int:id>', methods=['POST', 'GET'])

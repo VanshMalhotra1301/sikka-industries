@@ -12,31 +12,38 @@ from app.utils.decorators import roles_required
 def list_customers():
     """Renders all master customer accounts and registers new entities."""
     if request.method == 'POST':
-        name = request.form.get('name').strip()
-        phone = request.form.get('phone').strip()
-        gst_number = request.form.get('gst_number').strip()
-        address = request.form.get('address').strip()
-        email = request.form.get('email').strip()
+        name       = (request.form.get('name')       or '').strip()
+        phone      = (request.form.get('phone')      or '').strip()
+        gst_number = (request.form.get('gst_number') or '').strip()
+        address    = (request.form.get('address')    or '').strip()
+        email      = (request.form.get('email')      or '').strip()
+        state      = (request.form.get('state')      or 'Delhi').strip()
 
         if not name:
-            flash('Customer Name is a strictly required field.', 'danger')
+            flash('Customer Name is required.', 'danger')
             return redirect(url_for('crm.list_customers'))
 
-        new_customer = Customer(name=name, phone=phone, gst_number=gst_number, address=address, email=email)
+        new_customer = Customer(name=name, phone=phone, gst_number=gst_number,
+                                address=address, email=email, state=state)
         db.session.add(new_customer)
         db.session.flush()
 
-        op_bal = float(request.form.get('opening_balance') or 0.0)
+        op_bal  = float(request.form.get('opening_balance') or 0.0)
         op_type = request.form.get('opening_balance_type', 'Dr')
-        
+
         from app.models import AccountGroup, Ledger
-        sd_group = AccountGroup.query.filter_by(name="Sundry Debtors").first()
+        sd_group = AccountGroup.query.filter_by(name='Sundry Debtors').first()
         if sd_group:
-            cust_ledger = Ledger(name=name, group_id=sd_group.id, opening_balance=op_bal, opening_balance_type=op_type)
-            db.session.add(cust_ledger)
+            # Guard against duplicate ledger name (unique constraint)
+            existing_ledger = Ledger.query.filter_by(name=name).first()
+            if not existing_ledger:
+                cust_ledger = Ledger(name=name, group_id=sd_group.id,
+                                    opening_balance=op_bal,
+                                    opening_balance_type=op_type)
+                db.session.add(cust_ledger)
 
         db.session.commit()
-        flash(f'Customer Profile for "{name}" added successfully.', 'success')
+        flash(f'Customer "{name}" added successfully.', 'success')
         return redirect(url_for('crm.list_customers'))
 
     customers = Customer.query.order_by(Customer.name.asc()).all()
@@ -197,40 +204,46 @@ def print_statement(id):
 @login_required
 @roles_required(['Admin', 'Accountant', 'Owner'])
 def edit_customer(id):
-    customer = Customer.query.get_or_404(id)
-    name = request.form.get('name').strip()
-    phone = request.form.get('phone').strip()
-    gst_number = request.form.get('gst_number').strip()
-    address = request.form.get('address').strip()
-    email = request.form.get('email').strip()
-    op_bal = float(request.form.get('opening_balance') or 0.0)
-    op_type = request.form.get('opening_balance_type', 'Dr')
+    customer   = Customer.query.get_or_404(id)
+    name       = (request.form.get('name')       or '').strip()
+    phone      = (request.form.get('phone')      or '').strip()
+    gst_number = (request.form.get('gst_number') or '').strip()
+    address    = (request.form.get('address')    or '').strip()
+    email      = (request.form.get('email')      or '').strip()
+    op_bal     = float(request.form.get('opening_balance') or 0.0)
+    op_type    = request.form.get('opening_balance_type', 'Dr')
 
     if not name:
         flash('Customer Name is required.', 'danger')
         return redirect(url_for('crm.list_customers'))
 
-    old_name = customer.name
-    customer.name = name
-    customer.phone = phone
+    old_name         = customer.name
+    customer.name    = name
+    customer.phone   = phone
     customer.gst_number = gst_number
     customer.address = address
-    customer.email = email
-    
+    customer.email   = email
+
     from app.models import Ledger, AccountGroup
     ledger = Ledger.query.filter_by(name=old_name).first()
     if ledger:
-        ledger.name = name
-        ledger.opening_balance = op_bal
+        conflict = Ledger.query.filter(
+            Ledger.name == name, Ledger.id != ledger.id
+        ).first()
+        if not conflict:
+            ledger.name = name
+        ledger.opening_balance      = op_bal
         ledger.opening_balance_type = op_type
     else:
-        sd_group = AccountGroup.query.filter_by(name="Sundry Debtors").first()
-        if sd_group:
-            new_ledger = Ledger(name=name, group_id=sd_group.id, opening_balance=op_bal, opening_balance_type=op_type)
+        sd_group = AccountGroup.query.filter_by(name='Sundry Debtors').first()
+        if sd_group and not Ledger.query.filter_by(name=name).first():
+            new_ledger = Ledger(name=name, group_id=sd_group.id,
+                                opening_balance=op_bal,
+                                opening_balance_type=op_type)
             db.session.add(new_ledger)
 
     db.session.commit()
-    flash(f'Customer profile for "{name}" updated successfully.', 'success')
+    flash(f'Customer "{name}" updated successfully.', 'success')
     return redirect(url_for('crm.list_customers'))
 
 @crm_bp.route('/customers/delete/<int:id>', methods=['POST', 'GET'])
