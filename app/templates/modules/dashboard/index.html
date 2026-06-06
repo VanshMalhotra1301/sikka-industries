@@ -83,16 +83,16 @@
 
   <div class="stat-card stat-green">
     <i class="bi bi-graph-up-arrow stat-icon"></i>
-    <div class="stat-label"><i class="bi bi-circle-fill" style="color:var(--accent-green);font-size:7px;"></i> Today's Sales</div>
-    <div class="stat-value text-green">₹{{ "{:,.0f}".format(today_sales) }}</div>
-    <div class="stat-sub">Revenue generated today</div>
+    <div class="stat-label"><i class="bi bi-circle-fill" style="color:var(--accent-green);font-size:7px;"></i> Total Sales</div>
+    <div class="stat-value text-green">₹{{ "{:,.0f}".format(total_sales) }}</div>
+    <div class="stat-sub">Overall revenue generated</div>
   </div>
 
   <div class="stat-card stat-red">
     <i class="bi bi-arrow-down-circle-fill stat-icon"></i>
-    <div class="stat-label"><i class="bi bi-circle-fill" style="color:var(--accent-red);font-size:7px;"></i> Today's Expenses</div>
-    <div class="stat-value text-red">₹{{ "{:,.0f}".format(today_expenses) }}</div>
-    <div class="stat-sub">Overhead &amp; purchases</div>
+    <div class="stat-label"><i class="bi bi-circle-fill" style="color:var(--accent-red);font-size:7px;"></i> Total Expenses</div>
+    <div class="stat-value text-red">₹{{ "{:,.0f}".format(total_expenses) }}</div>
+    <div class="stat-sub">Overall overhead &amp; purchases</div>
   </div>
 
   <div class="stat-card stat-cyan">

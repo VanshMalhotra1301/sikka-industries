@@ -20,7 +20,7 @@ def index():
     role  = current_user.role
 
     # ── Finance KPIs (Accountant / Admin / Owner) ─────────────────────────────
-    today_sales = today_purchases = today_expenses = 0.0
+    total_sales = total_purchases = total_expenses = 0.0
     yearly_net_profit = 0.0
     cash_in_hand = bank_balance = 0.0
     outstanding_receivables = outstanding_payables = 0.0
@@ -33,17 +33,14 @@ def index():
     if role in FINANCE_ROLES:
         try:
             # Use cast(col, Date) for PostgreSQL compatibility (func.date() is SQLite-only)
-            today_sales = (
-                db.session.query(func.coalesce(func.sum(Sale.total_amount), 0.0))
-                .filter(cast(Sale.date, Date) == today).scalar()
+            total_sales = (
+                db.session.query(func.coalesce(func.sum(Sale.total_amount), 0.0)).scalar()
             )
-            today_purchases = (
-                db.session.query(func.coalesce(func.sum(Purchase.total_amount), 0.0))
-                .filter(cast(Purchase.date, Date) == today).scalar()
+            total_purchases = (
+                db.session.query(func.coalesce(func.sum(Purchase.total_amount), 0.0)).scalar()
             )
-            today_expenses = (
-                db.session.query(func.coalesce(func.sum(Expense.amount), 0.0))
-                .filter(cast(Expense.date, Date) == today).scalar()
+            total_expenses = (
+                db.session.query(func.coalesce(func.sum(Expense.amount), 0.0)).scalar()
             )
 
             cash_debits  = db.session.query(func.coalesce(func.sum(LedgerEntry.debit), 0.0)).filter(LedgerEntry.account_type  == 'Cash').scalar()
@@ -109,9 +106,9 @@ def index():
         'modules/dashboard/index.html',
         role=role,
         # Finance
-        today_sales=today_sales,
-        today_purchases=today_purchases,
-        today_expenses=today_expenses,
+        total_sales=total_sales,
+        total_purchases=total_purchases,
+        total_expenses=total_expenses,
         yearly_net_profit=yearly_net_profit,
         cash_in_hand=cash_in_hand,
         bank_balance=bank_balance,
