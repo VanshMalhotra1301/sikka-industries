@@ -71,9 +71,13 @@
     {# ── Warehouse: Admin / Owner / Store Manager ── #}
     {% if current_user.role in ['Admin', 'Owner', 'Store Manager'] %}
     <div class="nav-section-label">Warehouse</div>
-    <a href="{{ url_for('inventory.list_products') }}"
-       class="nav-link-custom {% if request.blueprint == 'inventory' %}active{% endif %}">
-      <i class="bi bi-box-seam-fill nav-icon"></i> Inventory Master
+    <a href="{{ url_for('inventory.raw_materials') }}"
+       class="nav-link-custom {% if request.endpoint == 'inventory.raw_materials' %}active{% endif %}">
+      <i class="bi bi-tools nav-icon"></i> Raw Materials
+    </a>
+    <a href="{{ url_for('inventory.finished_goods') }}"
+       class="nav-link-custom {% if request.endpoint == 'inventory.finished_goods' %}active{% endif %}">
+      <i class="bi bi-box-seam-fill nav-icon"></i> Finished Goods
     </a>
     <a href="{{ url_for('manufacturing.production_logs') }}"
        class="nav-link-custom {% if request.blueprint == 'manufacturing' %}active{% endif %}">
