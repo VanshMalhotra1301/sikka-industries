@@ -120,7 +120,7 @@
     <div class="stat-value {% if yearly_net_profit >= 0 %}text-green{% else %}text-red{% endif %}">
       ₹{{ "{:,.0f}".format(yearly_net_profit) }}
     </div>
-    <div class="stat-sub">Gross Profit − Total Expenses</div>
+    <div class="stat-sub">Sales − Cost of Goods Sold</div>
   </div>
 
 </div>
@@ -131,7 +131,12 @@
     <i class="bi bi-bank2 stat-icon"></i>
     <div class="stat-label">Bank Balance</div>
     <div class="stat-value text-blue">₹{{ "{:,.0f}".format(bank_balance) }}</div>
-    <div class="stat-sub">Net bank position</div>
+    <div class="stat-sub" style="display:flex; justify-content:space-between; align-items:center;">
+      <span>Net bank position</span>
+      {% if current_user.role in ['Admin', 'Owner'] %}
+      <button onclick="document.getElementById('addBankModal').classList.add('open')" style="background:transparent; border:1px solid var(--accent-blue); color:var(--accent-blue); border-radius:4px; font-size:10px; padding:2px 6px; cursor:pointer;">+ Add Balance</button>
+      {% endif %}
+    </div>
   </div>
 
   <div class="stat-card stat-amber">
@@ -583,6 +588,44 @@ document.addEventListener('themeChanged', function(e) {
         <div style="margin-top: 1.5rem; text-align: right;">
           <button type="button" class="btn btn-ghost" onclick="document.getElementById('addCashModal').classList.remove('open')">Cancel</button>
           <button type="submit" class="btn btn-primary">Add Cash</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+
+<!-- Add Bank Modal -->
+<div id="addBankModal" class="modal-overlay">
+  <div class="modal-content" style="max-width: 400px;">
+    <div class="modal-header">
+      <h3 class="modal-title">Add Extra Bank Balance</h3>
+      <button class="modal-close" onclick="document.getElementById('addBankModal').classList.remove('open')">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </div>
+    <div class="modal-body">
+      <form action="{{ url_for('accounting.add_bank') }}" method="POST">
+        <div class="form-group">
+          <label class="form-label">Select Bank Ledger</label>
+          <select name="bank_ledger_id" class="form-input" required>
+            <option value="">-- Choose Bank --</option>
+            {% for ledger in bank_ledgers %}
+              <option value="{{ ledger.id }}">{{ ledger.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group" style="margin-top: 1rem;">
+          <label class="form-label">Amount (₹)</label>
+          <input type="number" step="0.01" name="amount" class="form-input" required placeholder="e.g. 50000">
+        </div>
+        <div class="form-group" style="margin-top: 1rem;">
+          <label class="form-label">Reason / Narration</label>
+          <input type="text" name="narration" class="form-input" required placeholder="e.g. Capital brought in by Owner">
+        </div>
+        <div style="margin-top: 1.5rem; text-align: right;">
+          <button type="button" class="btn btn-ghost" onclick="document.getElementById('addBankModal').classList.remove('open')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Add Balance</button>
         </div>
       </form>
     </div>

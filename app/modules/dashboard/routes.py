@@ -29,6 +29,7 @@ def index():
     profit_trend_data = [0.0] * 12
     pending_sales_dues = []
     pending_purchase_dues = []
+    bank_ledgers = []
 
     if role in FINANCE_ROLES:
         try:
@@ -102,22 +103,7 @@ def index():
                     for item in s.items:
                         profit = (item.subtotal or 0.0) - (item.quantity * (item.product.purchase_cost or 0.0))
                         profit_trend_data[m - 1] += profit
-                        yearly_gross_profit += profit
-                        
-            if expense_ledger_ids:
-                yearly_expenses = (
-                    db.session.query(func.coalesce(func.sum(
-                        db.case((VoucherEntry.entry_type == 'Dr', VoucherEntry.amount),
-                                else_=-VoucherEntry.amount)
-                    ), 0.0))
-                    .join(Voucher)
-                    .filter(VoucherEntry.ledger_id.in_(expense_ledger_ids))
-                    .filter(extract('year', Voucher.date) == current_year)
-                    .scalar()
-                )
-            else:
-                yearly_expenses = 0.0
-            yearly_net_profit = yearly_gross_profit - yearly_expenses
+            yearly_net_profit = yearly_gross_profit
 
             # Due Date Reminders
             pending_sales_dues = Sale.query.filter(Sale.balance_amount > 0, Sale.due_date != None).order_by(Sale.due_date.asc()).all()
@@ -159,6 +145,7 @@ def index():
         bank_balance=bank_balance,
         outstanding_receivables=outstanding_receivables,
         outstanding_payables=outstanding_payables,
+        bank_ledgers=bank_ledgers,
         # Warehouse
         current_stock_value=current_stock_value,
         low_stock_alerts=low_stock_alerts[:5],

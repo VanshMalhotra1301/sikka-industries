@@ -206,6 +206,63 @@ def add_cash():
 
     return redirect(request.referrer or url_for('dashboard.index'))
 
+@accounting_bp.route('/add-bank', methods=['POST'])
+@login_required
+@roles_required(['Admin', 'Owner'])
+def add_bank():
+    """Inject extra bank balance into a specific Bank ledger via Owner's Equity."""
+    amount = float(request.form.get('amount') or 0.0)
+    narration = request.form.get('narration', '').strip()
+    bank_ledger_id = request.form.get('bank_ledger_id')
+    
+    if amount <= 0:
+        flash("Amount must be greater than zero.", "danger")
+        return redirect(request.referrer or url_for('dashboard.index'))
+        
+    if not bank_ledger_id:
+        flash("Please select a bank.", "danger")
+        return redirect(request.referrer or url_for('dashboard.index'))
+        
+    try:
+        bank_ledger = Ledger.query.get(bank_ledger_id)
+        if not bank_ledger:
+            flash("Invalid bank selected.", "danger")
+            return redirect(request.referrer or url_for('dashboard.index'))
+
+        # Find Owner's Equity Ledger
+        equity_group = AccountGroup.query.filter_by(name='Equity').first()
+        equity_ledger = Ledger.query.filter_by(name="Owner's Equity").first()
+        if not equity_ledger:
+            equity_ledger = Ledger(name="Owner's Equity", group_id=equity_group.id, is_system=True)
+            db.session.add(equity_ledger)
+            db.session.flush()
+
+        # Create Receipt Voucher
+        v_number = f"REC-BNK-{uuid.uuid4().hex[:6].upper()}"
+        voucher = Voucher(
+            voucher_type='Receipt',
+            voucher_number=v_number,
+            date=datetime.utcnow(),
+            narration=f"Bank balance injected: {narration}" if narration else "Bank balance injected",
+            created_by=current_user.id
+        )
+        db.session.add(voucher)
+        db.session.flush()
+
+        # Dr Bank
+        db.session.add(VoucherEntry(voucher_id=voucher.id, ledger_id=bank_ledger.id, entry_type='Dr', amount=amount))
+        # Cr Owner's Equity
+        db.session.add(VoucherEntry(voucher_id=voucher.id, ledger_id=equity_ledger.id, entry_type='Cr', amount=amount))
+
+        db.session.commit()
+        flash(f"Successfully added ₹{amount:,.2f} to {bank_ledger.name}.", "success")
+        
+    except Exception as e:
+        db.session.rollback()
+        flash(f"Failed to add bank balance: {str(e)}", "danger")
+
+    return redirect(request.referrer or url_for('dashboard.index'))
+
 @accounting_bp.route('/cash-flow', methods=['GET'])
 @login_required
 @roles_required(['Admin', 'Accountant', 'Owner'])
