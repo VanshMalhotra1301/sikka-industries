@@ -81,7 +81,7 @@ def create_app(config_name: str = None) -> Flask:
         return {
             'company_name': 'SIKKA GROUPS OF INDUSTRIES',
             'company_full': 'SIKKA GROUPS OF INDUSTRIES',
-            'industry_segment': 'Electric Motor Manufacturing',
+
             'current_year': datetime.utcnow().year,
         }
 

@@ -61,6 +61,7 @@
           <th>Code</th>
           <th>Product Name</th>
           <th>Category</th>
+          <th>Date Added</th>
           <th class="text-right">Purchase Cost</th>
           <th class="text-right">Selling Price</th>
           <th class="text-right">Stock Qty</th>
@@ -82,6 +83,7 @@
               <span class="badge badge-purple">Raw Material</span>
             {% endif %}
           </td>
+          <td class="td-muted">{{ p.created_at.strftime('%d %b %Y') }}</td>
           <td class="text-right td-muted">₹{{ "{:,.2f}".format(p.purchase_cost) }}</td>
           <td class="text-right">₹{{ "{:,.2f}".format(p.selling_price) }}</td>
           <td class="text-right">
@@ -111,7 +113,7 @@
           </td>
         </tr>
         {% else %}
-        <tr><td colspan="8">
+        <tr><td colspan="9">
           <div class="empty-state">
             <div class="empty-state-icon">📦</div>
             <h5>No products yet</h5>
