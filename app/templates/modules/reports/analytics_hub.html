@@ -1,123 +1,818 @@
 {% extends "base.html" %}
 {% block title %}Analytics Hub{% endblock %}
-{% block page_title %}Reports Hub{% endblock %}
-{% block page_subtitle %}Business intelligence — analytics, exports and performance metrics{% endblock %}
+{% block page_title %}Business Intelligence{% endblock %}
+{% block page_subtitle %}Executive-level analytics, trends & performance insights{% endblock %}
+
+{% block head %}
+<script src="https://cdn.jsdelivr.net/npm/apexcharts@3.49.0/dist/apexcharts.min.js"></script>
+<style>
+/* ── Analytics Hub Premium Styles ─────────────────────────────────────── */
+.analytics-hub { padding: 0; }
+
+/* Filter Bar */
+.filter-bar {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  padding: 14px 20px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  margin-bottom: 20px;
+  position: sticky; top: 0; z-index: 50;
+  backdrop-filter: blur(12px);
+}
+.filter-bar .filter-label {
+  font-size: 11px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.8px; color: var(--text-muted); margin-right: 4px;
+}
+.filter-btn {
+  padding: 6px 14px; border-radius: 8px; border: 1px solid var(--border);
+  background: transparent; color: var(--text-secondary);
+  font-size: 11px; font-weight: 600; cursor: pointer;
+  transition: all 0.2s ease;
+}
+.filter-btn:hover { border-color: var(--accent-blue); color: var(--accent-blue); }
+.filter-btn.active {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: #fff; border-color: transparent;
+  box-shadow: 0 2px 12px rgba(59,130,246,0.3);
+}
+.filter-custom { display: flex; align-items: center; gap: 6px; margin-left: auto; }
+.filter-custom input[type="date"] {
+  padding: 5px 10px; border-radius: 8px; border: 1px solid var(--border);
+  background: var(--bg-primary); color: var(--text-primary);
+  font-size: 11px; font-family: 'Inter', sans-serif;
+}
+.filter-custom .btn-apply {
+  padding: 6px 12px; border-radius: 8px; border: none;
+  background: var(--accent-green); color: #fff;
+  font-size: 11px; font-weight: 600; cursor: pointer;
+}
+
+/* Section Headers */
+.section-header {
+  display: flex; align-items: center; gap: 10px;
+  margin: 28px 0 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+}
+.section-header i {
+  font-size: 18px; padding: 8px;
+  border-radius: 10px;
+  background: rgba(59,130,246,0.1);
+  color: var(--accent-blue);
+}
+.section-header h3 {
+  font-size: 16px; font-weight: 700; color: var(--text-primary); margin: 0;
+}
+.section-header .section-badge {
+  font-size: 10px; padding: 3px 10px; border-radius: 20px;
+  background: rgba(59,130,246,0.1); color: var(--accent-blue);
+  font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;
+}
+
+/* KPI Widget Strip */
+.widget-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 12px; margin-bottom: 20px;
+}
+.widget-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 16px 18px;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.widget-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+}
+.widget-card::before {
+  content: '';
+  position: absolute; top: 0; left: 0;
+  width: 4px; height: 100%;
+  border-radius: 14px 0 0 14px;
+}
+.widget-card.w-green::before { background: linear-gradient(180deg, #10b981, #059669); }
+.widget-card.w-blue::before { background: linear-gradient(180deg, #3b82f6, #2563eb); }
+.widget-card.w-amber::before { background: linear-gradient(180deg, #f59e0b, #d97706); }
+.widget-card.w-red::before { background: linear-gradient(180deg, #ef4444, #dc2626); }
+.widget-card.w-purple::before { background: linear-gradient(180deg, #8b5cf6, #7c3aed); }
+.widget-card.w-cyan::before { background: linear-gradient(180deg, #06b6d4, #0891b2); }
+
+.widget-label {
+  font-size: 10px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.8px; color: var(--text-muted); margin-bottom: 6px;
+}
+.widget-value {
+  font-size: 22px; font-weight: 800; color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+.widget-sub {
+  font-size: 11px; color: var(--text-muted); margin-top: 4px;
+}
+.widget-icon {
+  position: absolute; top: 14px; right: 16px;
+  font-size: 20px; opacity: 0.15; color: var(--text-primary);
+}
+
+/* Chart Grid */
+.chart-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+.chart-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+.chart-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 18px;
+  transition: box-shadow 0.2s ease;
+}
+.chart-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+.chart-card.full-width { grid-column: 1 / -1; }
+.chart-title {
+  font-size: 13px; font-weight: 700; color: var(--text-primary);
+  margin-bottom: 12px;
+  display: flex; align-items: center; gap: 8px;
+}
+.chart-title i { font-size: 14px; color: var(--accent-blue); }
+
+/* Health Score */
+.health-ring {
+  width: 80px; height: 80px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 24px; font-weight: 800; color: var(--text-primary);
+  margin: 0 auto;
+}
+
+/* Low Stock Table */
+.alert-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.alert-table th {
+  text-align: left; padding: 8px 10px;
+  font-size: 10px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.5px;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border);
+}
+.alert-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-secondary);
+}
+.alert-table tr:last-child td { border-bottom: none; }
+
+/* Export Bar */
+.export-bar {
+  display: flex; gap: 10px; flex-wrap: wrap;
+  padding: 16px 20px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  margin-top: 24px;
+}
+.export-bar .export-label {
+  font-size: 12px; font-weight: 700; color: var(--text-primary);
+  display: flex; align-items: center; gap: 8px; margin-right: auto;
+}
+
+/* Loading */
+.analytics-loading {
+  display: flex; align-items: center; justify-content: center;
+  padding: 60px; color: var(--text-muted); font-size: 14px; gap: 10px;
+}
+.spinner {
+  width: 20px; height: 20px;
+  border: 3px solid var(--border);
+  border-top-color: var(--accent-blue);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* No Data */
+.no-data {
+  text-align: center; padding: 40px; color: var(--text-muted);
+  font-size: 13px;
+}
+.no-data i { font-size: 32px; display: block; margin-bottom: 10px; opacity: 0.3; }
+
+/* Responsive */
+@media (max-width: 900px) {
+  .chart-grid, .chart-grid-3 { grid-template-columns: 1fr; }
+  .widget-strip { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 600px) {
+  .widget-strip { grid-template-columns: 1fr; }
+  .filter-bar { flex-direction: column; align-items: stretch; }
+  .filter-custom { margin-left: 0; }
+}
+</style>
+{% endblock %}
 
 {% block content %}
+<div class="analytics-hub">
 
-<div class="page-header">
-  <div class="page-header-left">
-    <h2>Analytics Hub</h2>
-    <p>Executive-level performance metrics and data exports</p>
-  </div>
-  <div class="page-actions">
-    <a href="{{ url_for('reports.download_stock_excel') }}" class="btn btn-success">
-      <i class="bi bi-file-earmark-excel-fill"></i> Export Stock Excel
-    </a>
-    <a href="{{ url_for('reports.download_sales_pdf') }}" class="btn btn-danger">
-      <i class="bi bi-file-earmark-pdf-fill"></i> Export Sales PDF
-    </a>
-  </div>
-</div>
-
-<!-- KPI Cards -->
-<div class="stats-grid" style="grid-template-columns: repeat(4,1fr); margin-bottom:24px;">
-
-  <div class="stat-card stat-green">
-    <i class="bi bi-trophy-fill stat-icon"></i>
-    <div class="stat-label">Best Selling Motor</div>
-    <div style="font-size:15px; font-weight:700; color:var(--accent-green); margin:8px 0 4px;">{{ best_product }}</div>
-    <div class="stat-sub">{{ "{:,.0f}".format(best_volume) }} units dispatched</div>
-  </div>
-
-  <div class="stat-card stat-blue">
-    <i class="bi bi-person-fill-check stat-icon"></i>
-    <div class="stat-label">Top Revenue Customer</div>
-    <div style="font-size:15px; font-weight:700; color:var(--accent-blue); margin:8px 0 4px;">{{ top_customer }}</div>
-    <div class="stat-sub">₹{{ "{:,.0f}".format(top_billing) }} total billing</div>
-  </div>
-
-  <div class="stat-card stat-purple">
-    <i class="bi bi-box-seam-fill stat-icon"></i>
-    <div class="stat-label">Raw Material Lines</div>
-    <div class="stat-value text-purple" style="font-size:32px;">{{ total_raw }}</div>
-    <div class="stat-sub">SKUs in catalog</div>
-  </div>
-
-  <div class="stat-card {% if alarms > 0 %}stat-red{% else %}stat-green{% endif %}">
-    <i class="bi bi-exclamation-triangle-fill stat-icon"></i>
-    <div class="stat-label">Low Stock Alarms</div>
-    <div class="stat-value {% if alarms > 0 %}text-red{% else %}text-green{% endif %}" style="font-size:32px;">{{ alarms }}</div>
-    <div class="stat-sub">{% if alarms > 0 %}Items below threshold{% else %}All items healthy{% endif %}</div>
-  </div>
-
-</div>
-
-<!-- Quick Navigation -->
-<div class="grid-3">
-
-  <div class="card" style="cursor:pointer;" onclick="location.href='{{ url_for('sales.register') }}'">
-    <div class="card-body" style="text-align:center; padding:32px;">
-      <div style="font-size:40px; margin-bottom:12px;">🧾</div>
-      <div style="font-weight:700; font-size:14px; color:var(--text-primary);">Sales Register</div>
-      <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">View all issued invoices</div>
-    </div>
-  </div>
-
-  <div class="card" style="cursor:pointer;" onclick="location.href='{{ url_for('purchases.register') }}'">
-    <div class="card-body" style="text-align:center; padding:32px;">
-      <div style="font-size:40px; margin-bottom:12px;">📦</div>
-      <div style="font-weight:700; font-size:14px; color:var(--text-primary);">Purchase Register</div>
-      <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">View all procurement bills</div>
-    </div>
-  </div>
-
-  <div class="card" style="cursor:pointer;" onclick="location.href='{{ url_for('accounting.cash_flow_statement') }}'">
-    <div class="card-body" style="text-align:center; padding:32px;">
-      <div style="font-size:40px; margin-bottom:12px;">💰</div>
-      <div style="font-weight:700; font-size:14px; color:var(--text-primary);">Cash Flow</div>
-      <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">Inflow vs outflow analysis</div>
-    </div>
-  </div>
-
-</div>
-
-<!-- Export Section -->
-<div class="card" style="margin-top:8px;">
-  <div class="card-header">
-    <div class="card-title"><i class="bi bi-download" style="color:var(--accent-amber);"></i> Export Data</div>
-  </div>
-  <div class="card-body">
-    <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
-
-      <div style="background:rgba(16,185,129,0.05);border:1px solid rgba(16,185,129,0.2);border-radius:12px;padding:20px;">
-        <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
-          <div style="font-size:28px;">📊</div>
-          <div>
-            <div style="font-weight:700;color:var(--text-primary);">Inventory Master — Excel</div>
-            <div style="font-size:11px;color:var(--text-muted);">Complete stock list with prices and valuation</div>
-          </div>
-        </div>
-        <a href="{{ url_for('reports.download_stock_excel') }}" class="btn btn-success btn-sm">
-          <i class="bi bi-file-earmark-excel-fill"></i> Download .xlsx
-        </a>
-      </div>
-
-      <div style="background:rgba(239,68,68,0.05);border:1px solid rgba(239,68,68,0.2);border-radius:12px;padding:20px;">
-        <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
-          <div style="font-size:28px;">📄</div>
-          <div>
-            <div style="font-weight:700;color:var(--text-primary);">Sales Summary — PDF</div>
-            <div style="font-size:11px;color:var(--text-muted);">Executive sales brief for management review</div>
-          </div>
-        </div>
-        <a href="{{ url_for('reports.download_sales_pdf') }}" class="btn btn-danger btn-sm">
-          <i class="bi bi-file-earmark-pdf-fill"></i> Download .pdf
-        </a>
-      </div>
-
-    </div>
+<!-- ═══════════════════ FILTER BAR ═══════════════════ -->
+<div class="filter-bar" id="filterBar">
+  <span class="filter-label"><i class="bi bi-funnel-fill"></i> Period</span>
+  <button class="filter-btn" data-range="today">Today</button>
+  <button class="filter-btn" data-range="week">This Week</button>
+  <button class="filter-btn" data-range="month">This Month</button>
+  <button class="filter-btn" data-range="quarter">This Quarter</button>
+  <button class="filter-btn active" data-range="year">This Year</button>
+  <button class="filter-btn" data-range="all">All Time</button>
+  <div class="filter-custom">
+    <input type="date" id="filterStart">
+    <span style="color:var(--text-muted);font-size:11px;">to</span>
+    <input type="date" id="filterEnd">
+    <button class="btn-apply" onclick="applyCustomRange()">Apply</button>
   </div>
 </div>
 
+<!-- ═══════════════════ LOADING INDICATOR ═══════════════════ -->
+<div class="analytics-loading" id="analyticsLoading">
+  <div class="spinner"></div>
+  <span>Loading analytics data…</span>
+</div>
+
+<!-- ═══════════════════ MAIN CONTENT (hidden until loaded) ═══════════════════ -->
+<div id="analyticsContent" style="display:none;">
+
+<!-- ── KPI WIDGETS ── -->
+<div class="widget-strip" id="widgetStrip">
+  <div class="widget-card w-green">
+    <div class="widget-label">Total Revenue</div>
+    <div class="widget-value" id="wTotalSales">₹0</div>
+    <div class="widget-sub">Period sales</div>
+    <i class="bi bi-graph-up-arrow widget-icon"></i>
+  </div>
+  <div class="widget-card w-amber">
+    <div class="widget-label">Total Purchases</div>
+    <div class="widget-value" id="wTotalPurchases">₹0</div>
+    <div class="widget-sub">Raw materials</div>
+    <i class="bi bi-cart-check widget-icon"></i>
+  </div>
+  <div class="widget-card w-red">
+    <div class="widget-label">Total Expenses</div>
+    <div class="widget-value" id="wTotalExpenses">₹0</div>
+    <div class="widget-sub">Overhead & operations</div>
+    <i class="bi bi-arrow-down-circle widget-icon"></i>
+  </div>
+  <div class="widget-card w-blue">
+    <div class="widget-label">Gross Profit</div>
+    <div class="widget-value" id="wGrossProfit">₹0</div>
+    <div class="widget-sub">Sales − COGS</div>
+    <i class="bi bi-currency-rupee widget-icon"></i>
+  </div>
+  <div class="widget-card w-cyan">
+    <div class="widget-label">Receivables</div>
+    <div class="widget-value" id="wReceivables">₹0</div>
+    <div class="widget-sub">Outstanding from customers</div>
+    <i class="bi bi-hourglass-split widget-icon"></i>
+  </div>
+  <div class="widget-card w-purple">
+    <div class="widget-label">Payables</div>
+    <div class="widget-value" id="wPayables">₹0</div>
+    <div class="widget-sub">Due to suppliers</div>
+    <i class="bi bi-receipt widget-icon"></i>
+  </div>
+</div>
+
+<!-- ── BI INTELLIGENCE CARDS ── -->
+<div class="widget-strip" id="biCards" style="grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));">
+  <div class="widget-card w-green">
+    <div class="widget-label">Top Product</div>
+    <div class="widget-value" style="font-size:14px;" id="biTopProduct">—</div>
+    <div class="widget-sub" id="biTopProductVal">₹0 revenue</div>
+    <i class="bi bi-trophy widget-icon"></i>
+  </div>
+  <div class="widget-card w-blue">
+    <div class="widget-label">Top Customer</div>
+    <div class="widget-value" style="font-size:14px;" id="biTopCustomer">—</div>
+    <div class="widget-sub" id="biTopCustomerVal">₹0 billing</div>
+    <i class="bi bi-person-check widget-icon"></i>
+  </div>
+  <div class="widget-card w-amber">
+    <div class="widget-label">Top Supplier</div>
+    <div class="widget-value" style="font-size:14px;" id="biTopSupplier">—</div>
+    <div class="widget-sub" id="biTopSupplierVal">₹0 sourced</div>
+    <i class="bi bi-truck widget-icon"></i>
+  </div>
+  <div class="widget-card w-purple">
+    <div class="widget-label">Most Profitable</div>
+    <div class="widget-value" style="font-size:14px;" id="biMostProfitable">—</div>
+    <div class="widget-sub" id="biMostProfitableVal">₹0 profit</div>
+    <i class="bi bi-lightning widget-icon"></i>
+  </div>
+  <div class="widget-card w-cyan">
+    <div class="widget-label">Stock Value</div>
+    <div class="widget-value" style="font-size:16px;" id="biStockValue">₹0</div>
+    <div class="widget-sub">Current inventory valuation</div>
+    <i class="bi bi-boxes widget-icon"></i>
+  </div>
+  <div class="widget-card w-green" style="text-align:center;">
+    <div class="widget-label">Health Score</div>
+    <div class="health-ring" id="biHealthRing" style="margin-top:4px;">—</div>
+    <div class="widget-sub" style="margin-top:4px;" id="biHealthLabel">Calculating…</div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+<!-- FINANCIAL ANALYTICS -->
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+<div class="section-header">
+  <i class="bi bi-bar-chart-line-fill"></i>
+  <h3>Financial Analytics</h3>
+  <span class="section-badge">Core Metrics</span>
+</div>
+<div class="chart-grid">
+  <div class="chart-card">
+    <div class="chart-title"><i class="bi bi-graph-up"></i> Revenue Trend</div>
+    <div id="chartRevenue"></div>
+  </div>
+  <div class="chart-card">
+    <div class="chart-title"><i class="bi bi-cash-stack"></i> Gross Profit Trend</div>
+    <div id="chartProfit"></div>
+  </div>
+  <div class="chart-card">
+    <div class="chart-title"><i class="bi bi-arrow-down-circle"></i> Expense Trend</div>
+    <div id="chartExpenses"></div>
+  </div>
+  <div class="chart-card">
+    <div class="chart-title"><i class="bi bi-cart-check"></i> Purchase Trend</div>
+    <div id="chartPurchasesTrend"></div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+<!-- CASH FLOW ANALYTICS -->
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+<div class="section-header">
+  <i class="bi bi-wallet2" style="background:rgba(6,182,212,0.1);color:var(--accent-cyan);"></i>
+  <h3>Cash Flow Analytics</h3>
+  <span class="section-badge" style="background:rgba(6,182,212,0.1);color:var(--accent-cyan);">Liquidity</span>
+</div>
+<div class="chart-grid">
+  <div class="chart-card full-width">
+    <div class="chart-title"><i class="bi bi-arrow-left-right"></i> Cash Inflow vs Outflow</div>
+    <div id="chartCashflow"></div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+<!-- SALES ANALYTICS -->
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+<div class="section-header">
+  <i class="bi bi-bag-check-fill" style="background:rgba(16,185,129,0.1);color:var(--accent-green);"></i>
+  <h3>Sales Analytics</h3>
+  <span class="section-badge" style="background:rgba(16,185,129,0.1);color:var(--accent-green);">Revenue</span>
+</div>
+<div class="chart-grid">
+  <div class="chart-card full-width">
+    <div class="chart-title"><i class="bi bi-bar-chart"></i> Monthly Sales Trend</div>
+    <div id="chartSalesMonthly"></div>
+  </div>
+  <div class="chart-card">
+    <div class="chart-title"><i class="bi bi-pie-chart"></i> Product-wise Revenue</div>
+    <div id="chartProductRev"></div>
+  </div>
+  <div class="chart-card">
+    <div class="chart-title"><i class="bi bi-people"></i> Top Customers</div>
+    <div id="chartCustomerRev"></div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+<!-- PURCHASE ANALYTICS -->
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+<div class="section-header">
+  <i class="bi bi-truck" style="background:rgba(245,158,11,0.1);color:var(--accent-amber);"></i>
+  <h3>Purchase Analytics</h3>
+  <span class="section-badge" style="background:rgba(245,158,11,0.1);color:var(--accent-amber);">Procurement</span>
+</div>
+<div class="chart-grid">
+  <div class="chart-card">
+    <div class="chart-title"><i class="bi bi-bar-chart"></i> Monthly Purchase Trend</div>
+    <div id="chartPurchasesMonthly"></div>
+  </div>
+  <div class="chart-card">
+    <div class="chart-title"><i class="bi bi-pie-chart"></i> Supplier Contribution</div>
+    <div id="chartSupplierContrib"></div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+<!-- INVENTORY ANALYTICS -->
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+<div class="section-header">
+  <i class="bi bi-boxes" style="background:rgba(139,92,246,0.1);color:var(--accent-purple);"></i>
+  <h3>Inventory Analytics</h3>
+  <span class="section-badge" style="background:rgba(139,92,246,0.1);color:var(--accent-purple);">Warehouse</span>
+</div>
+<div class="chart-grid-3">
+  <div class="chart-card">
+    <div class="chart-title"><i class="bi bi-pie-chart-fill"></i> Stock Value Distribution</div>
+    <div id="chartStockDist"></div>
+  </div>
+  <div class="chart-card">
+    <div class="chart-title"><i class="bi bi-lightning-fill"></i> Fast Moving Products</div>
+    <div id="chartFastMovers"></div>
+  </div>
+  <div class="chart-card">
+    <div class="chart-title"><i class="bi bi-clock-history"></i> Dead / Slow Stock</div>
+    <div id="chartSlowMovers"></div>
+  </div>
+</div>
+<div class="chart-grid" style="margin-top:16px;">
+  <div class="chart-card full-width">
+    <div class="chart-title"><i class="bi bi-exclamation-triangle-fill" style="color:var(--accent-red);"></i> Low Stock Alerts</div>
+    <div id="lowStockTable"></div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+<!-- MANUFACTURING ANALYTICS -->
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+<div class="section-header">
+  <i class="bi bi-gear-wide-connected" style="background:rgba(249,115,22,0.1);color:#f97316;"></i>
+  <h3>Manufacturing Analytics</h3>
+  <span class="section-badge" style="background:rgba(249,115,22,0.1);color:#f97316;">Production</span>
+</div>
+<div class="chart-grid">
+  <div class="chart-card">
+    <div class="chart-title"><i class="bi bi-graph-up-arrow"></i> Production Trend</div>
+    <div id="chartProduction"></div>
+  </div>
+  <div class="chart-card">
+    <div class="chart-title"><i class="bi bi-bar-chart-steps"></i> Top Produced Products</div>
+    <div id="chartTopProduced"></div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+<!-- EXPORT BAR -->
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+<div class="export-bar">
+  <div class="export-label"><i class="bi bi-download"></i> Export Data</div>
+  <a href="{{ url_for('reports.download_stock_excel') }}" class="btn btn-success btn-sm">
+    <i class="bi bi-file-earmark-excel-fill"></i> Inventory Excel
+  </a>
+  <a href="{{ url_for('reports.download_sales_pdf') }}" class="btn btn-danger btn-sm">
+    <i class="bi bi-file-earmark-pdf-fill"></i> Sales PDF
+  </a>
+</div>
+
+</div><!-- /analyticsContent -->
+</div><!-- /analytics-hub -->
+
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+<!-- JAVASCRIPT -->
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+<script>
+const API_URL = "{{ url_for('reports.analytics_data') }}";
+const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+
+// Chart theme
+const THEME = {
+  bg: 'transparent',
+  text: isLight ? '#475569' : '#94a3b8',
+  grid: isLight ? 'rgba(15,23,42,0.06)' : 'rgba(255,255,255,0.04)',
+  tooltip_bg: isLight ? '#ffffff' : '#0f1929',
+  tooltip_border: isLight ? '#e2e8f0' : 'rgba(255,255,255,0.1)',
+};
+const COLORS = {
+  green: '#10b981', blue: '#3b82f6', amber: '#f59e0b',
+  red: '#ef4444', purple: '#8b5cf6', cyan: '#06b6d4',
+  orange: '#f97316', pink: '#ec4899', indigo: '#6366f1',
+  teal: '#14b8a6',
+};
+const PALETTE = [COLORS.blue, COLORS.green, COLORS.amber, COLORS.red, COLORS.purple, COLORS.cyan, COLORS.orange, COLORS.pink, COLORS.indigo, COLORS.teal];
+
+// Formatter
+function fmt(n) {
+  if (n === undefined || n === null) return '₹0';
+  if (Math.abs(n) >= 10000000) return '₹' + (n/10000000).toFixed(2) + ' Cr';
+  if (Math.abs(n) >= 100000) return '₹' + (n/100000).toFixed(2) + ' L';
+  if (Math.abs(n) >= 1000) return '₹' + (n/1000).toFixed(1) + 'K';
+  return '₹' + n.toLocaleString('en-IN', {maximumFractionDigits:0});
+}
+function fmtFull(n) {
+  return '₹' + (n||0).toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+
+// Store chart instances for cleanup
+let charts = {};
+function destroyCharts() {
+  Object.values(charts).forEach(c => { try { c.destroy(); } catch(e){} });
+  charts = {};
+}
+
+// ── DEFAULT CHART OPTIONS ──
+function lineOpts(id, title, labels, series, colors) {
+  return {
+    chart: { type: 'area', height: 280, background: THEME.bg, toolbar: { show: true, tools: { download: true, zoom: true, pan: true } },
+      animations: { enabled: true, easing: 'easeinout', speed: 600 },
+      fontFamily: 'Inter, sans-serif',
+    },
+    series: series,
+    xaxis: { categories: labels, labels: { style: { colors: THEME.text, fontSize: '10px' } }, axisBorder: { show: false } },
+    yaxis: { labels: { formatter: v => fmt(v), style: { colors: THEME.text, fontSize: '10px' } } },
+    grid: { borderColor: THEME.grid, strokeDashArray: 3 },
+    colors: colors || [COLORS.blue],
+    stroke: { curve: 'smooth', width: 2.5 },
+    fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.4, opacityTo: 0.05, stops: [0, 95] } },
+    dataLabels: { enabled: false },
+    tooltip: {
+      theme: isLight ? 'light' : 'dark',
+      y: { formatter: v => fmtFull(v) },
+      style: { fontSize: '11px' },
+    },
+    legend: { labels: { colors: THEME.text }, fontSize: '11px', position: 'top' },
+  };
+}
+
+function barOpts(id, labels, data, color, horizontal) {
+  return {
+    chart: { type: 'bar', height: horizontal ? Math.max(200, labels.length * 32) : 280, background: THEME.bg,
+      toolbar: { show: true }, fontFamily: 'Inter, sans-serif',
+      animations: { enabled: true, easing: 'easeinout', speed: 500 },
+    },
+    series: [{ name: 'Value', data: data }],
+    xaxis: { categories: labels, labels: { style: { colors: THEME.text, fontSize: '10px' } } },
+    yaxis: { labels: { formatter: v => typeof v === 'number' ? fmt(v) : v, style: { colors: THEME.text, fontSize: '10px' } } },
+    plotOptions: { bar: { horizontal: !!horizontal, borderRadius: 6, columnWidth: '55%', barHeight: '60%',
+      distributed: !horizontal,
+    }},
+    colors: Array.isArray(color) ? color : PALETTE,
+    grid: { borderColor: THEME.grid, strokeDashArray: 3 },
+    dataLabels: { enabled: false },
+    tooltip: { theme: isLight ? 'light' : 'dark', y: { formatter: v => fmtFull(v) }, style: { fontSize: '11px' } },
+    legend: { show: false },
+  };
+}
+
+function donutOpts(id, labels, data, colors) {
+  return {
+    chart: { type: 'donut', height: 300, background: THEME.bg, fontFamily: 'Inter, sans-serif',
+      animations: { enabled: true, easing: 'easeinout', speed: 600 },
+    },
+    series: data,
+    labels: labels,
+    colors: colors || PALETTE,
+    stroke: { width: 2, colors: [isLight ? '#fff' : '#0a0f1e'] },
+    dataLabels: { enabled: true, style: { fontSize: '11px', fontWeight: 600 }, dropShadow: { enabled: false } },
+    tooltip: { theme: isLight ? 'light' : 'dark', y: { formatter: v => fmtFull(v) }, style: { fontSize: '11px' } },
+    legend: { position: 'bottom', labels: { colors: THEME.text }, fontSize: '11px' },
+    plotOptions: { pie: { donut: { size: '60%', labels: { show: true, total: { show: true, label: 'Total', formatter: w => fmt(w.globals.seriesTotals.reduce((a,b) => a+b, 0)) },
+      value: { formatter: v => fmtFull(parseFloat(v)) }
+    }}}}
+  };
+}
+
+// ── RENDER ALL CHARTS ──
+function renderDashboard(d) {
+  destroyCharts();
+
+  // Widgets
+  document.getElementById('wTotalSales').textContent = fmtFull(d.widgets.total_sales);
+  document.getElementById('wTotalPurchases').textContent = fmtFull(d.widgets.total_purchases);
+  document.getElementById('wTotalExpenses').textContent = fmtFull(d.widgets.total_expenses);
+  document.getElementById('wGrossProfit').textContent = fmtFull(d.widgets.gross_profit);
+  document.getElementById('wReceivables').textContent = fmtFull(d.widgets.receivables);
+  document.getElementById('wPayables').textContent = fmtFull(d.widgets.payables);
+
+  // BI Cards
+  document.getElementById('biTopProduct').textContent = d.widgets.top_product.name;
+  document.getElementById('biTopProductVal').textContent = fmtFull(d.widgets.top_product.value) + ' revenue';
+  document.getElementById('biTopCustomer').textContent = d.widgets.top_customer.name;
+  document.getElementById('biTopCustomerVal').textContent = fmtFull(d.widgets.top_customer.value) + ' billing';
+  document.getElementById('biTopSupplier').textContent = d.widgets.top_supplier.name;
+  document.getElementById('biTopSupplierVal').textContent = fmtFull(d.widgets.top_supplier.value) + ' sourced';
+  document.getElementById('biMostProfitable').textContent = d.widgets.most_profitable.name;
+  document.getElementById('biMostProfitableVal').textContent = fmtFull(d.widgets.most_profitable.value) + ' profit';
+  document.getElementById('biStockValue').textContent = fmtFull(d.widgets.stock_value);
+
+  // Health Score
+  const hs = d.widgets.health_score;
+  const hsColor = hs >= 70 ? COLORS.green : hs >= 40 ? COLORS.amber : COLORS.red;
+  const hsLabel = hs >= 70 ? 'Healthy' : hs >= 40 ? 'Moderate' : 'Needs Attention';
+  document.getElementById('biHealthRing').textContent = hs;
+  document.getElementById('biHealthRing').style.background = `conic-gradient(${hsColor} ${hs*3.6}deg, ${THEME.grid} 0deg)`;
+  document.getElementById('biHealthLabel').textContent = hsLabel;
+
+  // ── FINANCIAL ──
+  charts.revenue = new ApexCharts(document.getElementById('chartRevenue'), lineOpts('rev', 'Revenue', d.financial.labels,
+    [{ name: 'Revenue', data: d.financial.revenue }], [COLORS.green]));
+  charts.revenue.render();
+
+  charts.profit = new ApexCharts(document.getElementById('chartProfit'), lineOpts('prof', 'Profit', d.financial.labels,
+    [{ name: 'Gross Profit', data: d.financial.profit }], [COLORS.blue]));
+  charts.profit.render();
+
+  charts.expenses = new ApexCharts(document.getElementById('chartExpenses'), lineOpts('exp', 'Expenses', d.financial.labels,
+    [{ name: 'Expenses', data: d.financial.expenses }], [COLORS.red]));
+  charts.expenses.render();
+
+  charts.purchasesTrend = new ApexCharts(document.getElementById('chartPurchasesTrend'), lineOpts('ptrend', 'Purchases', d.financial.labels,
+    [{ name: 'Purchases', data: d.financial.purchases }], [COLORS.amber]));
+  charts.purchasesTrend.render();
+
+  // ── CASH FLOW ──
+  charts.cashflow = new ApexCharts(document.getElementById('chartCashflow'), {
+    ...lineOpts('cf', 'Cash Flow', d.cashflow.labels, [
+      { name: 'Inflow', data: d.cashflow.inflow },
+      { name: 'Outflow', data: d.cashflow.outflow },
+      { name: 'Net', data: d.cashflow.net },
+    ], [COLORS.green, COLORS.red, COLORS.blue]),
+    chart: { ...lineOpts('cf', '', [], [], []).chart, height: 320 },
+  });
+  charts.cashflow.render();
+
+  // ── SALES ──
+  charts.salesMonthly = new ApexCharts(document.getElementById('chartSalesMonthly'), {
+    ...barOpts('sm', d.sales.labels, d.sales.monthly, COLORS.green),
+    plotOptions: { bar: { borderRadius: 6, columnWidth: '50%', distributed: false } },
+    colors: [COLORS.green],
+    chart: { ...barOpts('sm', [], [], '').chart, height: 300 },
+  });
+  charts.salesMonthly.render();
+
+  if (d.sales.product_revenue.labels.length > 0) {
+    charts.productRev = new ApexCharts(document.getElementById('chartProductRev'),
+      donutOpts('pr', d.sales.product_revenue.labels, d.sales.product_revenue.values));
+    charts.productRev.render();
+  } else {
+    document.getElementById('chartProductRev').innerHTML = '<div class="no-data"><i class="bi bi-pie-chart"></i>No sales data yet</div>';
+  }
+
+  if (d.sales.customer_revenue.labels.length > 0) {
+    charts.customerRev = new ApexCharts(document.getElementById('chartCustomerRev'),
+      barOpts('cr', d.sales.customer_revenue.labels, d.sales.customer_revenue.values, PALETTE, true));
+    charts.customerRev.render();
+  } else {
+    document.getElementById('chartCustomerRev').innerHTML = '<div class="no-data"><i class="bi bi-people"></i>No customer data yet</div>';
+  }
+
+  // ── PURCHASES ──
+  charts.purchasesMonthly = new ApexCharts(document.getElementById('chartPurchasesMonthly'), {
+    ...barOpts('pm', d.purchases.labels, d.purchases.monthly, COLORS.amber),
+    plotOptions: { bar: { borderRadius: 6, columnWidth: '50%', distributed: false } },
+    colors: [COLORS.amber],
+  });
+  charts.purchasesMonthly.render();
+
+  if (d.purchases.supplier_contribution.labels.length > 0) {
+    charts.supplierContrib = new ApexCharts(document.getElementById('chartSupplierContrib'),
+      donutOpts('sc', d.purchases.supplier_contribution.labels, d.purchases.supplier_contribution.values));
+    charts.supplierContrib.render();
+  } else {
+    document.getElementById('chartSupplierContrib').innerHTML = '<div class="no-data"><i class="bi bi-truck"></i>No purchase data yet</div>';
+  }
+
+  // ── INVENTORY ──
+  charts.stockDist = new ApexCharts(document.getElementById('chartStockDist'),
+    donutOpts('sd', d.inventory.category_distribution.labels, d.inventory.category_distribution.values, [COLORS.blue, COLORS.purple]));
+  charts.stockDist.render();
+
+  if (d.inventory.fast_movers.labels.length > 0) {
+    charts.fastMovers = new ApexCharts(document.getElementById('chartFastMovers'),
+      barOpts('fm', d.inventory.fast_movers.labels, d.inventory.fast_movers.values, PALETTE, true));
+    charts.fastMovers.render();
+  } else {
+    document.getElementById('chartFastMovers').innerHTML = '<div class="no-data"><i class="bi bi-lightning"></i>No sales movement yet</div>';
+  }
+
+  if (d.inventory.slow_movers.labels.length > 0) {
+    charts.slowMovers = new ApexCharts(document.getElementById('chartSlowMovers'),
+      barOpts('slm', d.inventory.slow_movers.labels, d.inventory.slow_movers.values, [COLORS.red], true));
+    charts.slowMovers.render();
+  } else {
+    document.getElementById('chartSlowMovers').innerHTML = '<div class="no-data"><i class="bi bi-clock-history"></i>No dead stock detected</div>';
+  }
+
+  // Low stock table
+  const ls = d.inventory.low_stock;
+  if (ls.length > 0) {
+    let html = '<table class="alert-table"><thead><tr><th>Code</th><th>Product</th><th>Current Qty</th><th>Threshold</th><th>Status</th></tr></thead><tbody>';
+    ls.forEach(item => {
+      const pct = item.threshold > 0 ? Math.round((item.qty / item.threshold) * 100) : 0;
+      const color = pct <= 25 ? COLORS.red : pct <= 60 ? COLORS.amber : COLORS.green;
+      html += `<tr><td style="font-weight:600;">${item.code}</td><td>${item.name}</td><td style="font-weight:700;color:${color};">${item.qty}</td><td>${item.threshold}</td><td><span style="background:${color}22;color:${color};padding:2px 8px;border-radius:6px;font-size:10px;font-weight:600;">${pct <= 25 ? 'CRITICAL' : pct <= 60 ? 'LOW' : 'OK'}</span></td></tr>`;
+    });
+    html += '</tbody></table>';
+    document.getElementById('lowStockTable').innerHTML = html;
+  } else {
+    document.getElementById('lowStockTable').innerHTML = '<div class="no-data"><i class="bi bi-check-circle"></i>All stock levels healthy</div>';
+  }
+
+  // ── MANUFACTURING ──
+  charts.production = new ApexCharts(document.getElementById('chartProduction'), lineOpts('prod', 'Production', d.manufacturing.labels,
+    [{ name: 'Units Produced', data: d.manufacturing.production },
+     { name: 'RM Consumed', data: d.manufacturing.consumption }],
+    [COLORS.green, COLORS.orange]));
+  charts.production.render();
+
+  if (d.manufacturing.top_produced.labels.length > 0) {
+    charts.topProduced = new ApexCharts(document.getElementById('chartTopProduced'),
+      barOpts('tp', d.manufacturing.top_produced.labels, d.manufacturing.top_produced.values, PALETTE, true));
+    charts.topProduced.render();
+  } else {
+    document.getElementById('chartTopProduced').innerHTML = '<div class="no-data"><i class="bi bi-gear"></i>No production data yet</div>';
+  }
+}
+
+// ── DATE RANGE LOGIC ──
+function getDateRange(range) {
+  const today = new Date();
+  const y = today.getFullYear(), m = today.getMonth(), d = today.getDate();
+  let start, end = today;
+
+  switch(range) {
+    case 'today': start = today; break;
+    case 'week': start = new Date(y, m, d - today.getDay()); break;
+    case 'month': start = new Date(y, m, 1); break;
+    case 'quarter':
+      const qm = m - (m % 3);
+      start = new Date(y, qm, 1); break;
+    case 'year': start = new Date(y, 0, 1); break;
+    case 'all': start = new Date(2020, 0, 1); break;
+    default: start = new Date(y, 0, 1);
+  }
+  return {
+    start: start.toISOString().split('T')[0],
+    end: end.toISOString().split('T')[0]
+  };
+}
+
+function loadData(startDate, endDate) {
+  document.getElementById('analyticsLoading').style.display = 'flex';
+  document.getElementById('analyticsContent').style.display = 'none';
+
+  const url = `${API_URL}?start=${startDate}&end=${endDate}`;
+  fetch(url)
+    .then(r => r.json())
+    .then(data => {
+      document.getElementById('analyticsLoading').style.display = 'none';
+      document.getElementById('analyticsContent').style.display = 'block';
+      if (data.error) {
+        console.error('Analytics error:', data.error);
+        return;
+      }
+      renderDashboard(data);
+    })
+    .catch(err => {
+      document.getElementById('analyticsLoading').style.display = 'none';
+      document.getElementById('analyticsContent').style.display = 'block';
+      console.error('Fetch error:', err);
+    });
+}
+
+// ── FILTER BUTTONS ──
+document.querySelectorAll('.filter-btn[data-range]').forEach(btn => {
+  btn.addEventListener('click', function() {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    this.classList.add('active');
+    const range = getDateRange(this.dataset.range);
+    document.getElementById('filterStart').value = range.start;
+    document.getElementById('filterEnd').value = range.end;
+    loadData(range.start, range.end);
+  });
+});
+
+function applyCustomRange() {
+  const start = document.getElementById('filterStart').value;
+  const end = document.getElementById('filterEnd').value;
+  if (start && end) {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    loadData(start, end);
+  }
+}
+
+// ── INITIAL LOAD ──
+(function() {
+  const range = getDateRange('year');
+  document.getElementById('filterStart').value = range.start;
+  document.getElementById('filterEnd').value = range.end;
+  loadData(range.start, range.end);
+})();
+
+// ── THEME SYNC ──
+document.addEventListener('themeChanged', function(e) {
+  const range = getDateRange(document.querySelector('.filter-btn.active')?.dataset?.range || 'year');
+  loadData(range.start, range.end);
+});
+</script>
 {% endblock %}
