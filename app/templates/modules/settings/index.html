@@ -29,7 +29,7 @@
                         <label>Confirm Admin Password *</label>
                         <input type="password" name="password" required placeholder="Enter your password to confirm">
                     </div>
-                    <button type="submit" class="btn btn-red w-full">
+                    <button type="submit" class="btn btn-danger w-full">
                         <i class="bi bi-trash-fill"></i> WIPE DATABASE
                     </button>
                 </form>
@@ -45,8 +45,8 @@
                 </div>
             </div>
             <div class="card-body">
-                <p><strong>Environment:</strong> Development</p>
-                <p><strong>Database:</strong> SQLite Local</p>
+                <p><strong>Environment:</strong> {{ env_display }}</p>
+                <p><strong>Database:</strong> {{ db_display }}</p>
                 <p><strong>Version:</strong> v1.0.0 (Tally Prime Architecture)</p>
             </div>
         </div>
