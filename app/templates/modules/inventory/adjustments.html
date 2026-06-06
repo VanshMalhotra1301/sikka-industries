@@ -11,7 +11,7 @@
     <p>Correct inventory discrepancies — all changes are audit logged</p>
   </div>
   <div class="page-actions">
-    <a href="{{ url_for('inventory.list_products') }}" class="btn btn-ghost">
+    <a href="{{ url_for('inventory.raw_materials') }}" class="btn btn-ghost">
       <i class="bi bi-arrow-left"></i> Back to Inventory
     </a>
   </div>
@@ -55,7 +55,7 @@
           <button type="submit" class="btn btn-amber">
             <i class="bi bi-check-circle-fill"></i> Apply Adjustment
           </button>
-          <a href="{{ url_for('inventory.list_products') }}" class="btn btn-ghost">Cancel</a>
+          <a href="{{ url_for('inventory.raw_materials') }}" class="btn btn-ghost">Cancel</a>
         </div>
 
       </form>
