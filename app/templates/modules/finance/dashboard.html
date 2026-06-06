@@ -6,439 +6,114 @@
 {% block head %}
 <script src="https://cdn.jsdelivr.net/npm/apexcharts@3.49.0/dist/apexcharts.min.js"></script>
 <style>
-  /* ── Enterprise Premium Finance Hub Styles ─────────────────────────── */
-  :root {
-    --f-bg: var(--bg-primary, #f8fafc);
-    --f-card: var(--card-bg, #ffffff);
-    --f-border: var(--border, #e2e8f0);
-    --f-text-main: var(--text-primary, #0f172a);
-    --f-text-mut: var(--text-muted, #64748b);
-    --f-accent: #3b82f6;
-    
-    --color-green: #10b981;
-    --color-red: #ef4444;
-    --color-amber: #f59e0b;
-    --color-blue: #3b82f6;
-    --color-purple: #8b5cf6;
-    --color-cyan: #06b6d4;
-  }
-  
-  html[data-theme='dark'] {
-    --f-bg: #0f172a;
-    --f-card: #1e293b;
-    --f-border: #334155;
-    --f-text-main: #f8fafc;
-    --f-text-mut: #94a3b8;
-  }
+/* ── Finance Hub Premium Styles ─────────────────────────────────────── */
+.finance-hub { padding: 0; }
 
-  .finance-hub {
-    padding: 0;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-  }
+/* Filter Bar & Tabs */
+.finance-header {
+  position: sticky; top: 0; z-index: 50;
+  background: var(--bg-primary);
+  padding: 10px 0 20px 0;
+}
+.filter-bar {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  padding: 14px 20px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  margin-bottom: 16px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+}
+.filter-bar .filter-label {
+  font-size: 11px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.8px; color: var(--text-muted); margin-right: 4px;
+}
+.filter-btn {
+  padding: 6px 14px; border-radius: 8px; border: 1px solid var(--border);
+  background: transparent; color: var(--text-secondary);
+  font-size: 11px; font-weight: 600; cursor: pointer; transition: all 0.2s ease;
+}
+.filter-btn:hover { border-color: var(--accent-blue); color: var(--accent-blue); }
+.filter-btn.active {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: #fff; border-color: transparent; box-shadow: 0 2px 12px rgba(59,130,246,0.3);
+}
+.filter-custom { display: flex; align-items: center; gap: 6px; }
+.filter-custom input[type="date"] {
+  padding: 5px 10px; border-radius: 8px; border: 1px solid var(--border);
+  background: var(--bg-primary); color: var(--text-primary);
+  font-size: 11px; font-family: 'Inter', sans-serif;
+}
+.filter-custom .btn-apply {
+  padding: 6px 12px; border-radius: 8px; border: none;
+  background: var(--accent-green); color: #fff;
+  font-size: 11px; font-weight: 600; cursor: pointer;
+}
 
-  /* Sticky Header & Filters */
-  .finance-header {
-    position: sticky;
-    top: 0;
-    z-index: 50;
-    background: var(--f-bg);
-    padding: 10px 0 20px 0;
-  }
+.finance-tabs {
+  display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px;
+}
+.finance-tabs::-webkit-scrollbar { height: 4px; }
+.finance-tabs::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+.tab-btn {
+  padding: 10px 18px; border-radius: 10px; border: 1px solid var(--border);
+  background: var(--card-bg); color: var(--text-secondary);
+  font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap;
+  display: flex; align-items: center; gap: 8px; transition: all 0.2s ease;
+}
+.tab-btn:hover { background: var(--hover-bg); color: var(--text-primary); }
+.tab-btn.active {
+  background: rgba(59,130,246,0.1); color: var(--accent-blue); border-color: var(--accent-blue);
+}
 
-  .filter-bar {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    flex-wrap: wrap;
-    padding: 14px 20px;
-    background: var(--f-card);
-    border: 1px solid var(--f-border);
-    border-radius: 14px;
-    margin-bottom: 16px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
-  }
+/* KPI Widget Strip */
+.widget-strip {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 20px;
+}
+.widget-card {
+  background: var(--card-bg); border: 1px solid var(--border);
+  border-radius: 14px; padding: 16px 18px; position: relative; overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.widget-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.15); }
+.widget-card::before { content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 100%; border-radius: 14px 0 0 14px; }
+.widget-card.w-green::before { background: linear-gradient(180deg, #10b981, #059669); }
+.widget-card.w-blue::before { background: linear-gradient(180deg, #3b82f6, #2563eb); }
+.widget-card.w-amber::before { background: linear-gradient(180deg, #f59e0b, #d97706); }
+.widget-card.w-red::before { background: linear-gradient(180deg, #ef4444, #dc2626); }
+.widget-card.w-purple::before { background: linear-gradient(180deg, #8b5cf6, #7c3aed); }
+.widget-card.w-cyan::before { background: linear-gradient(180deg, #06b6d4, #0891b2); }
 
-  .filter-bar .filter-label {
-    font-size: 11px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.8px;
-    color: var(--f-text-mut);
-    margin-right: 4px;
-  }
+.widget-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-muted); margin-bottom: 6px; }
+.widget-value { font-size: 22px; font-weight: 800; color: var(--text-primary); font-variant-numeric: tabular-nums; }
+.widget-sub { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+.widget-icon { position: absolute; top: 14px; right: 16px; font-size: 20px; opacity: 0.15; color: var(--text-primary); }
 
-  .filter-btn {
-    padding: 8px 16px;
-    border-radius: 8px;
-    border: 1px solid var(--f-border);
-    background: transparent;
-    color: var(--f-text-mut);
-    font-size: 12px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s ease;
-  }
+/* Treasury Insights Panel */
+.insights-panel { display: flex; flex-direction: column; gap: 10px; margin-bottom: 24px; }
+.insight-item {
+  display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 10px; font-size: 13px; font-weight: 500; border-left: 4px solid transparent; background: var(--card-bg); border: 1px solid var(--border);
+}
 
-  .filter-btn:hover {
-    border-color: var(--f-accent);
-    color: var(--f-accent);
-  }
+/* Chart Grid */
+.chart-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 24px; }
+.chart-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; }
+.chart-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 14px; padding: 18px; }
+.chart-card.full-width { grid-column: 1 / -1; }
+.chart-title { font-size: 13px; font-weight: 700; color: var(--text-primary); margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
 
-  .filter-btn.active {
-    background: var(--f-accent);
-    color: #fff;
-    border-color: transparent;
-    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
-  }
+/* Loading */
+.analytics-loading { display: flex; align-items: center; justify-content: center; padding: 60px; color: var(--text-muted); font-size: 14px; gap: 10px; }
+.spinner { width: 20px; height: 20px; border: 3px solid var(--border); border-top-color: var(--accent-blue); border-radius: 50%; animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
 
-  .filter-custom {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
+.tab-content { display: none; }
+.tab-content.active { display: block; animation: fadeIn 0.3s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-  .filter-custom input[type="date"] {
-    padding: 7px 12px;
-    border-radius: 8px;
-    border: 1px solid var(--f-border);
-    background: var(--f-bg);
-    color: var(--f-text-main);
-    font-size: 12px;
-    font-family: 'Inter', sans-serif;
-  }
-
-  .filter-custom .btn-apply {
-    padding: 8px 16px;
-    border-radius: 8px;
-    border: none;
-    background: var(--color-green);
-    color: #fff;
-    font-size: 12px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background 0.2s;
-  }
-  .filter-custom .btn-apply:hover { background: #059669; }
-
-  /* Navigation Tabs */
-  .finance-tabs {
-    display: flex;
-    gap: 10px;
-    overflow-x: auto;
-    padding-bottom: 6px;
-  }
-
-  .finance-tabs::-webkit-scrollbar { height: 4px; }
-  .finance-tabs::-webkit-scrollbar-thumb { background: var(--f-border); border-radius: 4px; }
-
-  .tab-btn {
-    padding: 12px 20px;
-    border-radius: 10px;
-    border: 1px solid var(--f-border);
-    background: var(--f-card);
-    color: var(--f-text-mut);
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    white-space: nowrap;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    transition: all 0.2s ease;
-  }
-
-  .tab-btn:hover {
-    background: var(--f-bg);
-    color: var(--f-text-main);
-  }
-
-  .tab-btn.active {
-    background: rgba(59, 130, 246, 0.08);
-    color: var(--f-accent);
-    border-color: var(--f-accent);
-  }
-
-  /* ── Dashboard Layout Grids ── */
-  .dashboard-layout {
-    display: grid;
-    grid-template-columns: 1fr 340px;
-    gap: 24px;
-    align-items: start;
-  }
-  @media(max-width: 1200px) {
-    .dashboard-layout { grid-template-columns: 1fr; }
-  }
-
-  /* KPI Widget Cards (Premium) */
-  .kpi-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 16px;
-    margin-bottom: 24px;
-  }
-
-  .kpi-card {
-    background: var(--f-card);
-    border: 1px solid var(--f-border);
-    border-radius: 16px;
-    padding: 20px;
-    position: relative;
-    overflow: hidden;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-    display: flex;
-    flex-direction: column;
-  }
-
-  .kpi-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
-  }
-
-  /* Top border accent instead of left */
-  .kpi-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 4px;
-  }
-  .kpi-card.w-green::before { background: linear-gradient(90deg, #10b981, #059669); }
-  .kpi-card.w-blue::before { background: linear-gradient(90deg, #3b82f6, #2563eb); }
-  .kpi-card.w-amber::before { background: linear-gradient(90deg, #f59e0b, #d97706); }
-  .kpi-card.w-red::before { background: linear-gradient(90deg, #ef4444, #dc2626); }
-  .kpi-card.w-purple::before { background: linear-gradient(90deg, #8b5cf6, #7c3aed); }
-  .kpi-card.w-cyan::before { background: linear-gradient(90deg, #06b6d4, #0891b2); }
-
-  .kpi-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 12px;
-  }
-
-  .kpi-label {
-    font-size: 12px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    color: var(--f-text-mut);
-  }
-
-  .kpi-icon {
-    width: 32px;
-    height: 32px;
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 16px;
-  }
-  .w-green .kpi-icon { background: rgba(16, 185, 129, 0.1); color: #10b981; }
-  .w-blue .kpi-icon { background: rgba(59, 130, 246, 0.1); color: #3b82f6; }
-  .w-amber .kpi-icon { background: rgba(245, 158, 11, 0.1); color: #f59e0b; }
-  .w-red .kpi-icon { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
-  .w-purple .kpi-icon { background: rgba(139, 92, 246, 0.1); color: #8b5cf6; }
-  .w-cyan .kpi-icon { background: rgba(6, 182, 212, 0.1); color: #06b6d4; }
-
-  .kpi-body {
-    display: flex;
-    align-items: baseline;
-    gap: 12px;
-    margin-bottom: 8px;
-  }
-
-  .kpi-value {
-    font-size: 26px;
-    font-weight: 800;
-    color: var(--f-text-main);
-    font-variant-numeric: tabular-nums;
-  }
-
-  .kpi-trend {
-    font-size: 13px;
-    font-weight: 700;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    padding: 2px 6px;
-    border-radius: 6px;
-  }
-  .kpi-trend.positive { background: rgba(16, 185, 129, 0.1); color: #10b981; }
-  .kpi-trend.negative { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
-  .kpi-trend.neutral { background: rgba(100, 116, 139, 0.1); color: #64748b; }
-
-  .kpi-sparkline {
-    margin-top: auto;
-    height: 40px;
-    margin-left: -10px;
-    margin-right: -10px;
-    margin-bottom: -10px;
-  }
-
-  /* ── Charts Grid ── */
-  .chart-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 20px;
-    margin-bottom: 24px;
-  }
-  .chart-grid-3 {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 20px;
-    margin-bottom: 24px;
-  }
-  @media(max-width: 900px) {
-    .chart-grid, .chart-grid-3 { grid-template-columns: 1fr; }
-  }
-
-  .chart-card {
-    background: var(--f-card);
-    border: 1px solid var(--f-border);
-    border-radius: 16px;
-    padding: 20px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02);
-  }
-  .chart-card.full-width { grid-column: 1 / -1; }
-
-  .chart-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 16px;
-  }
-
-  .chart-title {
-    font-size: 15px;
-    font-weight: 700;
-    color: var(--f-text-main);
-  }
-
-  /* ── Sidebar Panels ── */
-  .side-panel {
-    background: var(--f-card);
-    border: 1px solid var(--f-border);
-    border-radius: 16px;
-    padding: 20px;
-    margin-bottom: 24px;
-  }
-
-  .panel-title {
-    font-size: 14px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    color: var(--f-text-mut);
-    margin-bottom: 16px;
-    padding-bottom: 12px;
-    border-bottom: 1px solid var(--f-border);
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-
-  .insight-list {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-  }
-
-  .insight-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-  .insight-item-left {
-    display: flex;
-    flex-direction: column;
-  }
-  .insight-item-label {
-    font-size: 12px;
-    color: var(--f-text-mut);
-    margin-bottom: 2px;
-  }
-  .insight-item-val {
-    font-size: 14px;
-    font-weight: 700;
-    color: var(--f-text-main);
-  }
-  .insight-icon {
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    background: var(--f-bg);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--f-accent);
-    font-size: 16px;
-  }
-
-  /* Activity List (Mocked for UI) */
-  .activity-list {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  }
-  .activity-item {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 10px;
-    border-radius: 10px;
-    background: var(--f-bg);
-    border: 1px solid transparent;
-    transition: border 0.2s;
-  }
-  .activity-item:hover {
-    border-color: var(--f-border);
-  }
-  .activity-icon {
-    width: 10px; height: 10px; border-radius: 50%;
-  }
-  .activity-icon.sale { background: var(--color-green); }
-  .activity-icon.purch { background: var(--color-red); }
-  .activity-icon.alert { background: var(--color-amber); }
-  
-  .activity-details { flex: 1; }
-  .activity-title { font-size: 13px; font-weight: 600; color: var(--f-text-main); }
-  .activity-time { font-size: 11px; color: var(--f-text-mut); }
-  .activity-amount { font-size: 13px; font-weight: 700; color: var(--f-text-main); }
-
-  /* Loading State */
-  .analytics-loading {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 100px 0;
-    color: var(--f-text-mut);
-    font-size: 15px;
-    gap: 16px;
-  }
-
-  .spinner {
-    width: 32px;
-    height: 32px;
-    border: 3px solid var(--f-border);
-    border-top-color: var(--f-accent);
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-  }
-
-  @keyframes spin { to { transform: rotate(360deg); } }
-
-  .tab-content { display: none; }
-  .tab-content.active {
-    display: block;
-    animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-  }
-
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
+/* Responsive */
+@media (max-width: 900px) { .chart-grid, .chart-grid-3 { grid-template-columns: 1fr; } .widget-strip { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 600px) { .widget-strip { grid-template-columns: 1fr; } .filter-bar { flex-direction: column; align-items: stretch; } }
 </style>
 {% endblock %}
 
@@ -456,12 +131,12 @@
       <button class="filter-btn" data-range="all">All Time</button>
       <div class="filter-custom" style="margin-left:auto;">
         <input type="date" id="filterStart">
-        <span style="color:var(--f-text-mut);font-size:12px;">to</span>
+        <span style="color:var(--text-muted);font-size:11px;">to</span>
         <input type="date" id="filterEnd">
-        <button class="btn-apply" onclick="applyCustomRange()">Apply Filter</button>
+        <button class="btn-apply" onclick="applyCustomRange()">Apply</button>
       </div>
     </div>
-
+    
     <div class="finance-tabs">
       <button class="tab-btn active" data-tab="executive"><i class="bi bi-briefcase-fill"></i> Executive</button>
       <button class="tab-btn" data-tab="profit"><i class="bi bi-lightning-charge-fill"></i> Profit Centre</button>
@@ -474,394 +149,110 @@
   </div>
 
   <div class="analytics-loading" id="analyticsLoading">
-    <div class="spinner"></div>
-    <span>Compiling Financial Intelligence...</span>
+    <div class="spinner"></div><span>Compiling intelligence...</span>
   </div>
 
   <div id="financeContent" style="display:none; padding-top: 10px;">
+  
+    <!-- Insights Panel (Global across all tabs) -->
+    <div class="insights-panel" id="insightsPanel"></div>
 
     <!-- ── 1. EXECUTIVE TAB ── -->
     <div class="tab-content active" id="tab-executive">
-      <div class="dashboard-layout">
-        
-        <!-- Main Area -->
-        <div class="main-area">
-          <div class="kpi-grid">
-            <!-- Revenue -->
-            <div class="kpi-card w-blue" title="Total Revenue for selected period">
-              <div class="kpi-header">
-                <span class="kpi-label">Total Revenue</span>
-                <div class="kpi-icon"><i class="bi bi-graph-up"></i></div>
-              </div>
-              <div class="kpi-body">
-                <div class="kpi-value" id="eRev">₹0</div>
-                <div class="kpi-trend neutral" id="eRevPct">-</div>
-              </div>
-              <div class="kpi-sparkline" id="sExecRev"></div>
-            </div>
-            
-            <!-- Expenses -->
-            <div class="kpi-card w-red" title="Total Expenses for selected period">
-              <div class="kpi-header">
-                <span class="kpi-label">Total Expenses</span>
-                <div class="kpi-icon"><i class="bi bi-graph-down"></i></div>
-              </div>
-              <div class="kpi-body">
-                <div class="kpi-value" id="eExp">₹0</div>
-                <div class="kpi-trend neutral" id="eExpPct">-</div>
-              </div>
-              <div class="kpi-sparkline" id="sExecExp"></div>
-            </div>
-
-            <!-- Gross Profit -->
-            <div class="kpi-card w-amber">
-              <div class="kpi-header">
-                <span class="kpi-label">Gross Profit</span>
-                <div class="kpi-icon"><i class="bi bi-wallet2"></i></div>
-              </div>
-              <div class="kpi-body">
-                <div class="kpi-value" id="eGP">₹0</div>
-                <div class="kpi-trend neutral" id="eGPPct">-</div>
-              </div>
-              <div class="kpi-sparkline" id="sExecGP"></div>
-            </div>
-
-            <!-- Net Profit -->
-            <div class="kpi-card w-green">
-              <div class="kpi-header">
-                <span class="kpi-label">Net Profit</span>
-                <div class="kpi-icon"><i class="bi bi-piggy-bank"></i></div>
-              </div>
-              <div class="kpi-body">
-                <div class="kpi-value" id="eNP">₹0</div>
-                <div class="kpi-trend neutral" id="eNPPct">-</div>
-              </div>
-              <div class="kpi-sparkline" id="sExecNP"></div>
-            </div>
-          </div>
-
-          <div class="chart-grid">
-            <div class="chart-card full-width">
-              <div class="chart-header">
-                <div class="chart-title">Revenue & Profit Trend</div>
-              </div>
-              <div id="cExecMain"></div>
-            </div>
-            <div class="chart-card">
-              <div class="chart-header">
-                <div class="chart-title">Expense Trend</div>
-              </div>
-              <div id="cExecExpTrend"></div>
-            </div>
-            <div class="chart-card">
-              <div class="chart-header">
-                <div class="chart-title">Working Capital vs Liquidity</div>
-              </div>
-              <div id="cExecLiquidity"></div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Sidebar Area -->
-        <div class="sidebar-area">
-          <!-- Executive Insights -->
-          <div class="side-panel">
-            <div class="panel-title"><i class="bi bi-stars"></i> Executive Insights</div>
-            <div class="insight-list">
-              <div class="insight-item">
-                <div class="insight-item-left">
-                  <span class="insight-item-label">Health Score</span>
-                  <span class="insight-item-val" id="iHealth">0/100</span>
-                </div>
-                <div class="insight-icon"><i class="bi bi-heart-pulse-fill"></i></div>
-              </div>
-              <div class="insight-item">
-                <div class="insight-item-left">
-                  <span class="insight-item-label">Top Customer</span>
-                  <span class="insight-item-val" id="iTopCust">-</span>
-                </div>
-                <div class="insight-icon"><i class="bi bi-person-badge-fill"></i></div>
-              </div>
-              <div class="insight-item">
-                <div class="insight-item-left">
-                  <span class="insight-item-label">Top Supplier</span>
-                  <span class="insight-item-val" id="iTopSupp">-</span>
-                </div>
-                <div class="insight-icon"><i class="bi bi-truck"></i></div>
-              </div>
-              <div class="insight-item">
-                <div class="insight-item-left">
-                  <span class="insight-item-label">Most Profitable Product</span>
-                  <span class="insight-item-val" id="iTopProd">-</span>
-                </div>
-                <div class="insight-icon"><i class="bi bi-box-seam-fill"></i></div>
-              </div>
-              <div class="insight-item">
-                <div class="insight-item-left">
-                  <span class="insight-item-label">Stock Value</span>
-                  <span class="insight-item-val" id="iStockVal">₹0</span>
-                </div>
-                <div class="insight-icon"><i class="bi bi-boxes"></i></div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Activity & Alerts Mock -->
-          <div class="side-panel">
-            <div class="panel-title"><i class="bi bi-bell-fill"></i> Activity & Alerts</div>
-            <div class="activity-list" id="activityList">
-              <!-- Dynamically populated or mocked -->
-              <div class="activity-item">
-                <div class="activity-icon alert"></div>
-                <div class="activity-details">
-                  <div class="activity-title" id="alertLowStock">Checking inventory...</div>
-                  <div class="activity-time">System Alert</div>
-                </div>
-              </div>
-              <div class="activity-item">
-                <div class="activity-icon alert"></div>
-                <div class="activity-details">
-                  <div class="activity-title" id="alertOverdue">Checking receivables...</div>
-                  <div class="activity-time">Pending Collections</div>
-                </div>
-              </div>
-              <div class="activity-item" style="opacity: 0.7;">
-                <div class="activity-icon sale"></div>
-                <div class="activity-details">
-                  <div class="activity-title">Sales Order Recorded</div>
-                  <div class="activity-time">Just now</div>
-                </div>
-              </div>
-              <div class="activity-item" style="opacity: 0.7;">
-                <div class="activity-icon purch"></div>
-                <div class="activity-details">
-                  <div class="activity-title">Purchase Bill Posted</div>
-                  <div class="activity-time">2 hours ago</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
+      <div class="widget-strip">
+        <div class="widget-card w-blue"><div class="widget-label">Total Revenue</div><div class="widget-value" id="eRev">₹0</div><i class="bi bi-graph-up widget-icon"></i></div>
+        <div class="widget-card w-red"><div class="widget-label">Total Expenses</div><div class="widget-value" id="eExp">₹0</div><i class="bi bi-graph-down widget-icon"></i></div>
+        <div class="widget-card w-amber"><div class="widget-label">Gross Profit</div><div class="widget-value" id="eGP">₹0</div><i class="bi bi-wallet2 widget-icon"></i></div>
+        <div class="widget-card w-green"><div class="widget-label">Net Profit</div><div class="widget-value" id="eNP">₹0</div><i class="bi bi-piggy-bank widget-icon"></i></div>
+        <div class="widget-card w-cyan"><div class="widget-label">Cash & Bank</div><div class="widget-value" id="eLiq">₹0</div><i class="bi bi-safe widget-icon"></i></div>
+        <div class="widget-card w-purple"><div class="widget-label">Working Capital</div><div class="widget-value" id="eWC">₹0</div><i class="bi bi-briefcase widget-icon"></i></div>
+      </div>
+      <div class="chart-grid">
+        <div class="chart-card"><div class="chart-title">Revenue Trend</div><div id="cExecRev"></div></div>
+        <div class="chart-card"><div class="chart-title">Expense Trend</div><div id="cExecExp"></div></div>
+        <div class="chart-card full-width"><div class="chart-title">Profit Trend</div><div id="cExecProf"></div></div>
       </div>
     </div>
 
     <!-- ── 2. PROFIT CENTRE ── -->
     <div class="tab-content" id="tab-profit">
-      <div class="kpi-grid">
-        <div class="kpi-card w-amber">
-          <div class="kpi-header">
-            <span class="kpi-label">Gross Margin %</span>
-            <div class="kpi-icon"><i class="bi bi-percent"></i></div>
-          </div>
-          <div class="kpi-body">
-            <div class="kpi-value" id="pGM">0%</div>
-            <div class="kpi-trend neutral" id="pGMPct">-</div>
-          </div>
-          <div class="kpi-sparkline" id="sProfGM"></div>
-        </div>
-        <div class="kpi-card w-green">
-          <div class="kpi-header">
-            <span class="kpi-label">Net Margin %</span>
-            <div class="kpi-icon"><i class="bi bi-percent"></i></div>
-          </div>
-          <div class="kpi-body">
-            <div class="kpi-value" id="pNM">0%</div>
-            <div class="kpi-trend neutral" id="pNMPct">-</div>
-          </div>
-          <div class="kpi-sparkline" id="sProfNM"></div>
-        </div>
-        <div class="kpi-card w-blue">
-          <div class="kpi-header">
-            <span class="kpi-label">Top Product Profit</span>
-            <div class="kpi-icon"><i class="bi bi-trophy"></i></div>
-          </div>
-          <div class="kpi-body">
-            <div class="kpi-value" id="pTopProd" style="font-size:18px;">-</div>
-          </div>
-        </div>
+      <div class="widget-strip">
+        <div class="widget-card w-amber"><div class="widget-label">Gross Margin %</div><div class="widget-value" id="pGM">0%</div></div>
+        <div class="widget-card w-green"><div class="widget-label">Net Margin %</div><div class="widget-value" id="pNM">0%</div></div>
+        <div class="widget-card w-blue"><div class="widget-label">Top Product Profit</div><div class="widget-value" id="pTopProd" style="font-size:16px;">-</div></div>
       </div>
       <div class="chart-grid">
-        <div class="chart-card full-width">
-          <div class="chart-header"><div class="chart-title">Gross vs Net Profit Trend</div></div>
-          <div id="cProfTrend"></div>
-        </div>
-        <div class="chart-card">
-          <div class="chart-header"><div class="chart-title">Product Profitability (Top 10)</div></div>
-          <div id="cProfProd"></div>
-        </div>
-        <div class="chart-card">
-          <div class="chart-header"><div class="chart-title">Customer Profitability (Top 10)</div></div>
-          <div id="cProfCust"></div>
-        </div>
+        <div class="chart-card full-width"><div class="chart-title">Gross vs Net Profit Trend</div><div id="cProfTrend"></div></div>
+        <div class="chart-card"><div class="chart-title">Product Profitability (Top 10)</div><div id="cProfProd"></div></div>
+        <div class="chart-card"><div class="chart-title">Customer Profitability (Top 10)</div><div id="cProfCust"></div></div>
       </div>
     </div>
 
     <!-- ── 3. CASH FLOW ── -->
     <div class="tab-content" id="tab-cashflow">
-      <div class="kpi-grid">
-        <div class="kpi-card w-green">
-          <div class="kpi-header"><span class="kpi-label">Cash Inflow</span><div class="kpi-icon"><i class="bi bi-arrow-down-left"></i></div></div>
-          <div class="kpi-body">
-            <div class="kpi-value" id="cfIn">₹0</div>
-            <div class="kpi-trend neutral" id="cfInPct">-</div>
-          </div>
-          <div class="kpi-sparkline" id="sCfIn"></div>
-        </div>
-        <div class="kpi-card w-red">
-          <div class="kpi-header"><span class="kpi-label">Cash Outflow</span><div class="kpi-icon"><i class="bi bi-arrow-up-right"></i></div></div>
-          <div class="kpi-body">
-            <div class="kpi-value" id="cfOut">₹0</div>
-            <div class="kpi-trend neutral" id="cfOutPct">-</div>
-          </div>
-          <div class="kpi-sparkline" id="sCfOut"></div>
-        </div>
-        <div class="kpi-card w-blue">
-          <div class="kpi-header"><span class="kpi-label">Net Cash Flow</span><div class="kpi-icon"><i class="bi bi-water"></i></div></div>
-          <div class="kpi-body">
-            <div class="kpi-value" id="cfNet">₹0</div>
-            <div class="kpi-trend neutral" id="cfNetPct">-</div>
-          </div>
-          <div class="kpi-sparkline" id="sCfNet"></div>
-        </div>
+      <div class="widget-strip">
+        <div class="widget-card w-green"><div class="widget-label">Cash Inflow</div><div class="widget-value" id="cfIn">₹0</div></div>
+        <div class="widget-card w-red"><div class="widget-label">Cash Outflow</div><div class="widget-value" id="cfOut">₹0</div></div>
+        <div class="widget-card w-blue"><div class="widget-label">Net Cash Flow</div><div class="widget-value" id="cfNet">₹0</div></div>
       </div>
       <div class="chart-grid">
-        <div class="chart-card full-width">
-          <div class="chart-header"><div class="chart-title">Net Cash Position Trend</div></div>
-          <div id="cCfTrend"></div>
-        </div>
-        <div class="chart-card">
-          <div class="chart-header"><div class="chart-title">Cash Inflow Trend</div></div>
-          <div id="cCfIn"></div>
-        </div>
-        <div class="chart-card">
-          <div class="chart-header"><div class="chart-title">Cash Outflow Trend</div></div>
-          <div id="cCfOut"></div>
-        </div>
+        <div class="chart-card full-width"><div class="chart-title">Net Cash Position Trend</div><div id="cCfTrend"></div></div>
+        <div class="chart-card"><div class="chart-title">Cash Inflow Trend</div><div id="cCfIn"></div></div>
+        <div class="chart-card"><div class="chart-title">Cash Outflow Trend</div><div id="cCfOut"></div></div>
       </div>
     </div>
 
     <!-- ── 4. BANKING ── -->
     <div class="tab-content" id="tab-banking">
-      <div class="kpi-grid">
-        <div class="kpi-card w-blue">
-          <div class="kpi-header"><span class="kpi-label">Total Bank Balance</span><div class="kpi-icon"><i class="bi bi-bank"></i></div></div>
-          <div class="kpi-body"><div class="kpi-value" id="bBank">₹0</div><div class="kpi-trend neutral">Current</div></div>
-        </div>
-        <div class="kpi-card w-green">
-          <div class="kpi-header"><span class="kpi-label">Total Cash-in-Hand</span><div class="kpi-icon"><i class="bi bi-cash-stack"></i></div></div>
-          <div class="kpi-body"><div class="kpi-value" id="bCash">₹0</div><div class="kpi-trend neutral">Current</div></div>
-        </div>
-        <div class="kpi-card w-cyan">
-          <div class="kpi-header"><span class="kpi-label">Total Liquidity</span><div class="kpi-icon"><i class="bi bi-safe"></i></div></div>
-          <div class="kpi-body"><div class="kpi-value" id="bTotal">₹0</div><div class="kpi-trend neutral">Current</div></div>
-        </div>
+      <div class="widget-strip">
+        <div class="widget-card w-blue"><div class="widget-label">Total Bank Balance</div><div class="widget-value" id="bBank">₹0</div></div>
+        <div class="widget-card w-green"><div class="widget-label">Total Cash-in-Hand</div><div class="widget-value" id="bCash">₹0</div></div>
       </div>
       <div class="chart-grid">
-        <div class="chart-card">
-          <div class="chart-header"><div class="chart-title">Bank Fund Allocation</div></div>
-          <div id="cBankAlloc"></div>
-        </div>
-        <div class="chart-card">
-          <div class="chart-header"><div class="chart-title">Monthly Money In vs Out</div></div>
-          <div id="cBankInOut"></div>
-        </div>
+        <div class="chart-card"><div class="chart-title">Bank Fund Allocation</div><div id="cBankAlloc"></div></div>
+        <div class="chart-card"><div class="chart-title">Cash vs Bank Holdings</div><div id="cBankVsCash"></div></div>
+        <div class="chart-card full-width"><div class="chart-title">Money In vs Money Out</div><div id="cBankInOut"></div></div>
       </div>
     </div>
 
     <!-- ── 5. RECEIVABLES ── -->
     <div class="tab-content" id="tab-receivables">
-      <div class="kpi-grid">
-        <div class="kpi-card w-cyan">
-          <div class="kpi-header"><span class="kpi-label">Total Receivables</span><div class="kpi-icon"><i class="bi bi-box-arrow-in-down-right"></i></div></div>
-          <div class="kpi-body"><div class="kpi-value" id="rTot">₹0</div></div>
-        </div>
-        <div class="kpi-card w-red">
-          <div class="kpi-header"><span class="kpi-label">Overdue Payments</span><div class="kpi-icon"><i class="bi bi-exclamation-triangle"></i></div></div>
-          <div class="kpi-body"><div class="kpi-value" id="rOd">₹0</div></div>
-        </div>
-        <div class="kpi-card w-green">
-          <div class="kpi-header"><span class="kpi-label">Period Collections</span><div class="kpi-icon"><i class="bi bi-check-circle"></i></div></div>
-          <div class="kpi-body"><div class="kpi-value" id="rCol">₹0</div><div class="kpi-trend neutral" id="rColPct">-</div></div>
-          <div class="kpi-sparkline" id="sRecCol"></div>
-        </div>
+      <div class="widget-strip">
+        <div class="widget-card w-cyan"><div class="widget-label">Total Receivables</div><div class="widget-value" id="rTot">₹0</div></div>
+        <div class="widget-card w-red"><div class="widget-label">Overdue Payments</div><div class="widget-value" id="rOd">₹0</div></div>
+        <div class="widget-card w-green"><div class="widget-label">Period Collections</div><div class="widget-value" id="rCol">₹0</div></div>
       </div>
       <div class="chart-grid-3">
-        <div class="chart-card">
-          <div class="chart-header"><div class="chart-title">Receivables Aging</div></div>
-          <div id="cRecAging"></div>
-        </div>
-        <div class="chart-card" style="grid-column: span 2;">
-          <div class="chart-header"><div class="chart-title">Top Outstanding Customers</div></div>
-          <div id="cRecCust"></div>
-        </div>
+        <div class="chart-card"><div class="chart-title">Receivables Aging</div><div id="cRecAging"></div></div>
+        <div class="chart-card" style="grid-column: span 2;"><div class="chart-title">Top Outstanding Customers</div><div id="cRecCust"></div></div>
       </div>
-      <div class="chart-card">
-        <div class="chart-header"><div class="chart-title">Customer Collections Trend</div></div>
-        <div id="cRecTrend"></div>
-      </div>
+      <div class="chart-card"><div class="chart-title">Customer Collections Trend</div><div id="cRecTrend"></div></div>
     </div>
 
     <!-- ── 6. PAYABLES ── -->
     <div class="tab-content" id="tab-payables">
-      <div class="kpi-grid">
-        <div class="kpi-card w-purple">
-          <div class="kpi-header"><span class="kpi-label">Total Payables</span><div class="kpi-icon"><i class="bi bi-box-arrow-up-left"></i></div></div>
-          <div class="kpi-body"><div class="kpi-value" id="pTot">₹0</div></div>
-        </div>
-        <div class="kpi-card w-red">
-          <div class="kpi-header"><span class="kpi-label">Overdue Bills</span><div class="kpi-icon"><i class="bi bi-exclamation-triangle"></i></div></div>
-          <div class="kpi-body"><div class="kpi-value" id="pOd">₹0</div></div>
-        </div>
-        <div class="kpi-card w-amber">
-          <div class="kpi-header"><span class="kpi-label">Period Payments</span><div class="kpi-icon"><i class="bi bi-credit-card"></i></div></div>
-          <div class="kpi-body"><div class="kpi-value" id="pPay">₹0</div><div class="kpi-trend neutral" id="pPayPct">-</div></div>
-          <div class="kpi-sparkline" id="sPayPay"></div>
-        </div>
+      <div class="widget-strip">
+        <div class="widget-card w-purple"><div class="widget-label">Total Payables</div><div class="widget-value" id="pTot">₹0</div></div>
+        <div class="widget-card w-red"><div class="widget-label">Overdue Bills</div><div class="widget-value" id="pOd">₹0</div></div>
+        <div class="widget-card w-amber"><div class="widget-label">Period Payments</div><div class="widget-value" id="pPay">₹0</div></div>
       </div>
       <div class="chart-grid-3">
-        <div class="chart-card">
-          <div class="chart-header"><div class="chart-title">Payables Aging</div></div>
-          <div id="cPayAging"></div>
-        </div>
-        <div class="chart-card" style="grid-column: span 2;">
-          <div class="chart-header"><div class="chart-title">Top Supplier Liabilities</div></div>
-          <div id="cPaySupp"></div>
-        </div>
+        <div class="chart-card"><div class="chart-title">Payables Aging</div><div id="cPayAging"></div></div>
+        <div class="chart-card" style="grid-column: span 2;"><div class="chart-title">Top Supplier Liabilities</div><div id="cPaySupp"></div></div>
       </div>
-      <div class="chart-card">
-        <div class="chart-header"><div class="chart-title">Supplier Payment Trend</div></div>
-        <div id="cPayTrend"></div>
-      </div>
+      <div class="chart-card"><div class="chart-title">Supplier Payment Trend</div><div id="cPayTrend"></div></div>
     </div>
 
     <!-- ── 7. GENERAL LEDGER ── -->
     <div class="tab-content" id="tab-gl">
-      <div class="kpi-grid">
-        <div class="kpi-card w-blue">
-          <div class="kpi-header"><span class="kpi-label">Debit Volume</span><div class="kpi-icon"><i class="bi bi-plus-slash-minus"></i></div></div>
-          <div class="kpi-body"><div class="kpi-value" id="gDr">₹0</div><div class="kpi-trend neutral" id="gDrPct">-</div></div>
-          <div class="kpi-sparkline" id="sGlDr"></div>
-        </div>
-        <div class="kpi-card w-amber">
-          <div class="kpi-header"><span class="kpi-label">Credit Volume</span><div class="kpi-icon"><i class="bi bi-dash-slash-minus"></i></div></div>
-          <div class="kpi-body"><div class="kpi-value" id="gCr">₹0</div><div class="kpi-trend neutral" id="gCrPct">-</div></div>
-          <div class="kpi-sparkline" id="sGlCr"></div>
-        </div>
-        <div class="kpi-card w-purple">
-          <div class="kpi-header"><span class="kpi-label">Vouchers Processed</span><div class="kpi-icon"><i class="bi bi-receipt"></i></div></div>
-          <div class="kpi-body"><div class="kpi-value" id="gVou">0</div></div>
-        </div>
+      <div class="widget-strip">
+        <div class="widget-card w-blue"><div class="widget-label">Debit Volume</div><div class="widget-value" id="gDr">₹0</div></div>
+        <div class="widget-card w-amber"><div class="widget-label">Credit Volume</div><div class="widget-value" id="gCr">₹0</div></div>
+        <div class="widget-card w-purple"><div class="widget-label">Vouchers Processed</div><div class="widget-value" id="gVou">0</div></div>
       </div>
       <div class="chart-grid">
-        <div class="chart-card full-width">
-          <div class="chart-header"><div class="chart-title">Ledger Movement Trend (Dr vs Cr)</div></div>
-          <div id="cGlTrend"></div>
-        </div>
-        <div class="chart-card full-width">
-          <div class="chart-header"><div class="chart-title">Top Active Ledgers by Volume</div></div>
-          <div id="cGlTop"></div>
-        </div>
+        <div class="chart-card full-width"><div class="chart-title">Ledger Movement Trend (Dr vs Cr)</div><div id="cGlTrend"></div></div>
+        <div class="chart-card full-width"><div class="chart-title">Top Active Ledgers by Volume</div><div id="cGlTop"></div></div>
       </div>
     </div>
 
@@ -869,346 +260,185 @@
 </div>
 
 <script>
-  const API_URL = "{{ url_for('finance.api_data') }}";
-  // The reporting API might be restricted, but we'll try to fetch it for insights.
-  const ANALYTICS_URL = "/reports/analytics-data"; 
-  
-  const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+const API_URL = "{{ url_for('finance.api_data') }}";
+const isLight = document.documentElement.getAttribute('data-theme') === 'light';
 
-  const THEME = { 
-    bg: 'transparent', 
-    text: isLight ? '#64748b' : '#94a3b8', 
-    grid: isLight ? '#e2e8f0' : '#334155' 
-  };
-  const COLORS = { green: '#10b981', blue: '#3b82f6', amber: '#f59e0b', red: '#ef4444', purple: '#8b5cf6', cyan: '#06b6d4' };
-  const PALETTE = [COLORS.blue, COLORS.purple, COLORS.green, COLORS.amber, COLORS.cyan, COLORS.red];
+const THEME = { bg: 'transparent', text: isLight ? '#475569' : '#94a3b8', grid: isLight ? 'rgba(15,23,42,0.06)' : 'rgba(255,255,255,0.04)' };
+const COLORS = { green: '#10b981', blue: '#3b82f6', amber: '#f59e0b', red: '#ef4444', purple: '#8b5cf6', cyan: '#06b6d4' };
+const PALETTE = [COLORS.blue, COLORS.purple, COLORS.green, COLORS.amber, COLORS.cyan, COLORS.red];
 
-  let currentTab = 'executive';
-  let charts = {};
+let currentTab = 'executive';
+let charts = {};
 
-  function fmt(n) {
-    if (n === undefined || n === null) return '₹0';
-    if (Math.abs(n) >= 10000000) return '₹' + (n / 10000000).toFixed(2) + ' Cr';
-    if (Math.abs(n) >= 100000) return '₹' + (n / 100000).toFixed(2) + ' L';
-    if (Math.abs(n) >= 1000) return '₹' + (n / 1000).toFixed(1) + 'K';
-    return '₹' + n.toLocaleString('en-IN', { maximumFractionDigits: 0 });
-  }
-  function fmtFull(n) { return '₹' + (n || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+function fmt(n) {
+  if (n === undefined || n === null) return '₹0';
+  if (Math.abs(n) >= 10000000) return '₹' + (n/10000000).toFixed(2) + ' Cr';
+  if (Math.abs(n) >= 100000) return '₹' + (n/100000).toFixed(2) + ' L';
+  if (Math.abs(n) >= 1000) return '₹' + (n/1000).toFixed(1) + 'K';
+  return '₹' + n.toLocaleString('en-IN', {maximumFractionDigits:0});
+}
+function fmtFull(n) { return '₹' + (n||0).toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2}); }
 
-  function calcPct(curr, prev) {
-    if (!prev || prev === 0) return { pct: curr > 0 ? 100 : 0, class: curr > 0 ? 'positive' : 'neutral', icon: curr > 0 ? 'up' : 'dash' };
-    const diff = curr - prev;
-    const pct = (diff / prev) * 100;
-    if (pct > 0) return { pct: pct, class: 'positive', icon: 'up' };
-    if (pct < 0) return { pct: Math.abs(pct), class: 'negative', icon: 'down' };
-    return { pct: 0, class: 'neutral', icon: 'dash' };
-  }
+function destroyCharts() { Object.values(charts).forEach(c => { try { c.destroy(); } catch(e){} }); charts = {}; }
 
-  function setPctEl(id, curr, prev, reversePolarity = false) {
-    const el = document.getElementById(id);
-    if (!el) return;
-    const res = calcPct(curr, prev);
+const commonOpts = { chart: { background: THEME.bg, toolbar:{show:false}, fontFamily:'Inter, sans-serif' },
+  tooltip: { theme: isLight ? 'light' : 'dark', y: { formatter: v => fmtFull(v) }, style: {fontSize:'11px'} },
+  xaxis: { labels: { style: { colors: THEME.text, fontSize: '10px' } } },
+  yaxis: { labels: { formatter: v => fmt(v), style: { colors: THEME.text, fontSize: '10px' } } },
+  grid: { borderColor: THEME.grid, strokeDashArray: 3 }
+};
+
+function renderInsights(insights) {
+  const html = insights.map(i => `<div class="insight-item"><i class="bi bi-stars" style="color:var(--accent-amber);"></i> <span style="color:var(--text-secondary);">${i.replace(/\*\*(.*?)\*\*/g, '<strong style="color:var(--text-primary);">$1</strong>')}</span></div>`).join('');
+  document.getElementById('insightsPanel').innerHTML = html;
+}
+
+function renderTab(tab, d) {
+  destroyCharts();
+  renderInsights(d.insights);
+
+  if(tab === 'executive') {
+    document.getElementById('eRev').textContent = fmtFull(d.kpis.revenue);
+    document.getElementById('eExp').textContent = fmtFull(d.kpis.expenses);
+    document.getElementById('eGP').textContent = fmtFull(d.kpis.gross_profit);
+    document.getElementById('eNP').textContent = fmtFull(d.kpis.net_profit);
+    document.getElementById('eLiq').textContent = fmtFull(d.kpis.liquidity);
+    document.getElementById('eWC').textContent = fmtFull(d.kpis.working_capital);
     
-    let cls = res.class;
-    // For expenses, going up is negative (red)
-    if (reversePolarity && cls === 'positive') cls = 'negative';
-    else if (reversePolarity && cls === 'negative') cls = 'positive';
-
-    el.className = `kpi-trend ${cls}`;
-    el.innerHTML = `<i class="bi bi-arrow-${res.icon}"></i> ${res.pct.toFixed(1)}%`;
-    el.title = `vs Prev Period (₹${(prev||0).toLocaleString('en-IN')})`;
+    charts.eRev = new ApexCharts(document.getElementById('cExecRev'), { ...commonOpts, chart: { ...commonOpts.chart, type: 'area', height: 280 }, series: [{ name: 'Revenue', data: d.charts.revenue_trend }], xaxis: { ...commonOpts.xaxis, categories: d.charts.labels }, colors: [COLORS.blue], stroke: { curve: 'smooth', width: 2 }, fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.4, opacityTo: 0.05, stops: [0, 95] } }, dataLabels: { enabled: false } }); charts.eRev.render();
+    charts.eExp = new ApexCharts(document.getElementById('cExecExp'), { ...commonOpts, chart: { ...commonOpts.chart, type: 'area', height: 280 }, series: [{ name: 'Expenses', data: d.charts.expense_trend }], xaxis: { ...commonOpts.xaxis, categories: d.charts.labels }, colors: [COLORS.red], stroke: { curve: 'smooth', width: 2 }, fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.4, opacityTo: 0.05, stops: [0, 95] } }, dataLabels: { enabled: false } }); charts.eExp.render();
+    charts.eProf = new ApexCharts(document.getElementById('cExecProf'), { ...commonOpts, chart: { ...commonOpts.chart, type: 'bar', height: 280 }, series: [{ name: 'Net Profit', data: d.charts.profit_trend }], xaxis: { ...commonOpts.xaxis, categories: d.charts.labels }, colors: [COLORS.green], plotOptions: { bar: { borderRadius: 4, columnWidth: '50%' } }, dataLabels: { enabled: false } }); charts.eProf.render();
   }
-
-  function destroyCharts() { Object.values(charts).forEach(c => { try { c.destroy(); } catch (e) { } }); charts = {}; }
-
-  const commonOpts = {
-    chart: { background: THEME.bg, toolbar: { show: false }, fontFamily: 'Inter, sans-serif' },
-    tooltip: { theme: isLight ? 'light' : 'dark', y: { formatter: v => fmtFull(v) }, style: { fontSize: '12px' } },
-    xaxis: { labels: { style: { colors: THEME.text, fontSize: '11px', fontWeight: 500 } }, axisBorder: { show: false }, axisTicks: { show: false } },
-    yaxis: { labels: { formatter: v => fmt(v), style: { colors: THEME.text, fontSize: '11px', fontWeight: 500 } } },
-    grid: { borderColor: THEME.grid, strokeDashArray: 4, padding: { top: 0, right: 0, bottom: 0, left: 10 } }
-  };
-
-  const sparkOpts = {
-    chart: { type: 'area', height: 40, sparkline: { enabled: true } },
-    stroke: { curve: 'smooth', width: 2 },
-    fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.3, opacityTo: 0.0, stops: [0, 100] } },
-    tooltip: { fixed: { enabled: false }, x: { show: false }, y: { title: { formatter: function (seriesName) { return '' } } }, marker: { show: false } }
-  };
-
-  function renderSpark(id, data, color) {
-    if (!document.getElementById(id)) return;
-    charts[id] = new ApexCharts(document.getElementById(id), { ...sparkOpts, series: [{ data: data }], colors: [color] });
-    charts[id].render();
-  }
-
-  function renderTab(tab, curr, prev, analytics) {
-    destroyCharts();
+  else if(tab === 'profit') {
+    document.getElementById('pGM').textContent = d.kpis.gross_margin + '%';
+    document.getElementById('pNM').textContent = d.kpis.net_margin + '%';
+    document.getElementById('pTopProd').textContent = d.charts.top_prod_labels.length > 0 ? d.charts.top_prod_labels[0] : '-';
     
-    const d = curr;
-    const p = prev || { kpis: {} };
-
-    // Fill Insights Widget if on executive
-    if (tab === 'executive') {
-        if (analytics) {
-            document.getElementById('iHealth').textContent = `${analytics.health_score || d.kpis.health || 0}/100`;
-            document.getElementById('iTopCust').textContent = analytics.top_customer ? analytics.top_customer.name : '-';
-            document.getElementById('iTopSupp').textContent = analytics.top_supplier ? analytics.top_supplier.name : '-';
-            document.getElementById('iTopProd').textContent = analytics.most_profitable ? analytics.most_profitable.name : '-';
-            document.getElementById('iStockVal').textContent = fmtFull(analytics.stock_value || 0);
-
-            // Populate Alerts
-            if(analytics.low_stock_count > 0) {
-                document.getElementById('alertLowStock').innerHTML = `${analytics.low_stock_count} Items Low on Stock`;
-                document.getElementById('alertLowStock').parentElement.parentElement.style.display = 'flex';
-            }
-        }
-        
-        // Alerts fallback
-        if (d.kpis.receivables > 0) {
-            document.getElementById('alertOverdue').innerHTML = `₹${fmt(d.kpis.receivables)} Pending Receivables`;
-        }
-
-        // KPIs
-        document.getElementById('eRev').textContent = fmtFull(d.kpis.revenue);
-        setPctEl('eRevPct', d.kpis.revenue, p.kpis.revenue);
-        renderSpark('sExecRev', d.charts.revenue_trend, COLORS.blue);
-
-        document.getElementById('eExp').textContent = fmtFull(d.kpis.expenses);
-        setPctEl('eExpPct', d.kpis.expenses, p.kpis.expenses, true); // Reverse polarity
-        renderSpark('sExecExp', d.charts.expense_trend, COLORS.red);
-
-        document.getElementById('eGP').textContent = fmtFull(d.kpis.gross_profit);
-        setPctEl('eGPPct', d.kpis.gross_profit, p.kpis.gross_profit);
-        renderSpark('sExecGP', d.charts.profit_trend, COLORS.amber); // GP proxy
-
-        document.getElementById('eNP').textContent = fmtFull(d.kpis.net_profit);
-        setPctEl('eNPPct', d.kpis.net_profit, p.kpis.net_profit);
-        renderSpark('sExecNP', d.charts.profit_trend, COLORS.green);
-
-        // Main Charts
-        charts.eMain = new ApexCharts(document.getElementById('cExecMain'), { 
-            ...commonOpts, chart: { ...commonOpts.chart, type: 'area', height: 320 }, 
-            series: [
-                { name: 'Revenue', data: d.charts.revenue_trend },
-                { name: 'Net Profit', data: d.charts.profit_trend }
-            ], 
-            xaxis: { ...commonOpts.xaxis, categories: d.charts.labels }, 
-            colors: [COLORS.blue, COLORS.green], stroke: { curve: 'smooth', width: 3 }, 
-            fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.4, opacityTo: 0.01, stops: [0, 100] } }, 
-            legend: { position: 'top', horizontalAlign: 'right', labels: { colors: THEME.text } } 
-        }); 
-        charts.eMain.render();
-
-        charts.eExpC = new ApexCharts(document.getElementById('cExecExpTrend'), { 
-            ...commonOpts, chart: { ...commonOpts.chart, type: 'bar', height: 320 }, 
-            series: [{ name: 'Expenses', data: d.charts.expense_trend }], 
-            xaxis: { ...commonOpts.xaxis, categories: d.charts.labels }, 
-            colors: [COLORS.red], plotOptions: { bar: { borderRadius: 6, columnWidth: '40%' } } 
-        }); 
-        charts.eExpC.render();
-
-        charts.eLiq = new ApexCharts(document.getElementById('cExecLiquidity'), { 
-            ...commonOpts, chart: { ...commonOpts.chart, type: 'radar', height: 320 }, 
-            series: [{ name: 'Current', data: [d.kpis.bank, d.kpis.liquidity, d.kpis.receivables, d.kpis.payables, d.kpis.working_capital] }], 
-            xaxis: { categories: ['Bank', 'Liquidity', 'Receivables', 'Payables', 'Working Cap'] }, 
-            colors: [COLORS.purple], stroke: { width: 2 }, fill: { opacity: 0.2 },
-            yaxis: { show: false }
-        }); 
-        charts.eLiq.render();
-    }
-    else if (tab === 'profit') {
-      document.getElementById('pGM').textContent = d.kpis.gross_margin + '%';
-      setPctEl('pGMPct', d.kpis.gross_margin, p.kpis.gross_margin);
-      renderSpark('sProfGM', d.charts.gp_trend, COLORS.amber);
-
-      document.getElementById('pNM').textContent = d.kpis.net_margin + '%';
-      setPctEl('pNMPct', d.kpis.net_margin, p.kpis.net_margin);
-      renderSpark('sProfNM', d.charts.np_trend, COLORS.green);
-      
-      document.getElementById('pTopProd').textContent = d.charts.top_prod_labels.length > 0 ? d.charts.top_prod_labels[0] : '-';
-
-      charts.pTrend = new ApexCharts(document.getElementById('cProfTrend'), { ...commonOpts, chart: { ...commonOpts.chart, type: 'area', height: 320 }, series: [{ name: 'Gross Profit', data: d.charts.gp_trend }, { name: 'Net Profit', data: d.charts.np_trend }], xaxis: { ...commonOpts.xaxis, categories: d.charts.labels }, colors: [COLORS.amber, COLORS.green], stroke: { curve: 'smooth', width: 2 }, legend: { labels: { colors: THEME.text } } }); charts.pTrend.render();
-      charts.pProd = new ApexCharts(document.getElementById('cProfProd'), { ...commonOpts, chart: { ...commonOpts.chart, type: 'bar', height: 320 }, series: [{ name: 'Profit', data: d.charts.top_prod_values }], xaxis: { ...commonOpts.xaxis, categories: d.charts.top_prod_labels }, colors: PALETTE, plotOptions: { bar: { horizontal: true, borderRadius: 4, distributed: true } }, legend: { show: false } }); charts.pProd.render();
-      charts.pCust = new ApexCharts(document.getElementById('cProfCust'), { ...commonOpts, chart: { ...commonOpts.chart, type: 'bar', height: 320 }, series: [{ name: 'Profit', data: d.charts.top_cust_values }], xaxis: { ...commonOpts.xaxis, categories: d.charts.top_cust_labels }, colors: PALETTE, plotOptions: { bar: { horizontal: true, borderRadius: 4, distributed: true } }, legend: { show: false } }); charts.pCust.render();
-    }
-    else if (tab === 'cashflow') {
-      document.getElementById('cfIn').textContent = fmtFull(d.kpis.inflow);
-      setPctEl('cfInPct', d.kpis.inflow, p.kpis.inflow);
-      renderSpark('sCfIn', d.charts.in_trend, COLORS.green);
-
-      document.getElementById('cfOut').textContent = fmtFull(d.kpis.outflow);
-      setPctEl('cfOutPct', d.kpis.outflow, p.kpis.outflow, true);
-      renderSpark('sCfOut', d.charts.out_trend, COLORS.red);
-
-      document.getElementById('cfNet').textContent = fmtFull(d.kpis.net_flow);
-      setPctEl('cfNetPct', d.kpis.net_flow, p.kpis.net_flow);
-      renderSpark('sCfNet', d.charts.net_trend, COLORS.blue);
-
-      charts.cfNet = new ApexCharts(document.getElementById('cCfTrend'), { ...commonOpts, chart: { ...commonOpts.chart, type: 'area', height: 320 }, series: [{ name: 'Net Cash Flow', data: d.charts.net_trend }], xaxis: { ...commonOpts.xaxis, categories: d.charts.labels }, colors: [COLORS.blue], stroke: { curve: 'smooth', width: 3 }, fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.4, opacityTo: 0.05, stops: [0, 100] } } }); charts.cfNet.render();
-      charts.cfIn = new ApexCharts(document.getElementById('cCfIn'), { ...commonOpts, chart: { ...commonOpts.chart, type: 'bar', height: 320 }, series: [{ name: 'Inflow', data: d.charts.in_trend }], xaxis: { ...commonOpts.xaxis, categories: d.charts.labels }, colors: [COLORS.green], plotOptions: { bar: { borderRadius: 6 } } }); charts.cfIn.render();
-      charts.cfOut = new ApexCharts(document.getElementById('cCfOut'), { ...commonOpts, chart: { ...commonOpts.chart, type: 'bar', height: 320 }, series: [{ name: 'Outflow', data: d.charts.out_trend }], xaxis: { ...commonOpts.xaxis, categories: d.charts.labels }, colors: [COLORS.red], plotOptions: { bar: { borderRadius: 6 } } }); charts.cfOut.render();
-    }
-    else if (tab === 'banking') {
-      document.getElementById('bBank').textContent = fmtFull(d.kpis.total_bank);
-      document.getElementById('bCash').textContent = fmtFull(d.kpis.total_cash);
-      document.getElementById('bTotal').textContent = fmtFull(d.kpis.total_liquidity);
-
-      if (d.charts.alloc_labels.length > 0) {
-        charts.bAlloc = new ApexCharts(document.getElementById('cBankAlloc'), { chart: { type: 'donut', height: 320, background: THEME.bg, fontFamily: 'Inter, sans-serif' }, series: d.charts.alloc_values, labels: d.charts.alloc_labels, colors: PALETTE, stroke: { width: 2, colors: [varCardBg()] }, tooltip: commonOpts.tooltip, legend: { position: 'bottom', labels: { colors: THEME.text } } }); charts.bAlloc.render();
-      }
-      charts.bInOut = new ApexCharts(document.getElementById('cBankInOut'), { ...commonOpts, chart: { ...commonOpts.chart, type: 'bar', height: 320 }, series: [{ name: 'Inflow', data: d.charts.money_in }, { name: 'Outflow', data: d.charts.money_out }], xaxis: { ...commonOpts.xaxis, categories: d.charts.labels }, colors: [COLORS.green, COLORS.red], plotOptions: { bar: { borderRadius: 4 } }, legend: { labels: { colors: THEME.text } } }); charts.bInOut.render();
-    }
-    else if (tab === 'receivables') {
-      document.getElementById('rTot').textContent = fmtFull(d.kpis.total_receivables);
-      document.getElementById('rOd').textContent = fmtFull(d.kpis.overdue);
-      document.getElementById('rCol').textContent = fmtFull(d.kpis.period_collections);
-      setPctEl('rColPct', d.kpis.period_collections, p.kpis.period_collections);
-      renderSpark('sRecCol', d.charts.collection_trend, COLORS.green);
-
-      charts.rAging = new ApexCharts(document.getElementById('cRecAging'), { chart: { type: 'donut', height: 320, background: THEME.bg, fontFamily: 'Inter, sans-serif' }, series: d.charts.aging_values, labels: d.charts.aging_labels, colors: [COLORS.red, COLORS.green], stroke: { width: 2, colors: [varCardBg()] }, tooltip: commonOpts.tooltip, legend: { position: 'bottom', labels: { colors: THEME.text } } }); charts.rAging.render();
-      charts.rCust = new ApexCharts(document.getElementById('cRecCust'), { ...commonOpts, chart: { ...commonOpts.chart, type: 'bar', height: 320 }, series: [{ name: 'Receivable', data: d.charts.top_values }], xaxis: { ...commonOpts.xaxis, categories: d.charts.top_labels }, colors: PALETTE, plotOptions: { bar: { borderRadius: 4, distributed: true } }, legend: { show: false } }); charts.rCust.render();
-      charts.rTrend = new ApexCharts(document.getElementById('cRecTrend'), { ...commonOpts, chart: { ...commonOpts.chart, type: 'area', height: 320 }, series: [{ name: 'Collections', data: d.charts.collection_trend }], xaxis: { ...commonOpts.xaxis, categories: d.charts.labels }, colors: [COLORS.green], stroke: { curve: 'smooth', width: 3 }, fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.4, opacityTo: 0.05, stops: [0, 100] } } }); charts.rTrend.render();
-    }
-    else if (tab === 'payables') {
-      document.getElementById('pTot').textContent = fmtFull(d.kpis.total_payables);
-      document.getElementById('pOd').textContent = fmtFull(d.kpis.overdue);
-      document.getElementById('pPay').textContent = fmtFull(d.kpis.period_payments);
-      setPctEl('pPayPct', d.kpis.period_payments, p.kpis.period_payments);
-      renderSpark('sPayPay', d.charts.payment_trend, COLORS.amber);
-
-      charts.pAging = new ApexCharts(document.getElementById('cPayAging'), { chart: { type: 'donut', height: 320, background: THEME.bg, fontFamily: 'Inter, sans-serif' }, series: d.charts.aging_values, labels: d.charts.aging_labels, colors: [COLORS.red, COLORS.green], stroke: { width: 2, colors: [varCardBg()] }, tooltip: commonOpts.tooltip, legend: { position: 'bottom', labels: { colors: THEME.text } } }); charts.pAging.render();
-      charts.pSupp = new ApexCharts(document.getElementById('cPaySupp'), { ...commonOpts, chart: { ...commonOpts.chart, type: 'bar', height: 320 }, series: [{ name: 'Payable', data: d.charts.top_values }], xaxis: { ...commonOpts.xaxis, categories: d.charts.top_labels }, colors: PALETTE, plotOptions: { bar: { borderRadius: 4, distributed: true } }, legend: { show: false } }); charts.pSupp.render();
-      charts.pTrend = new ApexCharts(document.getElementById('cPayTrend'), { ...commonOpts, chart: { ...commonOpts.chart, type: 'area', height: 320 }, series: [{ name: 'Payments', data: d.charts.payment_trend }], xaxis: { ...commonOpts.xaxis, categories: d.charts.labels }, colors: [COLORS.amber], stroke: { curve: 'smooth', width: 3 }, fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.4, opacityTo: 0.05, stops: [0, 100] } } }); charts.pTrend.render();
-    }
-    else if (tab === 'gl') {
-      document.getElementById('gDr').textContent = fmtFull(d.kpis.total_debit);
-      setPctEl('gDrPct', d.kpis.total_debit, p.kpis.total_debit);
-      renderSpark('sGlDr', d.charts.dr_trend, COLORS.blue);
-
-      document.getElementById('gCr').textContent = fmtFull(d.kpis.total_credit);
-      setPctEl('gCrPct', d.kpis.total_credit, p.kpis.total_credit);
-      renderSpark('sGlCr', d.charts.cr_trend, COLORS.amber);
-      
-      document.getElementById('gVou').textContent = d.kpis.total_vouchers;
-
-      charts.gTrend = new ApexCharts(document.getElementById('cGlTrend'), { ...commonOpts, chart: { ...commonOpts.chart, type: 'area', height: 320 }, series: [{ name: 'Debit Vol', data: d.charts.dr_trend }, { name: 'Credit Vol', data: d.charts.cr_trend }], xaxis: { ...commonOpts.xaxis, categories: d.charts.labels }, colors: [COLORS.blue, COLORS.amber], stroke: { curve: 'smooth', width: 2 }, legend: { labels: { colors: THEME.text } } }); charts.gTrend.render();
-      charts.gTop = new ApexCharts(document.getElementById('cGlTop'), { ...commonOpts, chart: { ...commonOpts.chart, type: 'bar', height: 320 }, series: [{ name: 'Movement', data: d.charts.top_values }], xaxis: { ...commonOpts.xaxis, categories: d.charts.top_labels }, colors: PALETTE, plotOptions: { bar: { horizontal: true, borderRadius: 4, distributed: true } }, legend: { show: false } }); charts.gTop.render();
-    }
+    charts.pTrend = new ApexCharts(document.getElementById('cProfTrend'), { ...commonOpts, chart: { ...commonOpts.chart, type: 'area', height: 280 }, series: [{ name: 'Gross Profit', data: d.charts.gp_trend }, { name: 'Net Profit', data: d.charts.np_trend }], xaxis: { ...commonOpts.xaxis, categories: d.charts.labels }, colors: [COLORS.amber, COLORS.green], stroke: { curve: 'smooth', width: 2 }, dataLabels: { enabled: false }, legend: { labels:{colors:THEME.text} } }); charts.pTrend.render();
+    charts.pProd = new ApexCharts(document.getElementById('cProfProd'), { ...commonOpts, chart: { ...commonOpts.chart, type: 'bar', height: 280 }, series: [{ name: 'Profit', data: d.charts.top_prod_values }], xaxis: { ...commonOpts.xaxis, categories: d.charts.top_prod_labels }, colors: PALETTE, plotOptions: { bar: { horizontal: true, borderRadius: 4, distributed: true } }, dataLabels: { enabled: false }, legend:{show:false} }); charts.pProd.render();
+    charts.pCust = new ApexCharts(document.getElementById('cProfCust'), { ...commonOpts, chart: { ...commonOpts.chart, type: 'bar', height: 280 }, series: [{ name: 'Profit', data: d.charts.top_cust_values }], xaxis: { ...commonOpts.xaxis, categories: d.charts.top_cust_labels }, colors: PALETTE, plotOptions: { bar: { horizontal: true, borderRadius: 4, distributed: true } }, dataLabels: { enabled: false }, legend:{show:false} }); charts.pCust.render();
   }
-
-  function varCardBg() {
-    return isLight ? '#ffffff' : '#1e293b';
+  else if(tab === 'cashflow') {
+    document.getElementById('cfIn').textContent = fmtFull(d.kpis.inflow);
+    document.getElementById('cfOut').textContent = fmtFull(d.kpis.outflow);
+    document.getElementById('cfNet').textContent = fmtFull(d.kpis.net_flow);
+    
+    charts.cfNet = new ApexCharts(document.getElementById('cCfTrend'), { ...commonOpts, chart: { ...commonOpts.chart, type: 'area', height: 280 }, series: [{ name: 'Net Cash Flow', data: d.charts.net_trend }], xaxis: { ...commonOpts.xaxis, categories: d.charts.labels }, colors: [COLORS.blue], stroke: { curve: 'smooth', width: 2 }, fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.4, opacityTo: 0.05, stops: [0, 95] } }, dataLabels: { enabled: false } }); charts.cfNet.render();
+    charts.cfIn = new ApexCharts(document.getElementById('cCfIn'), { ...commonOpts, chart: { ...commonOpts.chart, type: 'bar', height: 280 }, series: [{ name: 'Inflow', data: d.charts.in_trend }], xaxis: { ...commonOpts.xaxis, categories: d.charts.labels }, colors: [COLORS.green], plotOptions: { bar: { borderRadius: 4 } }, dataLabels: { enabled: false } }); charts.cfIn.render();
+    charts.cfOut = new ApexCharts(document.getElementById('cCfOut'), { ...commonOpts, chart: { ...commonOpts.chart, type: 'bar', height: 280 }, series: [{ name: 'Outflow', data: d.charts.out_trend }], xaxis: { ...commonOpts.xaxis, categories: d.charts.labels }, colors: [COLORS.red], plotOptions: { bar: { borderRadius: 4 } }, dataLabels: { enabled: false } }); charts.cfOut.render();
   }
-
-  async function loadData() {
-    document.getElementById('analyticsLoading').style.display = 'flex';
-    document.getElementById('financeContent').style.display = 'none';
-
-    const startStr = document.getElementById('filterStart').value;
-    const endStr = document.getElementById('filterEnd').value;
-
-    let prevStartStr = '', prevEndStr = '';
-    if (startStr && endStr) {
-        const start = new Date(startStr);
-        const end = new Date(endStr);
-        const diffTime = Math.abs(end - start);
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
-        
-        const prevEnd = new Date(start);
-        prevEnd.setDate(prevEnd.getDate() - 1);
-        const prevStart = new Date(prevEnd);
-        prevStart.setDate(prevStart.getDate() - diffDays + 1);
-        
-        prevStartStr = prevStart.toISOString().split('T')[0];
-        prevEndStr = prevEnd.toISOString().split('T')[0];
+  else if(tab === 'banking') {
+    document.getElementById('bBank').textContent = fmtFull(d.kpis.total_bank);
+    document.getElementById('bCash').textContent = fmtFull(d.kpis.total_cash);
+    
+    if(d.charts.alloc_labels.length>0) {
+      charts.bAlloc = new ApexCharts(document.getElementById('cBankAlloc'), { chart: { type: 'donut', height: 280, background: THEME.bg, fontFamily:'Inter, sans-serif' }, series: d.charts.alloc_values, labels: d.charts.alloc_labels, colors: PALETTE, stroke: { width: 2, colors: [isLight ? '#fff' : '#0a0f1e'] }, dataLabels: { enabled: false }, tooltip: commonOpts.tooltip, legend: { position: 'bottom', labels: { colors: THEME.text }, fontSize: '11px' } }); charts.bAlloc.render();
     }
+    charts.bCash = new ApexCharts(document.getElementById('cBankVsCash'), { chart: { type: 'donut', height: 280, background: THEME.bg, fontFamily:'Inter, sans-serif' }, series: d.charts.cash_bank_values, labels: d.charts.cash_bank_labels, colors: [COLORS.blue, COLORS.green], stroke: { width: 2, colors: [isLight ? '#fff' : '#0a0f1e'] }, dataLabels: { enabled: false }, tooltip: commonOpts.tooltip, legend: { position: 'bottom', labels: { colors: THEME.text }, fontSize: '11px' } }); charts.bCash.render();
+    charts.bInOut = new ApexCharts(document.getElementById('cBankInOut'), { ...commonOpts, chart: { ...commonOpts.chart, type: 'bar', height: 280 }, series: [{ name: 'Inflow', data: d.charts.money_in }, { name: 'Outflow', data: d.charts.money_out }], xaxis: { ...commonOpts.xaxis, categories: d.charts.labels }, colors: [COLORS.green, COLORS.red], plotOptions: { bar: { borderRadius: 4 } }, dataLabels: { enabled: false }, legend: { labels:{colors:THEME.text} } }); charts.bInOut.render();
+  }
+  else if(tab === 'receivables') {
+    document.getElementById('rTot').textContent = fmtFull(d.kpis.total_receivables);
+    document.getElementById('rOd').textContent = fmtFull(d.kpis.overdue);
+    document.getElementById('rCol').textContent = fmtFull(d.kpis.period_collections);
+    
+    charts.rAging = new ApexCharts(document.getElementById('cRecAging'), { chart: { type: 'donut', height: 280, background: THEME.bg, fontFamily:'Inter, sans-serif' }, series: d.charts.aging_values, labels: d.charts.aging_labels, colors: [COLORS.red, COLORS.green], stroke: { width: 2, colors: [isLight ? '#fff' : '#0a0f1e'] }, dataLabels: { enabled: false }, tooltip: commonOpts.tooltip, legend: { position: 'bottom', labels: { colors: THEME.text }, fontSize: '11px' } }); charts.rAging.render();
+    charts.rCust = new ApexCharts(document.getElementById('cRecCust'), { ...commonOpts, chart: { ...commonOpts.chart, type: 'bar', height: 280 }, series: [{ name: 'Receivable', data: d.charts.top_values }], xaxis: { ...commonOpts.xaxis, categories: d.charts.top_labels }, colors: PALETTE, plotOptions: { bar: { borderRadius: 4, distributed: true } }, dataLabels: { enabled: false }, legend:{show:false} }); charts.rCust.render();
+    charts.rTrend = new ApexCharts(document.getElementById('cRecTrend'), { ...commonOpts, chart: { ...commonOpts.chart, type: 'area', height: 280 }, series: [{ name: 'Collections', data: d.charts.collection_trend }], xaxis: { ...commonOpts.xaxis, categories: d.charts.labels }, colors: [COLORS.green], stroke: { curve: 'smooth', width: 2 }, fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.4, opacityTo: 0.05, stops: [0, 95] } }, dataLabels: { enabled: false } }); charts.rTrend.render();
+  }
+  else if(tab === 'payables') {
+    document.getElementById('pTot').textContent = fmtFull(d.kpis.total_payables);
+    document.getElementById('pOd').textContent = fmtFull(d.kpis.overdue);
+    document.getElementById('pPay').textContent = fmtFull(d.kpis.period_payments);
+    
+    charts.pAging = new ApexCharts(document.getElementById('cPayAging'), { chart: { type: 'donut', height: 280, background: THEME.bg, fontFamily:'Inter, sans-serif' }, series: d.charts.aging_values, labels: d.charts.aging_labels, colors: [COLORS.red, COLORS.green], stroke: { width: 2, colors: [isLight ? '#fff' : '#0a0f1e'] }, dataLabels: { enabled: false }, tooltip: commonOpts.tooltip, legend: { position: 'bottom', labels: { colors: THEME.text }, fontSize: '11px' } }); charts.pAging.render();
+    charts.pSupp = new ApexCharts(document.getElementById('cPaySupp'), { ...commonOpts, chart: { ...commonOpts.chart, type: 'bar', height: 280 }, series: [{ name: 'Payable', data: d.charts.top_values }], xaxis: { ...commonOpts.xaxis, categories: d.charts.top_labels }, colors: PALETTE, plotOptions: { bar: { borderRadius: 4, distributed: true } }, dataLabels: { enabled: false }, legend:{show:false} }); charts.pSupp.render();
+    charts.pTrend = new ApexCharts(document.getElementById('cPayTrend'), { ...commonOpts, chart: { ...commonOpts.chart, type: 'area', height: 280 }, series: [{ name: 'Payments', data: d.charts.payment_trend }], xaxis: { ...commonOpts.xaxis, categories: d.charts.labels }, colors: [COLORS.amber], stroke: { curve: 'smooth', width: 2 }, fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.4, opacityTo: 0.05, stops: [0, 95] } }, dataLabels: { enabled: false } }); charts.pTrend.render();
+  }
+  else if(tab === 'gl') {
+    document.getElementById('gDr').textContent = fmtFull(d.kpis.total_debit);
+    document.getElementById('gCr').textContent = fmtFull(d.kpis.total_credit);
+    document.getElementById('gVou').textContent = d.kpis.total_vouchers;
+    
+    charts.gTrend = new ApexCharts(document.getElementById('cGlTrend'), { ...commonOpts, chart: { ...commonOpts.chart, type: 'area', height: 280 }, series: [{ name: 'Debit Vol', data: d.charts.dr_trend }, { name: 'Credit Vol', data: d.charts.cr_trend }], xaxis: { ...commonOpts.xaxis, categories: d.charts.labels }, colors: [COLORS.blue, COLORS.amber], stroke: { curve: 'smooth', width: 2 }, dataLabels: { enabled: false }, legend: { labels:{colors:THEME.text} } }); charts.gTrend.render();
+    charts.gTop = new ApexCharts(document.getElementById('cGlTop'), { ...commonOpts, chart: { ...commonOpts.chart, type: 'bar', height: 280 }, series: [{ name: 'Movement', data: d.charts.top_values }], xaxis: { ...commonOpts.xaxis, categories: d.charts.top_labels }, colors: PALETTE, plotOptions: { bar: { horizontal: true, borderRadius: 4, distributed: true } }, dataLabels: { enabled: false }, legend:{show:false} }); charts.gTop.render();
+  }
+}
 
-    const currentUrl = `${API_URL}?tab=${currentTab}&start=${startStr}&end=${endStr}`;
-    const prevUrl = `${API_URL}?tab=${currentTab}&start=${prevStartStr}&end=${prevEndStr}`;
-    const analyticsUrl = `${ANALYTICS_URL}?start=${startStr}&end=${endStr}`;
+function loadData() {
+  document.getElementById('analyticsLoading').style.display = 'flex';
+  document.getElementById('financeContent').style.display = 'none';
 
-    try {
-      const fetches = [fetch(currentUrl), fetch(prevUrl)];
-      if (currentTab === 'executive') fetches.push(fetch(analyticsUrl));
+  const start = document.getElementById('filterStart').value;
+  const end = document.getElementById('filterEnd').value;
+  const url = `${API_URL}?tab=${currentTab}&start=${start}&end=${end}`;
 
-      const results = await Promise.all(fetches);
-      const currData = await results[0].json();
-      const prevData = await results[1].json();
-      
-      let analyticsData = null;
-      if (results.length > 2 && results[2].ok) {
-          try { analyticsData = await results[2].json(); } catch(e) {}
-      }
-
+  fetch(url)
+    .then(r => r.json())
+    .then(data => {
       document.getElementById('analyticsLoading').style.display = 'none';
       document.getElementById('financeContent').style.display = 'block';
+      if(data.error) return console.error('Finance error:', data.error);
+      renderTab(currentTab, data);
+    })
+    .catch(console.error);
+}
 
-      if (currData.error) return console.error('Finance error:', currData.error);
-      renderTab(currentTab, currData, prevData, analyticsData);
-
-    } catch (e) {
-      console.error("Dashboard data load failed:", e);
-      document.getElementById('analyticsLoading').innerHTML = `<span style="color:var(--color-red)">Failed to load intelligence data.</span>`;
-    }
+// Init
+function getDateRange(range) {
+  const t = new Date();
+  const y = t.getFullYear(), m = t.getMonth(), d = t.getDate();
+  let s, e = t;
+  switch(range) {
+    case 'today': s = t; break;
+    case 'week': s = new Date(y, m, d - t.getDay()); break;
+    case 'month': s = new Date(y, m, 1); break;
+    case 'quarter': s = new Date(y, m - (m%3), 1); break;
+    case 'year': s = new Date(y, 0, 1); break;
+    case 'all': s = new Date(2020, 0, 1); break;
+    default: s = new Date(y, m, 1);
   }
+  return { start: s.toISOString().split('T')[0], end: e.toISOString().split('T')[0] };
+}
 
-  // Init Date Ranges
-  function getDateRange(range) {
-    const t = new Date();
-    const y = t.getFullYear(), m = t.getMonth(), d = t.getDate();
-    let s, e = t;
-    switch (range) {
-      case 'today': s = t; break;
-      case 'week': s = new Date(y, m, d - t.getDay()); break;
-      case 'month': s = new Date(y, m, 1); break;
-      case 'quarter': s = new Date(y, m - (m % 3), 1); break;
-      case 'year': s = new Date(y, 0, 1); break;
-      case 'all': s = new Date(2020, 0, 1); break;
-      default: s = new Date(y, m, 1);
-    }
-    return { start: s.toISOString().split('T')[0], end: e.toISOString().split('T')[0] };
-  }
-
-  document.querySelectorAll('.filter-btn[data-range]').forEach(btn => {
-    btn.addEventListener('click', function () {
-      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-      this.classList.add('active');
-      const rng = getDateRange(this.dataset.range);
-      document.getElementById('filterStart').value = rng.start;
-      document.getElementById('filterEnd').value = rng.end;
-      loadData();
-    });
-  });
-
-  function applyCustomRange() {
-    const start = document.getElementById('filterStart').value;
-    const end = document.getElementById('filterEnd').value;
-    if (start && end) {
-      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-      loadData();
-    }
-  }
-
-  document.querySelectorAll('.tab-btn').forEach(btn => {
-    btn.addEventListener('click', function () {
-      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-      this.classList.add('active');
-      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-      document.getElementById('tab-' + this.dataset.tab).classList.add('active');
-      currentTab = this.dataset.tab;
-      loadData();
-    });
-  });
-
-  // Startup
-  (function () {
-    const rng = getDateRange('month');
+document.querySelectorAll('.filter-btn[data-range]').forEach(btn => {
+  btn.addEventListener('click', function() {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    this.classList.add('active');
+    const rng = getDateRange(this.dataset.range);
     document.getElementById('filterStart').value = rng.start;
     document.getElementById('filterEnd').value = rng.end;
     loadData();
-  })();
+  });
+});
 
-  document.addEventListener('themeChanged', loadData);
+function applyCustomRange() {
+  const start = document.getElementById('filterStart').value;
+  const end = document.getElementById('filterEnd').value;
+  if(start && end) {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    loadData();
+  }
+}
+
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', function() {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    this.classList.add('active');
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    document.getElementById('tab-' + this.dataset.tab).classList.add('active');
+    currentTab = this.dataset.tab;
+    loadData();
+  });
+});
+
+(function() {
+  const rng = getDateRange('month');
+  document.getElementById('filterStart').value = rng.start;
+  document.getElementById('filterEnd').value = rng.end;
+  loadData();
+})();
+
+document.addEventListener('themeChanged', loadData);
 </script>
 {% endblock %}
