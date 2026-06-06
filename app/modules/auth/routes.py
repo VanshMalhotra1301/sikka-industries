@@ -1,11 +1,9 @@
-from flask import render_template, redirect, url_for, flash, request, session
+from flask import render_template, redirect, url_for, flash, request
 from flask_login import login_user, logout_user, login_required, current_user
-from datetime import datetime
 from app import db, bcrypt
-from app.models import User, UserSession
+from app.models import User
 from app.modules.auth import auth_bp
 from app.utils.decorators import roles_required
-from app.utils.security import get_client_ip, get_device_info, log_activity_no_commit
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
@@ -25,16 +23,6 @@ def login():
                 return render_template('modules/auth/login.html')
                 
             login_user(user, remember=True)
-            
-            # Create User Session Record
-            ip_addr = get_client_ip()
-            device = get_device_info()
-            user_session = UserSession(user_id=user.id, ip_address=ip_addr, device_info=device, status='Active')
-            db.session.add(user_session)
-            db.session.commit()
-            
-            session['user_session_id'] = user_session.id
-            
             next_page = request.args.get('next')
             return redirect(next_page) if next_page else redirect(url_for('dashboard.index'))
         else:
@@ -46,34 +34,9 @@ def login():
 @login_required
 def logout():
     """Clears user session storage matrix."""
-    session_id = session.get('user_session_id')
-    if session_id:
-        user_session = UserSession.query.get(session_id)
-        if user_session and user_session.status == 'Active':
-            user_session.logout_time = datetime.utcnow()
-            user_session.status = 'Logged Out'
-            db.session.commit()
-        session.pop('user_session_id', None)
-
     logout_user()
     flash('Logged out successfully.', 'info')
     return redirect(url_for('auth.login'))
-
-@auth_bp.route('/timeout', methods=['POST'])
-@login_required
-def timeout():
-    """Triggered via AJAX when inactivity timeout occurs."""
-    session_id = session.get('user_session_id')
-    if session_id:
-        user_session = UserSession.query.get(session_id)
-        if user_session and user_session.status == 'Active':
-            user_session.logout_time = datetime.utcnow()
-            user_session.status = 'Session Timeout'
-            db.session.commit()
-        session.pop('user_session_id', None)
-
-    logout_user()
-    return {'status': 'success', 'redirect': url_for('auth.login')}, 200
 
 @auth_bp.route('/init-admin')
 def init_admin():
