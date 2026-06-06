@@ -114,6 +114,7 @@
               <a href="{{ url_for('inventory.view_ledger', product_id=p.id) }}" class="btn btn-ghost btn-xs" title="View History Log">
                 <i class="bi bi-list-ul"></i> History
               </a>
+              {% if current_user.role == 'Admin' %}
               <button class="btn btn-ghost btn-xs text-blue" title="Edit Good"
                       onclick="openEditModal('{{ p.id }}', '{{ p.code|escape }}', '{{ p.name|escape }}', '{{ p.purchase_cost }}', '{{ p.selling_price }}', '{{ p.low_stock_threshold }}')">
                 <i class="bi bi-pencil-fill"></i> Edit
@@ -122,6 +123,7 @@
                  onclick="return confirm('Are you sure you want to delete finished good [{{ p.code|escape }}] {{ p.name|escape }}?');">
                 <i class="bi bi-trash-fill"></i> Delete
               </a>
+              {% endif %}
             </div>
           </td>
         </tr>

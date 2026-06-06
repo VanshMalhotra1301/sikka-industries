@@ -222,7 +222,7 @@ def create_entry():
 
 @purchases_bp.route('/delete/<int:id>', methods=['POST', 'GET'])
 @login_required
-@roles_required(['Admin', 'Accountant'])
+@roles_required(['Admin'])
 def delete_purchase(id):
     purchase = Purchase.query.get_or_404(id)
     try:

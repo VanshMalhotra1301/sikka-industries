@@ -111,3 +111,39 @@ def toggle_user_status(user_id):
     flash(f'Access permissions for user "{user.username}" have been {status_msg}.', 'info')
     return redirect(url_for('auth.manage_users'))
 
+@auth_bp.route('/change-password', methods=['POST'])
+@login_required
+def change_password():
+    """Allows a user to securely change their own password."""
+    current_password = request.form.get('current_password')
+    new_password = request.form.get('new_password')
+    
+    if not current_password or not new_password:
+        flash('Both current and new passwords are required.', 'danger')
+        return redirect(request.referrer or url_for('dashboard.index'))
+        
+    if not bcrypt.check_password_hash(current_user.password_hash, current_password):
+        flash('Incorrect current password.', 'danger')
+        return redirect(request.referrer or url_for('dashboard.index'))
+        
+    current_user.password_hash = bcrypt.generate_password_hash(new_password).decode('utf-8')
+    db.session.commit()
+    flash('Your password has been changed successfully.', 'success')
+    return redirect(request.referrer or url_for('dashboard.index'))
+
+@auth_bp.route('/admin-reset-password/<int:user_id>', methods=['POST'])
+@login_required
+@roles_required(['Admin'])
+def admin_reset_password(user_id):
+    """Allows Admin to forcefully reset another user's password."""
+    new_password = request.form.get('new_password')
+    if not new_password:
+        flash('New password is required.', 'danger')
+        return redirect(url_for('auth.manage_users'))
+        
+    user = User.query.get_or_404(user_id)
+    user.password_hash = bcrypt.generate_password_hash(new_password).decode('utf-8')
+    db.session.commit()
+    flash(f'Password for user "{user.username}" has been successfully reset.', 'success')
+    return redirect(url_for('auth.manage_users'))
+

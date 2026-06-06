@@ -248,7 +248,7 @@ def view_invoice(id):
 
 @sales_bp.route('/delete/<int:id>', methods=['POST', 'GET'])
 @login_required
-@roles_required(['Admin', 'Accountant'])
+@roles_required(['Admin'])
 def delete_sale(id):
     sale = Sale.query.get_or_404(id)
     try:

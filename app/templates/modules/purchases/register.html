@@ -79,10 +79,12 @@
             {% endif %}
           </td>
           <td class="text-right">
+            {% if current_user.role == 'Admin' %}
             <a href="{{ url_for('purchases.delete_purchase', id=p.id) }}" class="btn btn-ghost btn-xs text-red" title="Delete Purchase Bill"
                onclick="return confirm('Are you sure you want to delete and void Purchase Bill #{{ p.id }}? This will revert raw material inventory quantities and ledger entries.');">
               <i class="bi bi-trash-fill"></i> Delete
             </a>
+            {% endif %}
           </td>
         </tr>
         {% else %}

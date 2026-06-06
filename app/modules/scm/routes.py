@@ -118,7 +118,7 @@ def statement(id):
 
 @scm_bp.route('/suppliers/edit/<int:id>', methods=['POST'])
 @login_required
-@roles_required(['Admin', 'Accountant', 'Owner'])
+@roles_required(['Admin'])
 def edit_supplier(id):
     supplier    = Supplier.query.get_or_404(id)
     name        = (request.form.get('name')        or '').strip()
@@ -163,7 +163,7 @@ def edit_supplier(id):
 
 @scm_bp.route('/suppliers/delete/<int:id>', methods=['POST', 'GET'])
 @login_required
-@roles_required(['Admin', 'Accountant', 'Owner'])
+@roles_required(['Admin'])
 def delete_supplier(id):
     supplier = Supplier.query.get_or_404(id)
     has_purchases = Purchase.query.filter_by(supplier_id=id).first()

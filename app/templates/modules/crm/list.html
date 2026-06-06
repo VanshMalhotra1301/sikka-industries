@@ -73,6 +73,7 @@
               <a href="{{ url_for('crm.statement', id=item.profile.id) }}" class="btn btn-ghost btn-xs" title="View Statement">
                 <i class="bi bi-journal-text"></i> Statement
               </a>
+              {% if current_user.role == 'Admin' %}
               <button class="btn btn-ghost btn-xs text-blue" title="Edit Customer"
                       onclick="openEditModal('{{ item.profile.id }}', '{{ item.profile.name|escape }}', '{{ item.profile.phone|escape or '' }}', '{{ item.profile.email|escape or '' }}', '{{ item.profile.gst_number|escape or '' }}', '{{ item.profile.address|escape or '' }}', '{{ item.op_bal }}', '{{ item.op_type }}')">
                 <i class="bi bi-pencil-fill"></i> Edit
@@ -81,6 +82,7 @@
                  onclick="return confirm('Are you sure you want to delete customer {{ item.profile.name|escape }}?');">
                 <i class="bi bi-trash-fill"></i> Delete
               </a>
+              {% endif %}
             </div>
           </td>
         </tr>

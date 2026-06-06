@@ -141,10 +141,12 @@
             {% endfor %}
           </td>
           <td class="text-right">
+            {% if current_user.role == 'Admin' %}
             <a href="{{ url_for('manufacturing.delete_production_run', id=run.id) }}" class="btn btn-ghost btn-xs text-red" title="Delete Production Run"
                onclick="return confirm('Are you sure you want to delete Production Run #{{ run.id }}? This will subtract finished goods stock and return raw components.');">
               <i class="bi bi-trash-fill"></i> Delete
             </a>
+            {% endif %}
           </td>
         </tr>
         {% else %}

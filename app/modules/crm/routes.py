@@ -202,7 +202,7 @@ def print_statement(id):
 
 @crm_bp.route('/customers/edit/<int:id>', methods=['POST'])
 @login_required
-@roles_required(['Admin', 'Accountant', 'Owner'])
+@roles_required(['Admin'])
 def edit_customer(id):
     customer   = Customer.query.get_or_404(id)
     name       = (request.form.get('name')       or '').strip()
@@ -248,7 +248,7 @@ def edit_customer(id):
 
 @crm_bp.route('/customers/delete/<int:id>', methods=['POST', 'GET'])
 @login_required
-@roles_required(['Admin', 'Accountant', 'Owner'])
+@roles_required(['Admin'])
 def delete_customer(id):
     customer = Customer.query.get_or_404(id)
     has_sales = Sale.query.filter_by(customer_id=id).first()

@@ -144,6 +144,9 @@
   </nav>
 
   <div class="sidebar-footer">
+    <a href="#" class="nav-link-custom" onclick="document.getElementById('changePasswordModal').classList.add('open')">
+      <i class="bi bi-key nav-icon"></i> Change Password
+    </a>
     <a href="{{ url_for('auth.logout') }}" class="nav-link-custom">
       <i class="bi bi-box-arrow-left nav-icon"></i> Sign Out
     </a>
@@ -327,6 +330,32 @@
     });
   })();
 </script>
+<!-- Change Password Modal -->
+<div class="modal-overlay" id="changePasswordModal">
+  <div class="modal-box" style="max-width:400px;">
+    <div class="modal-header">
+      <span class="modal-title"><i class="bi bi-key" style="color:var(--accent-blue);"></i> &nbsp; Change Password</span>
+      <button class="modal-close" onclick="document.getElementById('changePasswordModal').classList.remove('open')">×</button>
+    </div>
+    <div class="modal-body">
+      <form method="POST" action="{{ url_for('auth.change_password') }}">
+        <div class="form-group">
+          <label>Current Password *</label>
+          <input type="password" name="current_password" required>
+        </div>
+        <div class="form-group">
+          <label>New Password *</label>
+          <input type="password" name="new_password" required>
+        </div>
+        <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:16px;">
+          <button type="button" class="btn btn-ghost" onclick="document.getElementById('changePasswordModal').classList.remove('open')">Cancel</button>
+          <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> Update Password</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
 {% block scripts %}{% endblock %}
 </body>
 </html>

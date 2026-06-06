@@ -65,13 +65,19 @@
           <td class="td-muted">{{ u.created_at.strftime('%d %b %Y') if u.created_at else '—' }}</td>
           <td class="text-right">
             {% if u.id != current_user.id %}
-            <form method="POST" action="{{ url_for('auth.toggle_user_status', user_id=u.id) }}"
-                  style="display:inline;" onsubmit="return confirm('Toggle access for {{ u.username }}?')">
-              <button type="submit" class="btn {% if u.is_active %}btn-danger{% else %}btn-success{% endif %} btn-xs">
-                {% if u.is_active %}<i class="bi bi-lock-fill"></i> Suspend
-                {% else %}<i class="bi bi-unlock-fill"></i> Activate{% endif %}
+            <div style="display:inline-flex; gap:6px;">
+              <button class="btn btn-ghost btn-xs text-blue" title="Force Reset Password"
+                      onclick="openResetModal('{{ u.id }}', '{{ u.username|escape }}')">
+                <i class="bi bi-key-fill"></i> Reset Pwd
               </button>
-            </form>
+              <form method="POST" action="{{ url_for('auth.toggle_user_status', user_id=u.id) }}"
+                    style="display:inline;" onsubmit="return confirm('Toggle access for {{ u.username }}?')">
+                <button type="submit" class="btn {% if u.is_active %}btn-danger{% else %}btn-success{% endif %} btn-xs">
+                  {% if u.is_active %}<i class="bi bi-lock-fill"></i> Suspend
+                  {% else %}<i class="bi bi-unlock-fill"></i> Activate{% endif %}
+                </button>
+              </form>
+            </div>
             {% endif %}
           </td>
         </tr>
@@ -127,5 +133,38 @@
     </div>
   </div>
 </div>
+
+<!-- Admin Reset Password Modal -->
+<div class="modal-overlay" id="resetModal">
+  <div class="modal-box" style="max-width:400px;">
+    <div class="modal-header">
+      <span class="modal-title"><i class="bi bi-key-fill" style="color:var(--accent-red);"></i> &nbsp; Force Reset Password</span>
+      <button class="modal-close" onclick="document.getElementById('resetModal').classList.remove('open')">×</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:13px; color:var(--text-muted); margin-bottom:15px;">
+        You are about to force-reset the password for <strong id="reset_username_display" style="color:var(--text-main);"></strong>.
+      </p>
+      <form id="resetForm" method="POST" action="">
+        <div class="form-group">
+          <label>New Password *</label>
+          <input type="password" name="new_password" placeholder="Enter new strong password" required>
+        </div>
+        <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:16px;">
+          <button type="button" class="btn btn-ghost" onclick="document.getElementById('resetModal').classList.remove('open')">Cancel</button>
+          <button type="submit" class="btn btn-danger"><i class="bi bi-exclamation-triangle-fill"></i> Force Reset</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+function openResetModal(userId, username) {
+  document.getElementById('resetForm').action = "/auth/admin-reset-password/" + userId;
+  document.getElementById('reset_username_display').innerText = username;
+  document.getElementById('resetModal').classList.add('open');
+}
+</script>
 
 {% endblock %}

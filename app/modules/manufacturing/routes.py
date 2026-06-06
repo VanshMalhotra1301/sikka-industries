@@ -113,7 +113,7 @@ def production_logs():
 
 @manufacturing_bp.route('/delete/<int:id>', methods=['POST', 'GET'])
 @login_required
-@roles_required(['Admin', 'Store Manager'])
+@roles_required(['Admin'])
 def delete_production_run(id):
     run = ProductionRun.query.get_or_404(id)
     try:

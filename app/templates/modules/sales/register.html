@@ -83,10 +83,12 @@
               <a href="{{ url_for('sales.view_invoice', id=s.id) }}" class="btn btn-ghost btn-xs" target="_blank" title="Print Invoice">
                 <i class="bi bi-printer"></i> Print
               </a>
+              {% if current_user.role == 'Admin' %}
               <a href="{{ url_for('sales.delete_sale', id=s.id) }}" class="btn btn-ghost btn-xs text-red" title="Delete Invoice"
                  onclick="return confirm('Are you sure you want to delete and void Sales Invoice #{{ s.id }}? This will revert inventory quantities and ledger entries.');">
                 <i class="bi bi-trash-fill"></i> Delete
               </a>
+              {% endif %}
             </div>
           </td>
         </tr>

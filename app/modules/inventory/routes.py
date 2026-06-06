@@ -121,7 +121,7 @@ def view_ledger(product_id):
 
 @inventory_bp.route('/products/edit/<int:id>', methods=['POST'])
 @login_required
-@roles_required(['Admin', 'Store Manager', 'Accountant', 'Owner'])
+@roles_required(['Admin'])
 def edit_product(id):
     product = Product.query.get_or_404(id)
     code = request.form.get('code').strip().upper()
@@ -157,7 +157,7 @@ def edit_product(id):
 
 @inventory_bp.route('/products/delete/<int:id>', methods=['POST', 'GET'])
 @login_required
-@roles_required(['Admin', 'Store Manager', 'Accountant', 'Owner'])
+@roles_required(['Admin'])
 def delete_product(id):
     product = Product.query.get_or_404(id)
     has_sales = SaleItem.query.filter_by(product_id=id).first()
