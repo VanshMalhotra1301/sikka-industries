@@ -1,84 +1,587 @@
 {% extends "base.html" %}
-{% block title %}Banking Systems{% endblock %}
-{% block page_title %}Banking Systems{% endblock %}
-{% block page_subtitle %}Manage all bank accounts and liquidity{% endblock %}
+{% block title %}Banking Intelligence Center{% endblock %}
+{% block page_title %}Treasury & Banking{% endblock %}
+{% block page_subtitle %}Executive liquidity, cash flow, and treasury management{% endblock %}
+
+{% block head %}
+<script src="https://cdn.jsdelivr.net/npm/apexcharts@3.49.0/dist/apexcharts.min.js"></script>
+<style>
+/* ── Premium Treasury Styles ─────────────────────────────────────── */
+.treasury-hub { padding: 0; }
+
+/* Filter Bar */
+.filter-bar {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  padding: 14px 20px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  margin-bottom: 20px;
+  position: sticky; top: 0; z-index: 50;
+  backdrop-filter: blur(12px);
+}
+.filter-bar .filter-label {
+  font-size: 11px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.8px; color: var(--text-muted); margin-right: 4px;
+}
+.filter-btn {
+  padding: 6px 14px; border-radius: 8px; border: 1px solid var(--border);
+  background: transparent; color: var(--text-secondary);
+  font-size: 11px; font-weight: 600; cursor: pointer;
+  transition: all 0.2s ease;
+}
+.filter-btn:hover { border-color: var(--accent-blue); color: var(--accent-blue); }
+.filter-btn.active {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: #fff; border-color: transparent;
+  box-shadow: 0 2px 12px rgba(59,130,246,0.3);
+}
+.filter-custom { display: flex; align-items: center; gap: 6px; }
+.filter-custom input[type="date"] {
+  padding: 5px 10px; border-radius: 8px; border: 1px solid var(--border);
+  background: var(--bg-primary); color: var(--text-primary);
+  font-size: 11px; font-family: 'Inter', sans-serif;
+}
+.filter-custom .btn-apply {
+  padding: 6px 12px; border-radius: 8px; border: none;
+  background: var(--accent-green); color: #fff;
+  font-size: 11px; font-weight: 600; cursor: pointer;
+}
+.header-actions { margin-left: auto; display: flex; gap: 10px; }
+
+/* Section Headers */
+.section-header {
+  display: flex; align-items: center; gap: 10px;
+  margin: 28px 0 14px; padding-bottom: 10px; border-bottom: 1px solid var(--border);
+}
+.section-header i {
+  font-size: 18px; padding: 8px; border-radius: 10px;
+  background: rgba(59,130,246,0.1); color: var(--accent-blue);
+}
+.section-header h3 { font-size: 16px; font-weight: 700; color: var(--text-primary); margin: 0; }
+.section-header .section-badge {
+  font-size: 10px; padding: 3px 10px; border-radius: 20px;
+  background: rgba(59,130,246,0.1); color: var(--accent-blue);
+  font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;
+}
+
+/* KPI Widget Strip */
+.widget-strip {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px; margin-bottom: 20px;
+}
+.widget-card {
+  background: var(--card-bg); border: 1px solid var(--border);
+  border-radius: 14px; padding: 16px 18px;
+  position: relative; overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.widget-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.15); }
+.widget-card::before {
+  content: ''; position: absolute; top: 0; left: 0;
+  width: 4px; height: 100%; border-radius: 14px 0 0 14px;
+}
+.widget-card.w-green::before { background: linear-gradient(180deg, #10b981, #059669); }
+.widget-card.w-blue::before { background: linear-gradient(180deg, #3b82f6, #2563eb); }
+.widget-card.w-amber::before { background: linear-gradient(180deg, #f59e0b, #d97706); }
+.widget-card.w-red::before { background: linear-gradient(180deg, #ef4444, #dc2626); }
+.widget-card.w-purple::before { background: linear-gradient(180deg, #8b5cf6, #7c3aed); }
+.widget-card.w-cyan::before { background: linear-gradient(180deg, #06b6d4, #0891b2); }
+
+.widget-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-muted); margin-bottom: 6px; }
+.widget-value { font-size: 22px; font-weight: 800; color: var(--text-primary); font-variant-numeric: tabular-nums; }
+.widget-sub { font-size: 11px; color: var(--text-muted); margin-top: 4px; display:flex; justify-content:space-between; }
+.widget-icon { position: absolute; top: 14px; right: 16px; font-size: 20px; opacity: 0.15; color: var(--text-primary); }
+
+/* Bank Cards Grid */
+.bank-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px; margin-bottom: 24px;
+}
+.bank-card {
+  background: var(--card-bg); border: 1px solid var(--border);
+  border-radius: 14px; padding: 20px;
+  display: flex; flex-direction: column; gap: 14px;
+  position: relative; overflow: hidden;
+}
+.bank-card::after {
+  content: '\F18F'; /* bi-bank */
+  font-family: "bootstrap-icons";
+  position: absolute; right: -10px; bottom: -20px;
+  font-size: 100px; color: var(--text-primary); opacity: 0.03;
+  pointer-events: none;
+}
+.bank-header { display: flex; justify-content: space-between; align-items: flex-start; }
+.bank-name { font-size: 15px; font-weight: 700; color: var(--text-primary); margin: 0; }
+.bank-status { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; padding: 2px 8px; border-radius: 10px; background: rgba(16,185,129,0.1); color: #10b981; }
+.bank-bal-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
+.bank-bal-value { font-size: 24px; font-weight: 800; color: var(--accent-blue); letter-spacing: -0.5px; }
+.bank-stats { display: flex; gap: 15px; border-top: 1px dashed var(--border); padding-top: 12px; }
+.bank-stat-item { flex: 1; }
+.bank-stat-lbl { font-size: 10px; color: var(--text-muted); margin-bottom: 2px; }
+.bank-stat-val { font-size: 13px; font-weight: 700; color: var(--text-secondary); }
+.bank-tx-date { font-size: 11px; color: var(--text-muted); margin-top: auto; display: flex; align-items: center; gap: 5px; }
+
+/* Treasury Insights Panel */
+.insights-panel {
+  display: flex; flex-direction: column; gap: 10px;
+  margin-bottom: 24px;
+}
+.insight-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 16px; border-radius: 10px;
+  font-size: 13px; font-weight: 500;
+  border-left: 4px solid transparent;
+}
+.insight-info { background: rgba(59,130,246,0.1); color: var(--accent-blue); border-left-color: var(--accent-blue); }
+.insight-success { background: rgba(16,185,129,0.1); color: #10b981; border-left-color: #10b981; }
+.insight-warning { background: rgba(245,158,11,0.1); color: #f59e0b; border-left-color: #f59e0b; }
+.insight-danger { background: rgba(239,68,68,0.1); color: #ef4444; border-left-color: #ef4444; }
+
+/* Chart Grid */
+.chart-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.chart-card {
+  background: var(--card-bg); border: 1px solid var(--border);
+  border-radius: 14px; padding: 18px; transition: box-shadow 0.2s ease;
+}
+.chart-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+.chart-card.full-width { grid-column: 1 / -1; }
+.chart-title { font-size: 13px; font-weight: 700; color: var(--text-primary); margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+
+/* Table & Forecast */
+.bottom-grid {
+  display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-top: 16px;
+}
+.tx-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.tx-table th { text-align: left; padding: 10px; font-size: 10px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); border-bottom: 1px solid var(--border); }
+.tx-table td { padding: 10px; border-bottom: 1px solid var(--border); color: var(--text-secondary); }
+.tx-type { font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 6px; }
+.tx-in { background: rgba(16,185,129,0.1); color: #10b981; }
+.tx-out { background: rgba(239,68,68,0.1); color: #ef4444; }
+
+.forecast-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 14px; padding: 20px; }
+.fc-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px dashed var(--border); }
+.fc-row:last-child { border-bottom: none; }
+.fc-label { font-size: 13px; font-weight: 600; color: var(--text-secondary); }
+.fc-val { font-size: 14px; font-weight: 700; }
+.fc-total { background: rgba(59,130,246,0.05); padding: 16px; border-radius: 10px; margin-top: 10px; text-align: center; }
+
+/* Loading */
+.analytics-loading { display: flex; align-items: center; justify-content: center; padding: 60px; color: var(--text-muted); font-size: 14px; gap: 10px; }
+.spinner { width: 20px; height: 20px; border: 3px solid var(--border); border-top-color: var(--accent-blue); border-radius: 50%; animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Responsive */
+@media (max-width: 1024px) { .bottom-grid { grid-template-columns: 1fr; } }
+@media (max-width: 900px) { .chart-grid { grid-template-columns: 1fr; } .widget-strip { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 600px) {
+  .widget-strip { grid-template-columns: 1fr; }
+  .filter-bar { flex-direction: column; align-items: stretch; }
+  .header-actions { margin-left: 0; justify-content: space-between; }
+}
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="grid-8-4">
-    <div>
-        <div class="card" style="margin-bottom: 24px;">
-            <div class="card-header">
-                <div class="card-title"><i class="bi bi-bank" style="color:var(--accent-blue);"></i> Bank Accounts</div>
-            </div>
-            <div class="table-wrap">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Bank Name</th>
-                            <th class="text-right">Current Balance (₹)</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for bank in bank_ledgers %}
-                        <tr>
-                            <td class="fw-bold">{{ bank.name }}</td>
-                            <td class="text-right" style="color:{% if bank.current_balance < 0 %}var(--accent-red){% else %}var(--accent-green){% endif %};">
-                                {{ "{:,.2f}".format(bank.current_balance) }}
-                                {% if bank.current_balance < 0 %}(OD){% endif %}
-                            </td>
-                        </tr>
-                        {% else %}
-                        <tr><td colspan="2" class="text-center">No bank accounts configured yet.</td></tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
+<div class="treasury-hub">
 
-        <div class="card">
-            <div class="card-header">
-                <div class="card-title"><i class="bi bi-cash-coin" style="color:var(--accent-green);"></i> Cash-in-Hand</div>
-            </div>
-            <div class="table-wrap">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Ledger Name</th>
-                            <th class="text-right">Current Balance (₹)</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for cash in cash_ledgers %}
-                        <tr>
-                            <td class="fw-bold">{{ cash.name }}</td>
-                            <td class="text-right" style="color:{% if cash.current_balance < 0 %}var(--accent-red){% else %}var(--accent-green){% endif %};">
-                                {{ "{:,.2f}".format(cash.current_balance) }}
-                            </td>
-                        </tr>
-                        {% else %}
-                        <tr><td colspan="2" class="text-center">No cash ledgers found.</td></tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-
-    <div>
-        <div class="card">
-            <div class="card-header">
-                <div class="card-title"><i class="bi bi-plus-circle" style="color:var(--accent-amber);"></i> Add Bank Account</div>
-            </div>
-            <div class="card-body">
-                <form method="POST" action="{{ url_for('banking.add_bank') }}">
-                    <div class="form-group">
-                        <label>Bank Name *</label>
-                        <input type="text" name="name" required placeholder="e.g. HDFC Current A/c">
-                    </div>
-                    <button type="submit" class="btn btn-primary w-full">Add Bank</button>
-                </form>
-            </div>
-        </div>
-    </div>
+<!-- ═══════════════════ FILTER BAR & ACTIONS ═══════════════════ -->
+<div class="filter-bar" id="filterBar">
+  <span class="filter-label"><i class="bi bi-calendar3"></i> Period</span>
+  <button class="filter-btn" data-range="today">Today</button>
+  <button class="filter-btn" data-range="week">This Week</button>
+  <button class="filter-btn active" data-range="month">This Month</button>
+  <button class="filter-btn" data-range="quarter">This Quarter</button>
+  <button class="filter-btn" data-range="year">This Year</button>
+  <button class="filter-btn" data-range="all">All Time</button>
+  <div class="filter-custom">
+    <input type="date" id="filterStart">
+    <span style="color:var(--text-muted);font-size:11px;">to</span>
+    <input type="date" id="filterEnd">
+    <button class="btn-apply" onclick="applyCustomRange()">Apply</button>
+  </div>
+  
+  <div class="header-actions">
+    <button class="btn btn-primary btn-sm" onclick="document.getElementById('addBankModal').showModal()">
+      <i class="bi bi-plus-circle"></i> Add Bank
+    </button>
+  </div>
 </div>
+
+<!-- ═══════════════════ LOADING INDICATOR ═══════════════════ -->
+<div class="analytics-loading" id="analyticsLoading">
+  <div class="spinner"></div>
+  <span>Fetching live treasury data…</span>
+</div>
+
+<!-- ═══════════════════ MAIN CONTENT ═══════════════════ -->
+<div id="analyticsContent" style="display:none;">
+
+<!-- ── KPI WIDGETS ── -->
+<div class="widget-strip">
+  <div class="widget-card w-blue">
+    <div class="widget-label">Total Liquidity</div>
+    <div class="widget-value" id="kpiLiquidity">₹0</div>
+    <div class="widget-sub">Available funds across all accounts</div>
+    <i class="bi bi-safe widget-icon"></i>
+  </div>
+  <div class="widget-card w-green">
+    <div class="widget-label">Period Inflow</div>
+    <div class="widget-value" id="kpiInflow" style="color:#10b981;">₹0</div>
+    <div class="widget-sub">Money received <i class="bi bi-arrow-down-left"></i></div>
+    <i class="bi bi-box-arrow-in-down-left widget-icon"></i>
+  </div>
+  <div class="widget-card w-red">
+    <div class="widget-label">Period Outflow</div>
+    <div class="widget-value" id="kpiOutflow" style="color:#ef4444;">₹0</div>
+    <div class="widget-sub">Money spent <i class="bi bi-arrow-up-right"></i></div>
+    <i class="bi bi-box-arrow-up-right widget-icon"></i>
+  </div>
+  <div class="widget-card w-amber">
+    <div class="widget-label">Net Cash Position</div>
+    <div class="widget-value" id="kpiNet">₹0</div>
+    <div class="widget-sub">Inflow minus Outflow</div>
+    <i class="bi bi-arrow-left-right widget-icon"></i>
+  </div>
+  <div class="widget-card w-cyan">
+    <div class="widget-label">Pending Receivables</div>
+    <div class="widget-value" id="kpiReceivables">₹0</div>
+    <div class="widget-sub">Expected from customers</div>
+    <i class="bi bi-hourglass-split widget-icon"></i>
+  </div>
+  <div class="widget-card w-purple">
+    <div class="widget-label">Pending Payables</div>
+    <div class="widget-value" id="kpiPayables">₹0</div>
+    <div class="widget-sub">Due to suppliers</div>
+    <i class="bi bi-receipt widget-icon"></i>
+  </div>
+</div>
+
+<!-- ── TREASURY INSIGHTS ── -->
+<div class="insights-panel" id="insightsPanel">
+  <!-- Dynamic AI-style alerts injected here -->
+</div>
+
+<!-- ── BANK-WISE BALANCES ── -->
+<div class="section-header">
+  <i class="bi bi-bank" style="background:rgba(59,130,246,0.1);color:var(--accent-blue);"></i>
+  <h3>Bank Accounts Overview</h3>
+  <span class="section-badge" style="background:rgba(59,130,246,0.1);color:var(--accent-blue);">Live Balances</span>
+</div>
+<div class="bank-grid" id="bankGrid">
+  <!-- Dynamic Bank Cards -->
+</div>
+
+<!-- ── TREASURY CHARTS ── -->
+<div class="section-header">
+  <i class="bi bi-bar-chart-line-fill" style="background:rgba(139,92,246,0.1);color:var(--accent-purple);"></i>
+  <h3>Liquidity Analytics</h3>
+  <span class="section-badge" style="background:rgba(139,92,246,0.1);color:var(--accent-purple);">Trends</span>
+</div>
+<div class="chart-grid">
+  <div class="chart-card full-width">
+    <div class="chart-title"><i class="bi bi-graph-up"></i> Net Cash Position Trend</div>
+    <div id="chartTrend"></div>
+  </div>
+  <div class="chart-card">
+    <div class="chart-title"><i class="bi bi-arrow-left-right"></i> Money In vs Money Out</div>
+    <div id="chartInOut"></div>
+  </div>
+  <div class="chart-card">
+    <div class="chart-title"><i class="bi bi-pie-chart-fill"></i> Fund Allocation</div>
+    <div id="chartAlloc"></div>
+  </div>
+</div>
+
+<!-- ── RECENT TRANSACTIONS & FORECASTING ── -->
+<div class="section-header">
+  <i class="bi bi-clock-history" style="background:rgba(245,158,11,0.1);color:var(--accent-amber);"></i>
+  <h3>Operations & Forecasting</h3>
+</div>
+<div class="bottom-grid">
+  <div class="chart-card">
+    <div class="chart-title"><i class="bi bi-list-columns"></i> Recent Transactions</div>
+    <div style="overflow-x:auto;">
+      <table class="tx-table" id="txTable">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Type</th>
+            <th>Party/Ledger</th>
+            <th style="text-align:right;">Amount</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Dynamic -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+  
+  <div class="forecast-card">
+    <div class="chart-title"><i class="bi bi-magic" style="color:var(--accent-purple);"></i> 30-Day Cash Forecast</div>
+    <p style="font-size:11px; color:var(--text-muted); margin-bottom:16px;">Based on outstanding due invoices and bills.</p>
+    
+    <div class="fc-row">
+      <span class="fc-label">Current Liquidity</span>
+      <span class="fc-val" id="fcCurrent" style="color:var(--accent-blue);">₹0</span>
+    </div>
+    <div class="fc-row">
+      <span class="fc-label">Expected Collections (+)</span>
+      <span class="fc-val" id="fcIn" style="color:#10b981;">₹0</span>
+    </div>
+    <div class="fc-row">
+      <span class="fc-label">Expected Payments (-)</span>
+      <span class="fc-val" id="fcOut" style="color:#ef4444;">₹0</span>
+    </div>
+    
+    <div class="fc-total">
+      <div style="font-size:11px; text-transform:uppercase; font-weight:700; color:var(--text-muted); margin-bottom:4px;">Projected Balance (30 Days)</div>
+      <div style="font-size:28px; font-weight:800; color:var(--text-primary); letter-spacing:-0.5px;" id="fcProjected">₹0</div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /analyticsContent -->
+</div><!-- /treasury-hub -->
+
+<!-- ── ADD BANK MODAL ── -->
+<dialog id="addBankModal" class="modal">
+  <div class="modal-box" style="max-width: 400px;">
+    <h3 style="margin-top:0; font-weight:700;"><i class="bi bi-bank"></i> Add Bank Account</h3>
+    <form method="POST" action="{{ url_for('banking.add_bank') }}">
+      <div class="form-group" style="margin-top:16px;">
+        <label style="font-size:12px;font-weight:600;">Bank / Ledger Name *</label>
+        <input type="text" name="name" required placeholder="e.g. HDFC Current A/c" class="form-control" style="width:100%; padding:10px; border-radius:8px; border:1px solid var(--border); background:var(--bg-primary); color:var(--text-primary); margin-top:6px;">
+      </div>
+      <div style="display:flex; gap:10px; margin-top:24px; justify-content:flex-end;">
+        <button type="button" class="btn btn-secondary" onclick="document.getElementById('addBankModal').close()">Cancel</button>
+        <button type="submit" class="btn btn-primary">Add Bank</button>
+      </div>
+    </form>
+  </div>
+</dialog>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+<!-- JAVASCRIPT -->
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+<script>
+const API_URL = "{{ url_for('banking.treasury_data') }}";
+const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+
+const THEME = {
+  bg: 'transparent',
+  text: isLight ? '#475569' : '#94a3b8',
+  grid: isLight ? 'rgba(15,23,42,0.06)' : 'rgba(255,255,255,0.04)',
+};
+const COLORS = { green: '#10b981', blue: '#3b82f6', amber: '#f59e0b', red: '#ef4444', purple: '#8b5cf6', cyan: '#06b6d4', orange: '#f97316' };
+const PALETTE = [COLORS.blue, COLORS.purple, COLORS.green, COLORS.amber, COLORS.cyan, COLORS.orange];
+
+function fmt(n) {
+  if (n === undefined || n === null) return '₹0';
+  if (Math.abs(n) >= 10000000) return '₹' + (n/10000000).toFixed(2) + ' Cr';
+  if (Math.abs(n) >= 100000) return '₹' + (n/100000).toFixed(2) + ' L';
+  if (Math.abs(n) >= 1000) return '₹' + (n/1000).toFixed(1) + 'K';
+  return '₹' + n.toLocaleString('en-IN', {maximumFractionDigits:0});
+}
+function fmtFull(n) {
+  return '₹' + (n||0).toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+
+let charts = {};
+function destroyCharts() { Object.values(charts).forEach(c => { try { c.destroy(); } catch(e){} }); charts = {}; }
+
+// Render charts & UI
+function renderDashboard(d) {
+  destroyCharts();
+
+  // 1. KPIs
+  document.getElementById('kpiLiquidity').textContent = fmtFull(d.kpis.total_liquidity);
+  document.getElementById('kpiInflow').textContent = fmtFull(d.kpis.period_inflow);
+  document.getElementById('kpiOutflow').textContent = fmtFull(d.kpis.period_outflow);
+  
+  const net = d.kpis.net_cash_flow;
+  const netEl = document.getElementById('kpiNet');
+  netEl.textContent = fmtFull(net);
+  netEl.style.color = net >= 0 ? COLORS.green : COLORS.red;
+
+  document.getElementById('kpiReceivables').textContent = fmtFull(d.kpis.receivables);
+  document.getElementById('kpiPayables').textContent = fmtFull(d.kpis.payables);
+
+  // 2. Insights
+  const insightsHtml = d.insights.map(i => `
+    <div class="insight-item insight-${i.type}">
+      <i class="bi ${i.icon}"></i>
+      <span>${i.text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')}</span>
+    </div>
+  `).join('');
+  document.getElementById('insightsPanel').innerHTML = insightsHtml;
+
+  // 3. Bank Cards
+  let bankHtml = '';
+  if(d.bank_details.length === 0) {
+    bankHtml = '<div style="grid-column:1/-1; padding:30px; text-align:center; color:var(--text-muted);">No bank accounts found.</div>';
+  } else {
+    d.bank_details.forEach(b => {
+      const isOD = b.balance < 0;
+      bankHtml += `
+        <div class="bank-card">
+          <div class="bank-header">
+            <div>
+              <h4 class="bank-name">${b.name}</h4>
+              <div class="bank-bal-label">Current Balance</div>
+            </div>
+            <span class="bank-status" style="${isOD ? 'color:#ef4444; background:rgba(239,68,68,0.1);' : ''}">${isOD ? 'OVERDRAWN' : 'ACTIVE'}</span>
+          </div>
+          <div class="bank-bal-value" style="${isOD ? 'color:#ef4444;' : ''}">${fmtFull(b.balance)}</div>
+          <div class="bank-stats">
+            <div class="bank-stat-item"><div class="bank-stat-lbl">Inflow</div><div class="bank-stat-val" style="color:#10b981;">+${fmt(b.inflow)}</div></div>
+            <div class="bank-stat-item"><div class="bank-stat-lbl">Outflow</div><div class="bank-stat-val" style="color:#ef4444;">-${fmt(b.outflow)}</div></div>
+          </div>
+          <div class="bank-tx-date"><i class="bi bi-clock-history"></i> Last Tx: ${b.last_tx}</div>
+        </div>
+      `;
+    });
+  }
+  document.getElementById('bankGrid').innerHTML = bankHtml;
+
+  // 4. Charts
+  const commonOpts = { chart: { background: THEME.bg, toolbar:{show:false}, fontFamily:'Inter, sans-serif' },
+    tooltip: { theme: isLight ? 'light' : 'dark', y: { formatter: v => fmtFull(v) }, style: {fontSize:'11px'} },
+    xaxis: { labels: { style: { colors: THEME.text, fontSize: '10px' } } },
+    yaxis: { labels: { formatter: v => fmt(v), style: { colors: THEME.text, fontSize: '10px' } } },
+    grid: { borderColor: THEME.grid, strokeDashArray: 3 }
+  };
+
+  charts.trend = new ApexCharts(document.getElementById('chartTrend'), {
+    ...commonOpts,
+    chart: { ...commonOpts.chart, type: 'area', height: 280, animations: { speed: 600 } },
+    series: [{ name: 'Net Cash Flow', data: d.charts.net }],
+    xaxis: { ...commonOpts.xaxis, categories: d.charts.labels },
+    colors: [COLORS.blue], stroke: { curve: 'smooth', width: 2.5 },
+    fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.4, opacityTo: 0.05, stops: [0, 95] } },
+    dataLabels: { enabled: false }
+  });
+  charts.trend.render();
+
+  charts.inout = new ApexCharts(document.getElementById('chartInOut'), {
+    ...commonOpts,
+    chart: { ...commonOpts.chart, type: 'bar', height: 280, stacked: false },
+    series: [{ name: 'Inflow', data: d.charts.inflow }, { name: 'Outflow', data: d.charts.outflow }],
+    xaxis: { ...commonOpts.xaxis, categories: d.charts.labels },
+    colors: [COLORS.green, COLORS.red],
+    plotOptions: { bar: { borderRadius: 4, columnWidth: '60%' } },
+    dataLabels: { enabled: false },
+    legend: { position: 'top', labels: { colors: THEME.text } }
+  });
+  charts.inout.render();
+
+  if (d.distribution.labels.length > 0) {
+    charts.alloc = new ApexCharts(document.getElementById('chartAlloc'), {
+      chart: { type: 'donut', height: 280, background: THEME.bg, fontFamily:'Inter, sans-serif' },
+      series: d.distribution.values, labels: d.distribution.labels,
+      colors: PALETTE, stroke: { width: 2, colors: [isLight ? '#fff' : '#0a0f1e'] },
+      dataLabels: { enabled: false },
+      tooltip: commonOpts.tooltip,
+      legend: { position: 'bottom', labels: { colors: THEME.text }, fontSize: '11px' }
+    });
+    charts.alloc.render();
+  } else {
+    document.getElementById('chartAlloc').innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-muted);font-size:13px;">No positive balances to allocate</div>';
+  }
+
+  // 5. Recent Transactions
+  let txHtml = '';
+  if(d.recent_transactions.length === 0) {
+    txHtml = '<tr><td colspan="4" style="text-align:center;">No recent transactions found</td></tr>';
+  } else {
+    d.recent_transactions.forEach(t => {
+      const isDr = t.type.includes('Deposit');
+      const cls = isDr ? 'tx-in' : 'tx-out';
+      txHtml += `
+        <tr>
+          <td>${t.date}<br><span style="font-size:9px;color:var(--text-muted);">${t.voucher_no}</span></td>
+          <td><span class="tx-type ${cls}">${isDr ? 'IN' : 'OUT'}</span></td>
+          <td><div style="font-weight:600;">${t.party}</div><div style="font-size:10px;color:var(--text-muted);max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${t.narration||'-'}</div></td>
+          <td style="text-align:right; font-weight:700; color:${isDr ? COLORS.green : COLORS.red};">${isDr ? '+' : '-'}${fmtFull(t.amount)}</td>
+        </tr>
+      `;
+    });
+  }
+  document.getElementById('txTable').querySelector('tbody').innerHTML = txHtml;
+
+  // 6. Forecast
+  document.getElementById('fcCurrent').textContent = fmtFull(d.kpis.total_liquidity);
+  document.getElementById('fcIn').textContent = '+' + fmtFull(d.forecast.expected_in);
+  document.getElementById('fcOut').textContent = '-' + fmtFull(d.forecast.expected_out);
+  document.getElementById('fcProjected').textContent = fmtFull(d.forecast.projected_balance);
+}
+
+// ── DATE RANGE LOGIC ──
+function getDateRange(range) {
+  const today = new Date();
+  const y = today.getFullYear(), m = today.getMonth(), d = today.getDate();
+  let start, end = today;
+
+  switch(range) {
+    case 'today': start = today; break;
+    case 'week': start = new Date(y, m, d - today.getDay()); break;
+    case 'month': start = new Date(y, m, 1); break;
+    case 'quarter': start = new Date(y, m - (m % 3), 1); break;
+    case 'year': start = new Date(y, 0, 1); break;
+    case 'all': start = new Date(2020, 0, 1); break;
+    default: start = new Date(y, m, 1);
+  }
+  return { start: start.toISOString().split('T')[0], end: end.toISOString().split('T')[0] };
+}
+
+function loadData(startDate, endDate) {
+  document.getElementById('analyticsLoading').style.display = 'flex';
+  document.getElementById('analyticsContent').style.display = 'none';
+
+  fetch(`${API_URL}?start=${startDate}&end=${endDate}`)
+    .then(r => r.json())
+    .then(data => {
+      document.getElementById('analyticsLoading').style.display = 'none';
+      document.getElementById('analyticsContent').style.display = 'block';
+      if(data.error) return console.error('Treasury error:', data.error);
+      renderDashboard(data);
+    })
+    .catch(console.error);
+}
+
+document.querySelectorAll('.filter-btn[data-range]').forEach(btn => {
+  btn.addEventListener('click', function() {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    this.classList.add('active');
+    const range = getDateRange(this.dataset.range);
+    document.getElementById('filterStart').value = range.start;
+    document.getElementById('filterEnd').value = range.end;
+    loadData(range.start, range.end);
+  });
+});
+
+function applyCustomRange() {
+  const start = document.getElementById('filterStart').value;
+  const end = document.getElementById('filterEnd').value;
+  if(start && end) {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    loadData(start, end);
+  }
+}
+
+// Initial Load
+(function() {
+  const range = getDateRange('month');
+  document.getElementById('filterStart').value = range.start;
+  document.getElementById('filterEnd').value = range.end;
+  loadData(range.start, range.end);
+})();
+
+// Theme sync
+document.addEventListener('themeChanged', function() {
+  const range = getDateRange(document.querySelector('.filter-btn.active')?.dataset?.range || 'month');
+  loadData(range.start, range.end);
+});
+</script>
 {% endblock %}
