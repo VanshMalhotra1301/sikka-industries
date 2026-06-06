@@ -4,8 +4,9 @@ services:
   - type: web
     name: sikka-erp
     runtime: python
+    plan: free
     buildCommand: "chmod +x build.sh && ./build.sh"
-    startCommand: "gunicorn run:app --bind 0.0.0.0:$PORT --workers 2 --timeout 120"
+    startCommand: "chmod +x start.sh && ./start.sh"
     envVars:
       - key: FLASK_ENV
         value: production
