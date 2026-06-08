@@ -66,11 +66,11 @@ app = create_app('production')
 with app.app_context():
     existing = User.query.filter_by(username='admin').first()
     if not existing:
-        hashed = bcrypt.generate_password_hash('admin123').decode('utf-8')
+        hashed = bcrypt.generate_password_hash('admin').decode('utf-8')
         admin = User(username='admin', password_hash=hashed, role='Admin', is_active=True)
         db.session.add(admin)
         db.session.commit()
-        print('Demo admin created -> Username: admin | Password: admin123')
+        print('Demo admin created -> Username: admin | Password: admin')
     else:
         print('Admin user already exists, skipping.')
 "
