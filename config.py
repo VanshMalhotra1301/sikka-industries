@@ -18,6 +18,8 @@ def _fix_db_url(url: str) -> str:
     if not url:
         return url
 
+    url = url.strip()
+
     if url.startswith('postgres://'):
         url = url.replace('postgres://', 'postgresql://', 1)
 
