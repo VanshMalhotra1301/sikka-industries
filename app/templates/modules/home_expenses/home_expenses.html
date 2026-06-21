@@ -1,0 +1,371 @@
+{% extends "base.html" %}
+{% block title %}Home Expenses{% endblock %}
+{% block page_title %}Personal Finance{% endblock %}
+{% block page_subtitle %}Track personal & household expenses — private to Owner / Admin{% endblock %}
+
+{% block content %}
+
+<!-- ════════════════════════════════════ SUMMARY STATS ════════════════════════════════════ -->
+<div class="stats-grid" style="grid-template-columns: repeat(3, 1fr);">
+
+  <div class="stat-card stat-amber">
+    <div class="stat-label"><i class="bi bi-calendar3"></i> This Month</div>
+    <div class="stat-value text-amber">₹{{ "{:,.0f}".format(month_total) }}</div>
+    <div class="stat-sub">{{ ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][current_month - 1] }} {{ current_year }}</div>
+    <i class="bi bi-house-heart-fill stat-icon"></i>
+  </div>
+
+  <div class="stat-card stat-purple">
+    <div class="stat-label"><i class="bi bi-calendar-range"></i> This Year</div>
+    <div class="stat-value text-purple">₹{{ "{:,.0f}".format(year_total) }}</div>
+    <div class="stat-sub">FY {{ current_year }}</div>
+    <i class="bi bi-wallet2 stat-icon"></i>
+  </div>
+
+  <div class="stat-card stat-cyan">
+    <div class="stat-label"><i class="bi bi-tags-fill"></i> Categories</div>
+    <div class="stat-value text-cyan">{{ categories|length }}</div>
+    <div class="stat-sub">Active categories</div>
+    <i class="bi bi-grid-fill stat-icon"></i>
+  </div>
+
+</div>
+
+<!-- ════════════════════════════════ CATEGORY BREAKDOWN (This Month) ════════════════════════════════ -->
+{% if category_totals %}
+<div class="card" style="margin-bottom:20px;">
+  <div class="card-header">
+    <div class="card-title"><i class="bi bi-pie-chart-fill" style="color:var(--accent-amber);"></i> Category Breakdown — This Month</div>
+    <span class="badge badge-amber">{{ category_totals|length }} categories</span>
+  </div>
+  <div class="card-body" style="padding:12px 20px;">
+    {% for cat_name, cat_icon, cat_total in category_totals %}
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;{% if not loop.last %}border-bottom:1px solid var(--border);{% endif %}">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="font-size:18px;">{{ cat_icon }}</span>
+        <span style="font-size:13px;color:var(--text-secondary);font-weight:500;">{{ cat_name }}</span>
+      </div>
+      <span style="font-size:14px;font-weight:700;color:var(--accent-amber);">₹{{ "{:,.0f}".format(cat_total) }}</span>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+<!-- ════════════════════════════════════ MAIN LAYOUT ════════════════════════════════════ -->
+<div class="grid-8-4">
+
+  <!-- ─── Add Expense Form ─── -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title"><i class="bi bi-plus-circle-fill" style="color:var(--accent-green);"></i> Record Home Expense</div>
+      <span class="badge badge-green">🏠 Home Expense</span>
+    </div>
+    <div class="card-body">
+      <form method="POST" action="{{ url_for('home_expenses.add_expense') }}" id="addExpenseForm">
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Expense Date *</label>
+            <input type="date" name="date" value="{{ now_date }}" required
+                   style="color-scheme: dark;">
+          </div>
+          <div class="form-group">
+            <label>Amount (₹) *</label>
+            <input type="number" name="amount" step="0.01" min="0.01"
+                   placeholder="e.g. 2500" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Category *</label>
+          <select name="category_id" required>
+            <option value="">— Select category —</option>
+            {% for cat in categories %}
+            <option value="{{ cat.id }}">{{ cat.icon }} {{ cat.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Description / Remarks</label>
+          <textarea name="description" rows="3"
+                    placeholder="Brief description of the expense..."></textarea>
+        </div>
+
+        <button type="submit" class="btn btn-success w-full">
+          <i class="bi bi-check-circle-fill"></i> Save Expense
+        </button>
+        <div style="font-size:10px;color:var(--text-muted);text-align:center;margin-top:8px;">
+          🏠 This expense will be recorded as a Home Expense (private).
+        </div>
+
+      </form>
+    </div>
+  </div>
+
+  <!-- ─── Manage Categories ─── -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title"><i class="bi bi-tags-fill" style="color:var(--accent-cyan);"></i> Categories</div>
+    </div>
+    <div class="card-body" style="padding:12px;">
+      <!-- Existing categories -->
+      {% for cat in categories %}
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 8px;{% if not loop.last %}border-bottom:1px solid var(--border);{% endif %}">
+        <span style="font-size:12px;color:var(--text-secondary);">
+          <span style="font-size:16px;">{{ cat.icon }}</span> {{ cat.name }}
+        </span>
+        <div style="display:flex;gap:4px;align-items:center;">
+          {% if cat.is_default %}
+            <span class="badge badge-gray" style="font-size:8px;">DEFAULT</span>
+          {% else %}
+            <a href="{{ url_for('home_expenses.delete_category', cat_id=cat.id) }}"
+               class="btn btn-ghost btn-xs text-red"
+               onclick="return confirm('Delete category \'{{ cat.name }}\'?');"
+               title="Delete Category">
+              <i class="bi bi-trash-fill"></i>
+            </a>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+
+      <!-- Add new category -->
+      <div style="border-top:1px solid var(--border);padding-top:12px;margin-top:8px;">
+        <form method="POST" action="{{ url_for('home_expenses.add_category') }}" style="display:flex;gap:8px;align-items:end;">
+          <div style="flex:1;">
+            <label style="font-size:9px;">New Category</label>
+            <input type="text" name="name" placeholder="e.g. Travel" required
+                   style="padding:8px 10px;font-size:12px;min-height:36px;">
+          </div>
+          <div style="width:60px;">
+            <label style="font-size:9px;">Icon</label>
+            <input type="text" name="icon" value="📋" maxlength="4"
+                   style="padding:8px 6px;font-size:16px;text-align:center;min-height:36px;">
+          </div>
+          <button type="submit" class="btn btn-primary btn-sm" style="min-height:36px;margin-bottom:16px;">
+            <i class="bi bi-plus"></i>
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ════════════════════════════════════ EXPENSE HISTORY ════════════════════════════════════ -->
+<div class="card">
+  <div class="card-header" style="flex-wrap:wrap;gap:12px;">
+    <div class="card-title"><i class="bi bi-clock-history" style="color:var(--text-muted);"></i> Expense History</div>
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+      <span class="badge badge-purple">{{ expenses|length }} entries</span>
+      <button class="btn btn-ghost btn-xs" onclick="document.getElementById('filterPanel').classList.toggle('hidden')" title="Toggle Filters">
+        <i class="bi bi-funnel-fill"></i> Filters
+      </button>
+      {% if expenses %}
+      <button class="btn btn-ghost btn-xs" onclick="exportTableToCSV('expenseTable','home_expenses.csv')" title="Export CSV">
+        <i class="bi bi-download"></i> CSV
+      </button>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Filter Panel -->
+  <div id="filterPanel" class="{% if not (filter_category or filter_month or filter_year or filter_date_from or filter_date_to) %}hidden{% endif %}"
+       style="padding:16px 20px;border-bottom:1px solid var(--border);background:rgba(79,142,247,0.03);">
+    <form method="GET" action="{{ url_for('home_expenses.index') }}">
+      <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:end;">
+        <div class="form-group" style="margin-bottom:0;min-width:140px;flex:1;">
+          <label>Category</label>
+          <select name="category">
+            <option value="">All Categories</option>
+            {% for cat in categories %}
+            <option value="{{ cat.id }}" {% if filter_category == cat.id|string %}selected{% endif %}>
+              {{ cat.icon }} {{ cat.name }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group" style="margin-bottom:0;min-width:120px;flex:1;">
+          <label>Month</label>
+          <select name="month">
+            <option value="">All Months</option>
+            {% for m in range(1, 13) %}
+            <option value="{{ m }}" {% if filter_month == m|string %}selected{% endif %}>
+              {{ ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][m - 1] }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group" style="margin-bottom:0;min-width:100px;flex:1;">
+          <label>Year</label>
+          <select name="year">
+            <option value="">All Years</option>
+            {% for y in available_years %}
+            <option value="{{ y }}" {% if filter_year == y|string %}selected{% endif %}>{{ y }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group" style="margin-bottom:0;min-width:140px;flex:1;">
+          <label>From Date</label>
+          <input type="date" name="date_from" value="{{ filter_date_from }}" style="color-scheme:dark;">
+        </div>
+        <div class="form-group" style="margin-bottom:0;min-width:140px;flex:1;">
+          <label>To Date</label>
+          <input type="date" name="date_to" value="{{ filter_date_to }}" style="color-scheme:dark;">
+        </div>
+        <div style="display:flex;gap:6px;margin-bottom:0;">
+          <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-search"></i> Apply</button>
+          <a href="{{ url_for('home_expenses.index') }}" class="btn btn-ghost btn-sm"><i class="bi bi-x-lg"></i> Clear</a>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <!-- Search -->
+  <div style="padding:12px 20px;border-bottom:1px solid var(--border);">
+    <div class="search-box">
+      <i class="bi bi-search" style="color:var(--text-muted);font-size:13px;"></i>
+      <input type="text" id="searchInput" placeholder="Search expenses..."
+             onkeyup="searchTable('searchInput','expenseTable')">
+    </div>
+  </div>
+
+  <div class="table-wrap">
+    <table id="expenseTable">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Category</th>
+          <th>Description</th>
+          <th>Created By</th>
+          <th class="text-right">Amount (₹)</th>
+          <th class="text-right">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for e in expenses %}
+        <tr>
+          <td class="td-muted" style="white-space:nowrap;">{{ e.date.strftime('%d %b %Y') }}</td>
+          <td>
+            <span class="badge badge-amber">
+              {{ e.category_ref.icon if e.category_ref else '📋' }} {{ e.category_ref.name if e.category_ref else 'Unknown' }}
+            </span>
+            <span class="badge badge-green" style="font-size:8px;margin-left:4px;">🏠 HOME</span>
+          </td>
+          <td class="td-muted">{{ e.description or '—' }}</td>
+          <td class="td-muted" style="white-space:nowrap;">
+            <i class="bi bi-person-fill" style="color:var(--accent-blue);"></i>
+            {{ e.creator.username if e.creator else '—' }}
+          </td>
+          <td class="text-right fw-bold text-amber">₹{{ "{:,.2f}".format(e.amount) }}</td>
+          <td class="text-right">
+            <div style="display:inline-flex; gap:6px;">
+              <button class="btn btn-ghost btn-xs text-blue" title="Edit Expense"
+                      onclick="openEditModal('{{ e.id }}', '{{ e.date.strftime('%Y-%m-%d') }}', '{{ e.amount }}', '{{ e.category_id }}', '{{ e.description|e if e.description else '' }}')">
+                <i class="bi bi-pencil-fill"></i>
+              </button>
+              <a href="{{ url_for('home_expenses.delete_expense', expense_id=e.id) }}"
+                 class="btn btn-ghost btn-xs text-red" title="Delete Expense"
+                 onclick="return confirm('Delete this ₹{{ '{:,.0f}'.format(e.amount) }} expense?');">
+                <i class="bi bi-trash-fill"></i>
+              </a>
+            </div>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="6">
+          <div class="empty-state">
+            <div class="empty-state-icon">🏠</div>
+            <h5>No home expenses recorded yet</h5>
+            <p>Use the form above to start tracking personal & household expenses.</p>
+          </div>
+        </td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════ EDIT MODAL ════════════════════════════════════ -->
+<div class="modal-overlay" id="editModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <span class="modal-title"><i class="bi bi-pencil-square" style="color:var(--accent-green);"></i> &nbsp; Edit Home Expense</span>
+      <button class="modal-close" onclick="document.getElementById('editModal').classList.remove('open')">×</button>
+    </div>
+    <div class="modal-body">
+      <form id="editForm" method="POST" action="">
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Expense Date *</label>
+            <input type="date" name="date" id="edit_date" required style="color-scheme:dark;">
+          </div>
+          <div class="form-group">
+            <label>Amount (₹) *</label>
+            <input type="number" name="amount" id="edit_amount" step="0.01" min="0.01" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Category *</label>
+          <select name="category_id" id="edit_category_id" required>
+            {% for cat in categories %}
+            <option value="{{ cat.id }}">{{ cat.icon }} {{ cat.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Description / Remarks</label>
+          <textarea name="description" id="edit_description" rows="3"></textarea>
+        </div>
+
+        <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:16px;">
+          <button type="button" class="btn btn-ghost" onclick="document.getElementById('editModal').classList.remove('open')">Cancel</button>
+          <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> Update Expense</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<style>
+  .hidden { display: none !important; }
+</style>
+<script>
+  // Set today's date as default for the add form
+  (function() {
+    const dateInput = document.querySelector('#addExpenseForm input[name="date"]');
+    if (dateInput && !dateInput.value) {
+      const today = new Date();
+      const yyyy = today.getFullYear();
+      const mm = String(today.getMonth() + 1).padStart(2, '0');
+      const dd = String(today.getDate()).padStart(2, '0');
+      dateInput.value = `${yyyy}-${mm}-${dd}`;
+    }
+  })();
+
+  // Open Edit Modal
+  function openEditModal(id, date, amount, categoryId, description) {
+    document.getElementById('editForm').action = "/home-expenses/edit/" + id;
+    document.getElementById('edit_date').value = date;
+    document.getElementById('edit_amount').value = amount;
+    document.getElementById('edit_category_id').value = categoryId;
+    document.getElementById('edit_description').value = description;
+    document.getElementById('editModal').classList.add('open');
+  }
+
+  // Close modal on Escape
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+      document.getElementById('editModal').classList.remove('open');
+    }
+  });
+</script>
+{% endblock %}

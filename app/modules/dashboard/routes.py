@@ -4,6 +4,7 @@ from sqlalchemy import func, extract, cast, Date
 from datetime import datetime, date
 from app import db
 from app.models import Sale, Purchase, Expense, LedgerEntry, Product, ProductionRun, AccountGroup, Ledger, Voucher, VoucherEntry
+from app.modules.home_expenses.models import HomeExpense
 from app.modules.dashboard import dashboard_bp
 
 # Roles that have full financial visibility
@@ -19,9 +20,15 @@ def index():
     today = date.today()
     role  = current_user.role
 
+    # Home Manager users go directly to their dedicated page
+    if role == 'Home Manager':
+        from flask import redirect, url_for
+        return redirect(url_for('home_expenses.index'))
+
     # ── Finance KPIs (Accountant / Admin / Owner) ─────────────────────────────
     total_sales = total_purchases = total_expenses = 0.0
     yearly_net_profit = 0.0
+    home_expenses_total = 0.0
     cash_in_hand = bank_balance = 0.0
     outstanding_receivables = outstanding_payables = 0.0
     months_labels = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
@@ -58,6 +65,12 @@ def index():
                 total_expenses = exp_dr - exp_cr
             else:
                 total_expenses = 0.0
+
+            # Add Home Expenses to total (lightweight personal expenses)
+            home_expenses_total = db.session.query(
+                func.coalesce(func.sum(HomeExpense.amount), 0.0)
+            ).scalar()
+            total_expenses += home_expenses_total
 
             # 2. Cash in Hand
             cash_groups = AccountGroup.query.filter(AccountGroup.name == 'Cash-in-Hand').all()
@@ -163,4 +176,5 @@ def index():
         pending_sales_dues=pending_sales_dues,
         pending_purchase_dues=pending_purchase_dues,
         today_date=today,
+        home_expenses_total=home_expenses_total if role in FINANCE_ROLES else 0.0,
     )

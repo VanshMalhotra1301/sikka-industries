@@ -132,6 +132,16 @@
     </a>
     {% endif %}
 
+    {# ── Personal Finance: Owner / Admin / Home Manager ── #}
+    {% if current_user.role in ['Admin', 'Owner', 'Home Manager'] %}
+    <div class="nav-section-label">Personal Finance</div>
+    <a href="{{ url_for('home_expenses.index') }}"
+       class="nav-link-custom {% if request.blueprint == 'home_expenses' %}active{% endif %}"
+       style="background:linear-gradient(135deg, rgba(245,158,11,0.1), transparent); border-left:3px solid var(--accent-amber);">
+      <i class="bi bi-house-heart-fill nav-icon" style="color:var(--accent-amber);"></i> Home Expenses
+    </a>
+    {% endif %}
+
     {# ── Admin-only ── #}
     {% if current_user.role == 'Admin' %}
     <div class="nav-section-label">System Admin</div>
