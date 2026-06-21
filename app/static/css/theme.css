@@ -285,6 +285,7 @@ body {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Top Bar */
@@ -1194,4 +1195,16 @@ textarea { resize: vertical; min-height: 80px; }
 
   /* Quick actions wrap */
   .card-body > div[style*="flex"] { gap: 8px !important; }
+}
+
+/* ============================================================
+   SIDEBAR COLLAPSED STATE (Desktop)
+   ============================================================ */
+@media (min-width: 993px) {
+  body.sidebar-collapsed .sidebar {
+    transform: translateX(-100%);
+  }
+  body.sidebar-collapsed .main-content {
+    margin-left: 0;
+  }
 }

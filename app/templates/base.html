@@ -19,6 +19,11 @@
   {% block head %}{% endblock %}
 </head>
 <body>
+<script>
+  if (localStorage.getItem('sidebarCollapsed') === 'true') {
+    document.body.classList.add('sidebar-collapsed');
+  }
+</script>
 
 <!-- Hamburger toggle (visible on tablet / mobile only via CSS) -->
 <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle navigation">
@@ -173,9 +178,14 @@
 
   <!-- Top Bar -->
   <header class="topbar">
-    <div class="topbar-left">
-      <h4>{% block page_title %}{{ company_full }}{% endblock %}</h4>
-      <p>{% block page_subtitle %}{{ industry_segment }}{% endblock %}</p>
+    <div class="topbar-left" style="display:flex; align-items:center; gap:16px;">
+      <button id="desktopSidebarToggle" class="btn btn-ghost btn-sm" aria-label="Toggle Sidebar" style="padding: 6px 10px; font-size: 18px; margin-left: -12px;" title="Toggle Sidebar">
+        <i class="bi bi-layout-sidebar"></i>
+      </button>
+      <div>
+        <h4>{% block page_title %}{{ company_full }}{% endblock %}</h4>
+        <p>{% block page_subtitle %}{{ industry_segment }}{% endblock %}</p>
+      </div>
     </div>
     <div class="topbar-right">
       <button id="theme-toggle" class="btn btn-ghost btn-sm" aria-label="Toggle Theme" style="padding: 6px 10px; font-size: 14px; margin-right: 8px;">
@@ -371,5 +381,28 @@
 </div>
 
 {% block scripts %}{% endblock %}
+<script>
+  // Desktop Sidebar Toggle
+  const desktopSidebarToggle = document.getElementById('desktopSidebarToggle');
+  if (desktopSidebarToggle) {
+    desktopSidebarToggle.addEventListener('click', function() {
+      document.body.classList.toggle('sidebar-collapsed');
+      localStorage.setItem('sidebarCollapsed', document.body.classList.contains('sidebar-collapsed'));
+    });
+  }
+
+  // Preserve Sidebar Scroll Position across page loads
+  const sidebarNav = document.getElementById('sidebar');
+  if (sidebarNav) {
+    const savedScroll = sessionStorage.getItem('sidebarScrollPos');
+    if (savedScroll) {
+      // Small timeout ensures DOM is fully painted before scrolling
+      setTimeout(() => sidebarNav.scrollTop = parseInt(savedScroll, 10), 0);
+    }
+    sidebarNav.addEventListener('scroll', function() {
+      sessionStorage.setItem('sidebarScrollPos', sidebarNav.scrollTop);
+    });
+  }
+</script>
 </body>
 </html>
