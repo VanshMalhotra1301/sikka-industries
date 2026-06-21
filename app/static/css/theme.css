@@ -460,8 +460,10 @@ body {
 .stat-value {
   font-size: 26px;
   font-weight: 800;
-  line-height: 1;
+  line-height: 1.1;
   margin-bottom: 4px;
+  overflow-wrap: anywhere;
+  word-break: break-all;
 }
 
 .stat-sub {
