@@ -141,6 +141,36 @@ def add_factory():
     return render_template('modules/hrms/add_factory.html')
 
 
+@hrms_bp.route('/factories/<int:factory_id>/edit', methods=['GET', 'POST'])
+@login_required
+@roles_required(['Admin', 'Owner'])
+def edit_factory(factory_id):
+    factory = Factory.query.get_or_404(factory_id)
+    if request.method == 'POST':
+        factory.name = request.form.get('name')
+        factory.address = request.form.get('address')
+        factory.latitude = float(request.form.get('latitude') or 0)
+        factory.longitude = float(request.form.get('longitude') or 0)
+        factory.attendance_radius = int(request.form.get('attendance_radius') or 200)
+        
+        _log_audit('Factory Updated', 'Factory', entity_id=factory.id, new_value=factory.name)
+        db.session.commit()
+        flash(f'Factory "{factory.name}" updated successfully.', 'success')
+        return redirect(url_for('hrms.factories'))
+    return render_template('modules/hrms/edit_factory.html', factory=factory)
+
+
+@hrms_bp.route('/factories/<int:factory_id>/delete', methods=['POST'])
+@login_required
+@roles_required(['Admin', 'Owner'])
+def delete_factory(factory_id):
+    factory = Factory.query.get_or_404(factory_id)
+    factory.is_active = False  # Soft delete
+    _log_audit('Factory Deactivated (Soft Delete)', 'Factory', entity_id=factory.id, old_value=factory.name)
+    db.session.commit()
+    flash(f'Factory "{factory.name}" has been deactivated.', 'info')
+    return redirect(url_for('hrms.factories'))
+
 # ══════════════════════════════════════════════════════════════════════════════
 # ADMIN: EMPLOYEE MANAGEMENT
 # ══════════════════════════════════════════════════════════════════════════════
@@ -229,6 +259,59 @@ def add_employee():
 
     all_factories = Factory.query.filter_by(is_active=True).all()
     return render_template('modules/hrms/add_employee.html', factories=all_factories)
+
+
+@hrms_bp.route('/employees/<int:emp_id>/edit', methods=['GET', 'POST'])
+@login_required
+@roles_required(['Admin', 'Owner', 'HR Manager'])
+def edit_employee(emp_id):
+    emp = Employee.query.get_or_404(emp_id)
+    if request.method == 'POST':
+        emp.name = request.form.get('name')
+        emp.phone = request.form.get('phone')
+        emp.email = request.form.get('email')
+        emp.address = request.form.get('address')
+        emp.designation = request.form.get('designation')
+        emp.department = request.form.get('department')
+        emp.base_salary = float(request.form.get('base_salary') or 0)
+        emp.employment_type = request.form.get('employment_type', 'Full-Time')
+        factory_id = request.form.get('factory_id')
+        emp.factory_id = int(factory_id) if factory_id else None
+        
+        # Handle optional status update
+        new_status = request.form.get('status')
+        if new_status:
+            emp.status = new_status
+
+        if 'photo' in request.files:
+            file = request.files['photo']
+            if file and file.filename and allowed_file(file.filename):
+                os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+                filename = f"{emp.employee_code}_{secure_filename(file.filename)}"
+                file.save(os.path.join(UPLOAD_FOLDER, filename))
+                emp.photo_filename = filename
+
+        _log_audit('Employee Updated', 'Employee', entity_id=emp.id, new_value=emp.name)
+        db.session.commit()
+        flash(f'Employee "{emp.name}" updated successfully.', 'success')
+        return redirect(url_for('hrms.employees'))
+
+    all_factories = Factory.query.filter_by(is_active=True).all()
+    return render_template('modules/hrms/edit_employee.html', emp=emp, factories=all_factories)
+
+
+@hrms_bp.route('/employees/<int:emp_id>/delete', methods=['POST'])
+@login_required
+@roles_required(['Admin', 'Owner', 'HR Manager'])
+def delete_employee(emp_id):
+    emp = Employee.query.get_or_404(emp_id)
+    emp.status = 'Terminated'
+    if emp.user:
+        emp.user.is_active = False  # Deactivate their login
+    _log_audit('Employee Terminated (Soft Delete)', 'Employee', entity_id=emp.id, old_value=emp.name)
+    db.session.commit()
+    flash(f'Employee "{emp.name}" has been marked as Terminated.', 'info')
+    return redirect(url_for('hrms.employees'))
 
 
 @hrms_bp.route('/employees/<int:emp_id>')

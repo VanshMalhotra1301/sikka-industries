@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+{% block title %}Edit Employee{% endblock %}
+{% block page_title %}Edit Profile: {{ emp.name }}{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 900px; margin:0 auto;">
+  <div class="card-header"><h4 class="card-title">Employee Profile Update</h4></div>
+  <div class="card-body">
+    <form method="POST" action="{{ url_for('hrms.edit_employee', emp_id=emp.id) }}" enctype="multipart/form-data">
+      
+      <!-- General Info -->
+      <h5 style="margin-top:0; margin-bottom:16px; border-bottom:1px solid var(--border); padding-bottom:8px; color:var(--text-secondary);">1. Personal Information</h5>
+      <div class="form-row-3">
+        <div class="form-group">
+          <label>Full Name *</label>
+          <input type="text" name="name" value="{{ emp.name }}" required>
+        </div>
+        <div class="form-group">
+          <label>Phone Number</label>
+          <input type="text" name="phone" value="{{ emp.phone or '' }}">
+        </div>
+        <div class="form-group">
+          <label>Email Address</label>
+          <input type="email" name="email" value="{{ emp.email or '' }}">
+        </div>
+      </div>
+      
+      <div class="form-group">
+        <label>Address</label>
+        <input type="text" name="address" value="{{ emp.address or '' }}">
+      </div>
+      
+      <div class="form-group">
+        <label>Update Employee Photo</label>
+        {% if emp.photo_filename %}
+        <div style="margin-bottom:8px;">
+          <img src="{{ url_for('static', filename='uploads/employees/' + emp.photo_filename) }}" style="width:48px; height:48px; border-radius:50%; object-fit:cover;">
+          <span class="fs-sm td-muted">Current photo</span>
+        </div>
+        {% endif %}
+        <input type="file" name="photo" accept="image/png, image/jpeg, image/webp" class="form-control" style="background:var(--bg-sidebar); border:1px solid var(--border); padding:8px; border-radius:8px; color:var(--text-primary); width:100%;">
+      </div>
+
+      <!-- Employment Info -->
+      <h5 style="margin-top:24px; margin-bottom:16px; border-bottom:1px solid var(--border); padding-bottom:8px; color:var(--text-secondary);">2. Employment Details</h5>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Assigned Factory Location *</label>
+          <select name="factory_id" required>
+            <option value="" disabled>-- Select Factory --</option>
+            {% for f in factories %}
+            <option value="{{ f.id }}" {% if emp.factory_id == f.id %}selected{% endif %}>{{ f.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Employment Type</label>
+          <select name="employment_type">
+            <option value="Full-Time" {% if emp.employment_type == 'Full-Time' %}selected{% endif %}>Full-Time</option>
+            <option value="Part-Time" {% if emp.employment_type == 'Part-Time' %}selected{% endif %}>Part-Time</option>
+            <option value="Contract" {% if emp.employment_type == 'Contract' %}selected{% endif %}>Contract</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row-3">
+        <div class="form-group">
+          <label>Department</label>
+          <input type="text" name="department" value="{{ emp.department or '' }}" placeholder="e.g. Production">
+        </div>
+        <div class="form-group">
+          <label>Designation</label>
+          <input type="text" name="designation" value="{{ emp.designation or '' }}" placeholder="e.g. Operator">
+        </div>
+        <div class="form-group">
+          <label>Status</label>
+          <select name="status">
+            <option value="Active" {% if emp.status == 'Active' %}selected{% endif %}>Active</option>
+            <option value="Inactive" {% if emp.status == 'Inactive' %}selected{% endif %}>Inactive</option>
+            <option value="Terminated" {% if emp.status == 'Terminated' %}selected{% endif %}>Terminated</option>
+          </select>
+        </div>
+      </div>
+      
+      <div class="form-row">
+        <div class="form-group">
+          <label>Monthly Base Salary (₹) *</label>
+          <input type="number" step="0.01" name="base_salary" value="{{ emp.base_salary }}" required>
+        </div>
+      </div>
+
+      <div style="display:flex; justify-content:flex-end; gap:12px; border-top:1px solid var(--border); padding-top:20px;">
+        <a href="{{ url_for('hrms.employees') }}" class="btn btn-ghost">Cancel</a>
+        <button type="submit" class="btn btn-primary"><i class="bi bi-save"></i> Save Changes</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
