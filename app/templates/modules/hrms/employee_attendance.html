@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+{% block title %}My Attendance{% endblock %}
+{% block page_title %}Attendance History{% endblock %}
+{% block page_subtitle %}Your daily check-in records{% endblock %}
+
+{% block content %}
+<div class="card" style="border-radius:16px;">
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Status</th>
+          <th>Check-in/out</th>
+          <th>Hours</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for a in records %}
+        <tr>
+          <td style="font-weight:600;">{{ a.date.strftime('%a, %d %b') }}</td>
+          <td>
+            {% if a.status == 'Present' %}<span class="badge badge-green">Present</span>
+            {% elif a.status == 'Absent' %}<span class="badge badge-red">Absent</span>
+            {% elif a.status == 'On Leave' %}<span class="badge badge-amber">Leave</span>
+            {% elif a.status == 'Late' %}<span class="badge badge-purple">Late</span>
+            {% else %}<span class="badge badge-gray">{{ a.status }}</span>{% endif %}
+          </td>
+          <td class="fs-xs td-mono">
+            In: <span class="{{ 'text-green fw-bold' if a.check_in else 'td-muted' }}">{{ a.check_in.strftime('%H:%M') if a.check_in else '-' }}</span><br>
+            Out: <span class="{{ 'text-blue fw-bold' if a.check_out else 'td-muted' }}">{{ a.check_out.strftime('%H:%M') if a.check_out else '-' }}</span>
+          </td>
+          <td class="td-mono text-center">
+            {% if a.working_hours %}{{ "%.1f"|format(a.working_hours) }}h{% else %}-{% endif %}
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="4" class="empty-state">No attendance records found.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div style="margin-top:20px; text-align:center;">
+  <a href="{{ url_for('hrms.employee_portal') }}" class="btn btn-ghost"><i class="bi bi-arrow-left"></i> Back to Dashboard</a>
+</div>
+{% endblock %}

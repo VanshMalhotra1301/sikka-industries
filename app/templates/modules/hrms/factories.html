@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% block title %}Factory Management{% endblock %}
+{% block page_title %}Factory Locations{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-left"><h2>Factory Management</h2><p>Manage factory locations and geo-fencing for attendance</p></div>
+  <div class="page-actions"><a href="{{ url_for('hrms.add_factory') }}" class="btn btn-primary"><i class="bi bi-plus-lg"></i> Add Factory</a></div>
+</div>
+
+<div class="card">
+  <div class="table-wrap">
+    <table id="factoryTable">
+      <thead><tr><th>Factory</th><th>Address</th><th>Coordinates</th><th>Radius</th><th>Employees</th><th>Status</th></tr></thead>
+      <tbody>
+        {% for f in factories %}
+        <tr>
+          <td style="font-weight:600;">{{ f.name }}</td>
+          <td class="td-muted">{{ f.address or '-' }}</td>
+          <td class="td-mono">{{ "%.5f, %.5f"|format(f.latitude or 0, f.longitude or 0) }}</td>
+          <td><span class="badge badge-blue">{{ f.attendance_radius }}m</span></td>
+          <td>{{ f.employees|length }}</td>
+          <td>{% if f.is_active %}<span class="badge badge-green">Active</span>{% else %}<span class="badge badge-red">Inactive</span>{% endif %}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="6" class="empty-state"><i class="bi bi-building" style="font-size:2rem; opacity:0.3;"></i><p>No factories created yet.</p></td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,166 @@
+{% extends 'base.html' %}
+{% block title %}My Portal{% endblock %}
+{% block page_title %}Hello, {{ emp.name.split()[0] }}{% endblock %}
+{% block page_subtitle %}Employee Self-Service Portal{% endblock %}
+
+{% block content %}
+<style>
+/* Mobile optimized tweaks */
+.ep-card { border-radius:16px; margin-bottom:16px; background:var(--bg-card); border:1px solid var(--border); overflow:hidden; }
+.ep-card-body { padding:20px; }
+.ep-btn-big { width:100%; padding:18px; font-size:16px; border-radius:12px; display:flex; justify-content:center; align-items:center; gap:10px; font-weight:700; margin-bottom:12px; }
+.ep-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.ep-stat { background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:12px; padding:16px; text-align:center; }
+.ep-stat-val { font-size:24px; font-weight:800; line-height:1; margin-bottom:4px; }
+.ep-stat-lbl { font-size:11px; color:var(--text-muted); text-transform:uppercase; font-weight:600; letter-spacing:0.05em; }
+</style>
+
+<!-- GPS Status -->
+<div id="gps-status-box" style="display:none; padding:12px 16px; border-radius:12px; margin-bottom:16px; font-size:13px; font-weight:600; align-items:center; gap:8px;">
+  <i class="bi bi-geo-alt-fill"></i> <span id="gps-msg">Checking location...</span>
+</div>
+
+<div class="ep-card">
+  <div class="ep-card-body" style="text-align:center;">
+    <h5 style="margin:0 0 16px; font-size:14px; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.1em;">Today's Attendance</h5>
+    
+    {% if not today_att or not today_att.check_in %}
+      <div style="font-size:48px; color:var(--text-muted); margin-bottom:16px;"><i class="bi bi-clock-history"></i></div>
+      <p style="color:var(--text-muted); margin-bottom:24px;">You have not checked in yet today.</p>
+      <button onclick="markCheckIn()" class="btn btn-primary ep-btn-big" id="btn-checkin">
+        <i class="bi bi-box-arrow-in-right" style="font-size:20px;"></i> Mark Check-In
+      </button>
+      <div class="fs-xs td-muted"><i class="bi bi-geo-alt"></i> Location will be verified for {{ emp.factory.name if emp.factory else 'assigned factory' }}</div>
+    
+    {% elif today_att.check_in and not today_att.check_out %}
+      <div style="font-size:48px; color:var(--accent-green); margin-bottom:16px;"><i class="bi bi-check-circle-fill"></i></div>
+      <p style="color:var(--text-primary); font-size:16px; font-weight:600; margin-bottom:8px;">Checked In at {{ today_att.check_in.strftime('%I:%M %p') }}</p>
+      <p style="color:var(--text-muted); margin-bottom:24px;">Working actively.</p>
+      <button onclick="markCheckOut()" class="btn btn-amber ep-btn-big" id="btn-checkout">
+        <i class="bi bi-box-arrow-right" style="font-size:20px;"></i> Mark Check-Out
+      </button>
+
+    {% else %}
+      <div style="font-size:48px; color:var(--accent-blue); margin-bottom:16px;"><i class="bi bi-calendar2-check-fill"></i></div>
+      <p style="color:var(--text-primary); font-size:16px; font-weight:600; margin-bottom:8px;">Shift Completed</p>
+      <p class="td-muted">In: {{ today_att.check_in.strftime('%I:%M %p') }} | Out: {{ today_att.check_out.strftime('%I:%M %p') }}</p>
+      <p class="text-blue" style="font-weight:700; margin-top:8px;">Total Hours: {{ today_att.working_hours }}h</p>
+    {% endif %}
+  </div>
+</div>
+
+<div class="ep-grid" style="margin-bottom:16px;">
+  <div class="ep-stat">
+    <div class="ep-stat-val text-green">{{ days_present }}</div>
+    <div class="ep-stat-lbl">Days Present</div>
+    <div class="td-muted fs-xs mt-4">This Month</div>
+  </div>
+  <div class="ep-stat">
+    <div class="ep-stat-val text-red">{{ days_absent }}</div>
+    <div class="ep-stat-lbl">Days Absent</div>
+    <div class="td-muted fs-xs mt-4">This Month</div>
+  </div>
+</div>
+
+<div class="ep-card">
+  <div class="ep-card-body" style="padding:0;">
+    <a href="{{ url_for('hrms.employee_attendance_history') }}" style="display:flex; justify-content:space-between; align-items:center; padding:16px 20px; border-bottom:1px solid var(--border); color:var(--text-primary); text-decoration:none;">
+      <div style="display:flex; align-items:center; gap:12px; font-weight:600;"><i class="bi bi-calendar-range text-blue" style="font-size:20px;"></i> Attendance History</div>
+      <i class="bi bi-chevron-right td-muted"></i>
+    </a>
+    <a href="{{ url_for('hrms.employee_salary') }}" style="display:flex; justify-content:space-between; align-items:center; padding:16px 20px; border-bottom:1px solid var(--border); color:var(--text-primary); text-decoration:none;">
+      <div style="display:flex; align-items:center; gap:12px; font-weight:600;"><i class="bi bi-cash-stack text-cyan" style="font-size:20px;"></i> Salary Slips</div>
+      <i class="bi bi-chevron-right td-muted"></i>
+    </a>
+    <a href="{{ url_for('hrms.employee_leave') }}" style="display:flex; justify-content:space-between; align-items:center; padding:16px 20px; border-bottom:1px solid var(--border); color:var(--text-primary); text-decoration:none;">
+      <div style="display:flex; align-items:center; gap:12px; font-weight:600;">
+        <i class="bi bi-envelope-paper text-amber" style="font-size:20px;"></i> Leave Requests
+        {% if pending_leaves > 0 %}<span class="badge badge-amber">{{ pending_leaves }}</span>{% endif %}
+      </div>
+      <i class="bi bi-chevron-right td-muted"></i>
+    </a>
+    <a href="{{ url_for('hrms.employee_profile') }}" style="display:flex; justify-content:space-between; align-items:center; padding:16px 20px; color:var(--text-primary); text-decoration:none;">
+      <div style="display:flex; align-items:center; gap:12px; font-weight:600;"><i class="bi bi-person-circle text-purple" style="font-size:20px;"></i> My Profile</div>
+      <i class="bi bi-chevron-right td-muted"></i>
+    </a>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function showGPSStatus(msg, type) {
+  const box = document.getElementById('gps-status-box');
+  const txt = document.getElementById('gps-msg');
+  box.style.display = 'flex';
+  txt.innerText = msg;
+  box.style.background = type === 'error' ? 'rgba(239,68,68,0.1)' : 'rgba(16,185,129,0.1)';
+  box.style.color = type === 'error' ? 'var(--accent-red)' : 'var(--accent-green)';
+}
+
+function markCheckIn() {
+  const btn = document.getElementById('btn-checkin');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Verifying Location...';
+
+  if (!navigator.geolocation) {
+    showGPSStatus('GPS not supported by your device.', 'error');
+    submitCheckIn(null, null);
+    return;
+  }
+
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      submitCheckIn(pos.coords.latitude, pos.coords.longitude);
+    },
+    (err) => {
+      console.warn("GPS Error", err);
+      showGPSStatus('Location access denied or unavailable. Trying to check in without GPS...', 'error');
+      submitCheckIn(null, null);
+    },
+    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+  );
+}
+
+function submitCheckIn(lat, lng) {
+  const deviceInfo = navigator.userAgent;
+  
+  fetch("{{ url_for('hrms.employee_checkin') }}", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ latitude: lat, longitude: lng, device_info: deviceInfo })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if(data.success) {
+      window.location.reload();
+    } else {
+      showGPSStatus(data.message, 'error');
+      document.getElementById('btn-checkin').disabled = false;
+      document.getElementById('btn-checkin').innerHTML = '<i class="bi bi-box-arrow-in-right" style="font-size:20px;"></i> Try Again';
+    }
+  })
+  .catch(err => {
+    showGPSStatus('Network error. Please check your connection.', 'error');
+    document.getElementById('btn-checkin').disabled = false;
+  });
+}
+
+function markCheckOut() {
+  const btn = document.getElementById('btn-checkout');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Processing...';
+  
+  fetch("{{ url_for('hrms.employee_checkout') }}", { method: "POST" })
+  .then(res => res.json())
+  .then(data => {
+    if(data.success) {
+      window.location.reload();
+    } else {
+      alert(data.message);
+      btn.disabled = false;
+    }
+  });
+}
+</script>
+{% endblock %}

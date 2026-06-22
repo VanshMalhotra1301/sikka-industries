@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+{% block title %}Employee Profile{% endblock %}
+{% block page_title %}{{ emp.name }}{% endblock %}
+
+{% block content %}
+<div class="grid-8-4">
+  <div class="card">
+    <div class="card-body" style="display:flex; gap:24px; align-items:flex-start;">
+      {% if emp.photo_filename %}
+      <img src="{{ url_for('static', filename='uploads/employees/' + emp.photo_filename) }}" style="width:120px; height:120px; border-radius:12px; object-fit:cover; border:2px solid var(--border);">
+      {% else %}
+      <div style="width:120px; height:120px; border-radius:12px; background:var(--bg-card-hover); display:flex; align-items:center; justify-content:center; font-size:40px; color:var(--text-muted);"><i class="bi bi-person"></i></div>
+      {% endif %}
+      
+      <div style="flex:1;">
+        <h3 style="margin:0 0 4px; font-weight:800; display:flex; align-items:center; gap:12px;">
+          {{ emp.name }}
+          <span class="badge badge-gray" style="font-size:12px;">{{ emp.employee_code }}</span>
+        </h3>
+        <p style="color:var(--text-secondary); margin:0 0 16px;">{{ emp.designation or 'No Designation' }} · {{ emp.department or 'No Dept' }}</p>
+        
+        <div class="grid-2" style="gap:12px;">
+          <div><span class="td-muted">Phone:</span> <span style="font-weight:600;">{{ emp.phone or '-' }}</span></div>
+          <div><span class="td-muted">Email:</span> <span style="font-weight:600;">{{ emp.email or '-' }}</span></div>
+          <div><span class="td-muted">Factory:</span> <span style="font-weight:600;">{{ emp.factory.name if emp.factory else '-' }}</span></div>
+          <div><span class="td-muted">Joined:</span> <span style="font-weight:600;">{{ emp.joined_at.strftime('%d %b %Y') if emp.joined_at else '-' }}</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><h4 class="card-title"><i class="bi bi-calendar2-minus text-amber"></i> Leave Balances</h4></div>
+    <div class="card-body">
+      <div style="display:flex; justify-content:space-between; margin-bottom:12px; padding-bottom:12px; border-bottom:1px solid var(--border);">
+        <span class="fw-semibold">Casual Leave</span><span class="badge badge-blue" style="font-size:14px;">{{ emp.casual_leave_balance }}</span>
+      </div>
+      <div style="display:flex; justify-content:space-between; margin-bottom:12px; padding-bottom:12px; border-bottom:1px solid var(--border);">
+        <span class="fw-semibold">Sick Leave</span><span class="badge badge-amber" style="font-size:14px;">{{ emp.sick_leave_balance }}</span>
+      </div>
+      <div style="display:flex; justify-content:space-between;">
+        <span class="fw-semibold">Emergency Leave</span><span class="badge badge-red" style="font-size:14px;">{{ emp.emergency_leave_balance }}</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="grid-2">
+  <div class="card">
+    <div class="card-header"><h4 class="card-title"><i class="bi bi-calendar-check text-green"></i> Recent Attendance</h4></div>
+    <div class="table-wrap" style="max-height:300px; overflow-y:auto;">
+      <table>
+        <thead><tr><th>Date</th><th>Status</th><th>Check-in/out</th><th>Hours</th></tr></thead>
+        <tbody>
+          {% for a in recent_attendance %}
+          <tr>
+            <td style="font-weight:600;">{{ a.date.strftime('%d %b') }}</td>
+            <td>
+              {% if a.status == 'Present' %}<span class="badge badge-green">Present</span>
+              {% elif a.status == 'Absent' %}<span class="badge badge-red">Absent</span>
+              {% elif a.status == 'On Leave' %}<span class="badge badge-amber">Leave</span>
+              {% else %}<span class="badge badge-gray">{{ a.status }}</span>{% endif %}
+            </td>
+            <td class="fs-xs">
+              In: {{ a.check_in.strftime('%H:%M') if a.check_in else '-' }}<br>
+              Out: {{ a.check_out.strftime('%H:%M') if a.check_out else '-' }}
+            </td>
+            <td>{% if a.working_hours %}{{ a.working_hours }}h{% else %}-{% endif %}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="4" class="empty-state">No attendance recorded.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><h4 class="card-title"><i class="bi bi-cash-stack text-cyan"></i> Salary Slips</h4></div>
+    <div class="table-wrap" style="max-height:300px; overflow-y:auto;">
+      <table>
+        <thead><tr><th>Month/Year</th><th>Net Salary</th><th>Status</th></tr></thead>
+        <tbody>
+          {% for s in salary_slips %}
+          <tr>
+            <td style="font-weight:600;">{{ "%02d"|format(s.month) }} / {{ s.year }}</td>
+            <td class="text-green fw-bold">₹{{ "{:,.2f}".format(s.net_salary) }}</td>
+            <td><span class="badge badge-blue">{{ s.status }}</span></td>
+          </tr>
+          {% else %}
+          <tr><td colspan="3" class="empty-state">No slips generated.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

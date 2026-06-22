@@ -25,6 +25,11 @@ def index():
         from flask import redirect, url_for
         return redirect(url_for('home_expenses.index'))
 
+    # Employee users go to their HRMS self-service portal
+    if role == 'Employee':
+        from flask import redirect, url_for
+        return redirect(url_for('hrms.employee_portal'))
+
     # ── Finance KPIs (Accountant / Admin / Owner) ─────────────────────────────
     total_sales = total_purchases = total_expenses = 0.0
     yearly_net_profit = 0.0

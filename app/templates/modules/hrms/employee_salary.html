@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% block title %}My Salary Slips{% endblock %}
+{% block page_title %}Salary Slips{% endblock %}
+{% block page_subtitle %}Your monthly payroll records{% endblock %}
+
+{% block content %}
+<div class="card" style="border-radius:16px;">
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Month</th>
+          <th>Net Salary</th>
+          <th>Status</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in slips %}
+        <tr>
+          <td style="font-weight:600;">{{ "%02d"|format(s.month) }} / {{ s.year }}</td>
+          <td class="text-green fw-bold">₹{{ "{:,.2f}".format(s.net_salary) }}</td>
+          <td>
+            {% if s.status == 'Generated' %}<span class="badge badge-blue">Processing</span>
+            {% elif s.status == 'Paid' %}<span class="badge badge-green">Paid</span>
+            {% else %}<span class="badge badge-gray">{{ s.status }}</span>{% endif %}
+          </td>
+          <td style="text-align:right;">
+            <button class="btn btn-ghost btn-sm" onclick="alert('PDF Download feature coming soon!')"><i class="bi bi-download"></i></button>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="4" class="empty-state">No salary slips generated yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div style="margin-top:20px; text-align:center;">
+  <a href="{{ url_for('hrms.employee_portal') }}" class="btn btn-ghost"><i class="bi bi-arrow-left"></i> Back to Dashboard</a>
+</div>
+{% endblock %}

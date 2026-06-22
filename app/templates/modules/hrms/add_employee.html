@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+{% block title %}Onboard Employee{% endblock %}
+{% block page_title %}Employee Onboarding{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 900px; margin:0 auto;">
+  <div class="card-header"><h4 class="card-title">Employee Profile Setup</h4></div>
+  <div class="card-body">
+    <form method="POST" action="{{ url_for('hrms.add_employee') }}" enctype="multipart/form-data">
+      
+      <!-- General Info -->
+      <h5 style="margin-top:0; margin-bottom:16px; border-bottom:1px solid var(--border); padding-bottom:8px; color:var(--text-secondary);">1. Personal Information</h5>
+      <div class="form-row-3">
+        <div class="form-group">
+          <label>Full Name *</label>
+          <input type="text" name="name" required>
+        </div>
+        <div class="form-group">
+          <label>Phone Number</label>
+          <input type="text" name="phone">
+        </div>
+        <div class="form-group">
+          <label>Email Address</label>
+          <input type="email" name="email">
+        </div>
+      </div>
+      
+      <div class="form-group">
+        <label>Address</label>
+        <input type="text" name="address">
+      </div>
+      
+      <div class="form-group">
+        <label>Employee Photo</label>
+        <input type="file" name="photo" accept="image/png, image/jpeg, image/webp" class="form-control" style="background:var(--bg-sidebar); border:1px solid var(--border); padding:8px; border-radius:8px; color:var(--text-primary); width:100%;">
+      </div>
+
+      <!-- Employment Info -->
+      <h5 style="margin-top:24px; margin-bottom:16px; border-bottom:1px solid var(--border); padding-bottom:8px; color:var(--text-secondary);">2. Employment Details</h5>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Assigned Factory Location *</label>
+          <select name="factory_id" required>
+            <option value="" disabled selected>-- Select Factory --</option>
+            {% for f in factories %}
+            <option value="{{ f.id }}">{{ f.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Employment Type</label>
+          <select name="employment_type">
+            <option value="Full-Time">Full-Time</option>
+            <option value="Part-Time">Part-Time</option>
+            <option value="Contract">Contract</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row-3">
+        <div class="form-group">
+          <label>Department</label>
+          <input type="text" name="department" placeholder="e.g. Production">
+        </div>
+        <div class="form-group">
+          <label>Designation</label>
+          <input type="text" name="designation" placeholder="e.g. Operator">
+        </div>
+        <div class="form-group">
+          <label>Date of Joining *</label>
+          <input type="date" name="joined_at" required>
+        </div>
+      </div>
+      
+      <div class="form-row">
+        <div class="form-group">
+          <label>Monthly Base Salary (₹) *</label>
+          <input type="number" step="0.01" name="base_salary" required>
+        </div>
+      </div>
+
+      <!-- System Access -->
+      <h5 style="margin-top:24px; margin-bottom:16px; border-bottom:1px solid var(--border); padding-bottom:8px; color:var(--text-secondary);">3. Self-Service Portal Access</h5>
+      <div style="background:rgba(79, 142, 247, 0.05); border:1px solid rgba(79, 142, 247, 0.2); padding:16px; border-radius:12px; margin-bottom:20px;">
+        <p style="font-size:12px; color:var(--text-muted); margin-top:0; margin-bottom:16px;">Create a user account so the employee can log into the mobile portal to mark attendance and view salary slips.</p>
+        <div class="form-row">
+          <div class="form-group" style="margin-bottom:0;">
+            <label>Login Username *</label>
+            <input type="text" name="username" required>
+          </div>
+          <div class="form-group" style="margin-bottom:0;">
+            <label>Login Password *</label>
+            <input type="password" name="password" required>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex; justify-content:flex-end; gap:12px; border-top:1px solid var(--border); padding-top:20px;">
+        <a href="{{ url_for('hrms.employees') }}" class="btn btn-ghost">Cancel</a>
+        <button type="submit" class="btn btn-primary"><i class="bi bi-person-plus-fill"></i> Save & Onboard</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

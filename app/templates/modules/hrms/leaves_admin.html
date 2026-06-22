@@ -1,0 +1,82 @@
+{% extends 'base.html' %}
+{% block title %}Leave Management{% endblock %}
+{% block page_title %}Leave Management{% endblock %}
+
+{% block content %}
+<div class="card" style="margin-bottom:20px;">
+  <div class="card-header"><h4 class="card-title"><i class="bi bi-clock-history text-amber"></i> Pending Leave Requests</h4></div>
+  <div class="table-responsive">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Employee</th>
+          <th>Type</th>
+          <th>Duration</th>
+          <th>Days</th>
+          <th>Reason</th>
+          <th>Applied On</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for req in pending %}
+        <tr>
+          <td style="font-weight:600;">{{ req.employee.name }}<br><span class="td-muted">{{ req.employee.employee_code }}</span></td>
+          <td><span class="badge badge-gray">{{ req.leave_type }}</span></td>
+          <td>{{ req.start_date.strftime('%d %b') }} - {{ req.end_date.strftime('%d %b %Y') }}</td>
+          <td>{{ req.days }}</td>
+          <td style="max-width:200px; white-space:normal; font-size:12px;">{{ req.reason or '-' }}</td>
+          <td class="td-muted">{{ req.applied_at.strftime('%d %b %H:%M') }}</td>
+          <td style="display:flex; gap:8px;">
+            <form method="POST" action="{{ url_for('hrms.leave_action', leave_id=req.id) }}">
+              <input type="hidden" name="action" value="approve">
+              <button type="submit" class="btn btn-success btn-sm"><i class="bi bi-check-lg"></i> Approve</button>
+            </form>
+            <form method="POST" action="{{ url_for('hrms.leave_action', leave_id=req.id) }}">
+              <input type="hidden" name="action" value="reject">
+              <button type="submit" class="btn btn-danger btn-sm"><i class="bi bi-x-lg"></i> Reject</button>
+            </form>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="7" class="empty-state">No pending leave requests.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header"><h4 class="card-title"><i class="bi bi-archive text-blue"></i> Recent History</h4></div>
+  <div class="table-responsive">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Employee</th>
+          <th>Type</th>
+          <th>Duration</th>
+          <th>Status</th>
+          <th>Action By</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for req in history %}
+        <tr>
+          <td style="font-weight:600;">{{ req.employee.name }}</td>
+          <td><span class="badge badge-gray">{{ req.leave_type }}</span></td>
+          <td>{{ req.start_date.strftime('%d %b') }} - {{ req.end_date.strftime('%d %b') }} ({{ req.days }} days)</td>
+          <td>
+            {% if req.status == 'Approved' %}<span class="badge badge-green">Approved</span>
+            {% elif req.status == 'Rejected' %}<span class="badge badge-red">Rejected</span>
+            {% endif %}
+          </td>
+          <td class="td-muted">{{ req.approver.username if req.approver else '-' }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="5" class="empty-state">No recent leave history.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,69 @@
+{% extends 'base.html' %}
+{% block title %}Admin Attendance Log{% endblock %}
+{% block page_title %}Attendance Logs{% endblock %}
+
+{% block content %}
+<div class="card" style="margin-bottom: 20px;">
+  <div class="card-body">
+    <form method="GET" action="{{ url_for('hrms.attendance_admin') }}" style="display:flex; gap:16px; align-items:flex-end;">
+      <div class="form-group" style="margin-bottom:0;">
+        <label>Select Date</label>
+        <input type="date" name="date" class="form-control" value="{{ target_date.strftime('%Y-%m-%d') }}" onchange="this.form.submit()">
+      </div>
+      <button type="submit" class="btn btn-secondary"><i class="bi bi-search"></i> Load</button>
+    </form>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <h4 class="card-title">Attendance for {{ target_date.strftime('%d %b %Y') }}</h4>
+  </div>
+  <div class="table-responsive">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>EMP Code</th>
+          <th>Name</th>
+          <th>Factory</th>
+          <th>Status</th>
+          <th>Check-In</th>
+          <th>Check-Out</th>
+          <th>Location Verified</th>
+          <th>Hours Worked</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for att, emp in records %}
+        <tr>
+          <td><span class="badge badge-gray">{{ emp.employee_code }}</span></td>
+          <td style="font-weight:600;">{{ emp.name }}</td>
+          <td>{{ att.factory.name if att.factory else '-' }}</td>
+          <td>
+            {% if att.status == 'Present' %}<span class="badge badge-green">Present</span>
+            {% elif att.status == 'Absent' %}<span class="badge badge-red">Absent</span>
+            {% elif att.status == 'On Leave' %}<span class="badge badge-amber">Leave</span>
+            {% elif att.status == 'Late' %}<span class="badge badge-purple">Late</span>
+            {% else %}<span class="badge badge-gray">{{ att.status }}</span>{% endif %}
+          </td>
+          <td class="td-mono">{{ att.check_in.strftime('%H:%M:%S') if att.check_in else '-' }}</td>
+          <td class="td-mono">{{ att.check_out.strftime('%H:%M:%S') if att.check_out else '-' }}</td>
+          <td>
+            {% if att.location_verified %}<span class="text-green fw-bold"><i class="bi bi-check-circle-fill"></i> Yes</span>
+            {% else %}<span class="text-red fw-bold"><i class="bi bi-x-circle-fill"></i> No</span>{% endif %}
+          </td>
+          <td class="td-mono">
+            {% if att.working_hours %}{{ "%.1f"|format(att.working_hours) }} h{% else %}-{% endif %}
+            {% if att.overtime_hours and att.overtime_hours > 0 %}<br><span class="text-purple fs-xs">+{{ "%.1f"|format(att.overtime_hours) }} OT</span>{% endif %}
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="8" class="empty-state">No attendance records found for this date.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

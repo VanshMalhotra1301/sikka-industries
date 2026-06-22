@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+{% block title %}Employee Directory{% endblock %}
+{% block page_title %}Employee Directory{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-left"><h2>Employee Directory</h2><p>Manage all factory workforce accounts</p></div>
+  <div class="page-actions"><a href="{{ url_for('hrms.add_employee') }}" class="btn btn-primary"><i class="bi bi-person-plus-fill"></i> Add Employee</a></div>
+</div>
+
+<div class="card">
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Employee Name</th>
+          <th>Designation</th>
+          <th>Factory</th>
+          <th>Contact</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for emp in employees %}
+        <tr>
+          <td><span class="badge badge-gray">{{ emp.employee_code }}</span></td>
+          <td style="font-weight:600; display:flex; align-items:center; gap:10px;">
+            {% if emp.photo_filename %}
+            <img src="{{ url_for('static', filename='uploads/employees/' + emp.photo_filename) }}" style="width:32px; height:32px; border-radius:50%; object-fit:cover;">
+            {% else %}
+            <div style="width:32px; height:32px; border-radius:50%; background:var(--bg-card-hover); display:flex; align-items:center; justify-content:center; color:var(--text-muted);"><i class="bi bi-person"></i></div>
+            {% endif %}
+            {{ emp.name }}
+          </td>
+          <td>{{ emp.designation or '-' }}<br><span class="td-muted">{{ emp.department or '-' }}</span></td>
+          <td>{{ emp.factory.name if emp.factory else '-' }}</td>
+          <td>{{ emp.phone or '-' }}</td>
+          <td>
+            {% if emp.status == 'Active' %}<span class="badge badge-green">Active</span>
+            {% elif emp.status == 'Terminated' %}<span class="badge badge-red">Terminated</span>
+            {% else %}<span class="badge badge-amber">{{ emp.status }}</span>{% endif %}
+          </td>
+          <td>
+            <a href="{{ url_for('hrms.view_employee', emp_id=emp.id) }}" class="btn btn-ghost btn-sm" title="View Profile"><i class="bi bi-person-lines-fill"></i> View</a>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="7" class="empty-state"><i class="bi bi-people" style="font-size:2rem; opacity:0.3;"></i><p>No employees onboarded yet.</p></td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

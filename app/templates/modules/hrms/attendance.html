@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+{% block title %}Daily Attendance{% endblock %}
+{% block page_title %}Daily Attendance{% endblock %}
+
+{% block content %}
+<div class="card" style="margin-bottom: 20px;">
+  <div class="card-body">
+    <form method="GET" action="{{ url_for('hrms.mark_attendance') }}" style="display:flex; gap:16px; align-items:flex-end;">
+      <div class="form-group" style="margin-bottom:0;">
+        <label>Select Date</label>
+        <input type="date" name="date" class="form-control" value="{{ target_date.strftime('%Y-%m-%d') }}" onchange="this.form.submit()">
+      </div>
+      <button type="submit" class="btn btn-secondary">Load</button>
+    </form>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <h4 class="card-title">Mark Attendance for {{ target_date.strftime('%d %b %Y') }}</h4>
+  </div>
+  <div class="card-body p-0">
+    <form method="POST" action="{{ url_for('hrms.mark_attendance', date=target_date.strftime('%Y-%m-%d')) }}">
+      <div class="table-responsive">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>EMP Code</th>
+              <th>Name</th>
+              <th>Department</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for emp in employees %}
+            <tr>
+              <td><span class="badge" style="background:var(--bg-elevated);">{{ emp.employee_code }}</span></td>
+              <td style="font-weight:500;">{{ emp.name }}</td>
+              <td>{{ emp.department or '-' }}</td>
+              <td>
+                {% set current_status = att_dict.get(emp.id, 'Present') %}
+                <div style="display:flex; gap:12px;">
+                  <label style="display:flex; align-items:center; gap:4px; cursor:pointer;">
+                    <input type="radio" name="status_{{ emp.id }}" value="Present" {% if current_status == 'Present' %}checked{% endif %}>
+                    <span class="text-success">Present</span>
+                  </label>
+                  <label style="display:flex; align-items:center; gap:4px; cursor:pointer;">
+                    <input type="radio" name="status_{{ emp.id }}" value="Absent" {% if current_status == 'Absent' %}checked{% endif %}>
+                    <span class="text-danger">Absent</span>
+                  </label>
+                  <label style="display:flex; align-items:center; gap:4px; cursor:pointer;">
+                    <input type="radio" name="status_{{ emp.id }}" value="Half-Day" {% if current_status == 'Half-Day' %}checked{% endif %}>
+                    <span class="text-warning">Half-Day</span>
+                  </label>
+                </div>
+              </td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="4" class="empty-state">No active employees found.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      
+      {% if employees %}
+      <div style="padding:16px; border-top:1px solid var(--border-color); display:flex; justify-content:flex-end;">
+        <button type="submit" class="btn btn-primary"><i class="bi bi-save"></i> Save Attendance</button>
+      </div>
+      {% endif %}
+    </form>
+  </div>
+</div>
+{% endblock %}

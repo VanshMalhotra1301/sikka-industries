@@ -60,6 +60,15 @@
       <i class="bi bi-grid-1x2-fill nav-icon"></i> Dashboard
     </a>
 
+    {# ── HR & Operations: Admin / Owner / HR Manager / Accountant ── #}
+    {% if current_user.role in ['Admin', 'Owner', 'HR Manager', 'Accountant'] %}
+    <div class="nav-section-label">HR & Payroll</div>
+    <a href="{{ url_for('hrms.index') }}"
+       class="nav-link-custom {% if request.blueprint == 'hrms' %}active{% endif %}">
+      <i class="bi bi-people-fill nav-icon"></i> HRMS & Payroll
+    </a>
+    {% endif %}
+
     {# ── Stakeholders: Admin / Owner / Accountant ── #}
     {% if current_user.role in ['Admin', 'Owner', 'Accountant'] %}
     <div class="nav-section-label">Stakeholders</div>

@@ -360,3 +360,185 @@ class ProductionConsumption(db.Model):
     def __repr__(self):
         return f'<ProductionConsumption run={self.production_run_id} rm={self.raw_material_id}>'
 
+
+# ---------------------------------------------------------------------------
+# HRMS & PAYROLL — Enterprise Factory Workforce Management
+# ---------------------------------------------------------------------------
+class Factory(db.Model):
+    """Factory / Plant locations for attendance geo-fencing."""
+    __tablename__ = 'factories'
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(150), unique=True, nullable=False)
+    address = db.Column(db.Text)
+    latitude = db.Column(db.Float, nullable=True)
+    longitude = db.Column(db.Float, nullable=True)
+    attendance_radius = db.Column(db.Integer, default=200)  # metres
+    is_active = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def __repr__(self):
+        return f'<Factory {self.name}>'
+
+
+class Employee(db.Model):
+    """Employee Master Record linked to a User account."""
+    __tablename__ = 'employees'
+
+    id = db.Column(db.Integer, primary_key=True)
+    employee_code = db.Column(db.String(50), unique=True, nullable=False)
+    name = db.Column(db.String(150), nullable=False)
+    photo_filename = db.Column(db.String(255))
+    phone = db.Column(db.String(20))
+    email = db.Column(db.String(120))
+    address = db.Column(db.Text)
+    designation = db.Column(db.String(100))
+    department = db.Column(db.String(100))
+    base_salary = db.Column(db.Float, default=0.0)
+    employment_type = db.Column(db.String(50), default='Full-Time')  # Full-Time, Part-Time, Contract
+    joined_at = db.Column(db.Date)
+    status = db.Column(db.String(20), default='Active')  # Active, Inactive, Terminated
+
+    # Factory & Location assignment
+    factory_id = db.Column(db.Integer, db.ForeignKey('factories.id'), nullable=True)
+
+    # Link to User model for login
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True, unique=True)
+
+    # Leave balances
+    casual_leave_balance = db.Column(db.Float, default=12.0)
+    sick_leave_balance = db.Column(db.Float, default=6.0)
+    emergency_leave_balance = db.Column(db.Float, default=3.0)
+
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    factory = db.relationship('Factory', backref='employees')
+    user = db.relationship('User', backref=db.backref('employee_profile', uselist=False))
+
+    def __repr__(self):
+        return f'<Employee [{self.employee_code}] {self.name}>'
+
+
+class Attendance(db.Model):
+    """Daily Attendance with GPS verification and check-in/out tracking."""
+    __tablename__ = 'attendance'
+
+    id = db.Column(db.Integer, primary_key=True)
+    employee_id = db.Column(db.Integer, db.ForeignKey('employees.id'), nullable=False)
+    factory_id = db.Column(db.Integer, db.ForeignKey('factories.id'), nullable=True)
+    date = db.Column(db.Date, nullable=False)
+
+    check_in = db.Column(db.DateTime, nullable=True)
+    check_out = db.Column(db.DateTime, nullable=True)
+    working_hours = db.Column(db.Float, default=0.0)
+    overtime_hours = db.Column(db.Float, default=0.0)
+
+    # GPS location captured at check-in
+    checkin_latitude = db.Column(db.Float, nullable=True)
+    checkin_longitude = db.Column(db.Float, nullable=True)
+    location_verified = db.Column(db.Boolean, default=False)
+
+    # 'Present', 'Absent', 'Half Day', 'Late', 'On Leave'
+    status = db.Column(db.String(20), default='Present')
+    notes = db.Column(db.Text)
+    device_info = db.Column(db.String(255))
+
+    employee = db.relationship('Employee', backref='attendances')
+    factory = db.relationship('Factory', backref='attendance_records')
+
+    def __repr__(self):
+        return f'<Attendance {self.date} {self.employee_id} - {self.status}>'
+
+
+class LeaveRequest(db.Model):
+    """Employee Leave Requests with approval workflow."""
+    __tablename__ = 'leave_requests'
+
+    id = db.Column(db.Integer, primary_key=True)
+    employee_id = db.Column(db.Integer, db.ForeignKey('employees.id'), nullable=False)
+    leave_type = db.Column(db.String(50), nullable=False)  # Casual, Sick, Emergency
+    start_date = db.Column(db.Date, nullable=False)
+    end_date = db.Column(db.Date, nullable=False)
+    days = db.Column(db.Float, default=1.0)
+    reason = db.Column(db.Text)
+    # 'Pending', 'Approved', 'Rejected'
+    status = db.Column(db.String(20), default='Pending')
+    approved_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    applied_at = db.Column(db.DateTime, default=datetime.utcnow)
+    actioned_at = db.Column(db.DateTime, nullable=True)
+
+    employee = db.relationship('Employee', backref='leave_requests')
+    approver = db.relationship('User', foreign_keys=[approved_by])
+
+    def __repr__(self):
+        return f'<LeaveRequest {self.leave_type} {self.employee_id}>'
+
+
+class SalarySlip(db.Model):
+    """Monthly Salary Slip Record with breakdown."""
+    __tablename__ = 'salary_slips'
+
+    id = db.Column(db.Integer, primary_key=True)
+    employee_id = db.Column(db.Integer, db.ForeignKey('employees.id'), nullable=False)
+    month = db.Column(db.Integer, nullable=False)
+    year = db.Column(db.Integer, nullable=False)
+
+    working_days = db.Column(db.Integer, default=0)
+    days_present = db.Column(db.Integer, default=0)
+    days_absent = db.Column(db.Integer, default=0)
+    total_overtime_hours = db.Column(db.Float, default=0.0)
+
+    basic_salary = db.Column(db.Float, default=0.0)
+    overtime_pay = db.Column(db.Float, default=0.0)
+    bonus = db.Column(db.Float, default=0.0)
+    allowances = db.Column(db.Float, default=0.0)
+    deductions = db.Column(db.Float, default=0.0)
+    net_salary = db.Column(db.Float, default=0.0)
+
+    # 'Draft', 'Generated', 'Paid'
+    status = db.Column(db.String(20), default='Draft')
+    generated_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    employee = db.relationship('Employee', backref='salary_slips')
+
+    def __repr__(self):
+        return f'<SalarySlip {self.month}/{self.year} {self.employee_id}>'
+
+
+class HRNotification(db.Model):
+    """Notification log for HR events."""
+    __tablename__ = 'hr_notifications'
+
+    id = db.Column(db.Integer, primary_key=True)
+    # 'check_in', 'check_out', 'leave_request', 'salary_generated', 'attendance_outside_radius'
+    event_type = db.Column(db.String(50), nullable=False)
+    message = db.Column(db.Text, nullable=False)
+    employee_id = db.Column(db.Integer, db.ForeignKey('employees.id'), nullable=True)
+    is_read = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    employee = db.relationship('Employee', backref='notifications')
+
+    def __repr__(self):
+        return f'<HRNotification {self.event_type}>'
+
+
+class HRAuditLog(db.Model):
+    """Tamper-proof audit trail for HR operations."""
+    __tablename__ = 'hr_audit_logs'
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    action = db.Column(db.String(100), nullable=False)
+    entity_type = db.Column(db.String(50))
+    entity_id = db.Column(db.Integer)
+    old_value = db.Column(db.Text)
+    new_value = db.Column(db.Text)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+
+    user = db.relationship('User')
+
+    def __repr__(self):
+        return f'<HRAuditLog {self.action} by user {self.user_id}>'
+
+

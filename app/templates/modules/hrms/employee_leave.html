@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+{% block title %}My Leaves{% endblock %}
+{% block page_title %}Leave Management{% endblock %}
+
+{% block content %}
+<div class="card" style="border-radius:16px; margin-bottom:20px;">
+  <div class="card-header"><h4 class="card-title">Apply for Leave</h4></div>
+  <div class="card-body">
+    <form method="POST" action="{{ url_for('hrms.employee_leave') }}">
+      <div class="form-group">
+        <label>Leave Type</label>
+        <select name="leave_type" required>
+          <option value="Casual">Casual Leave (Balance: {{ emp.casual_leave_balance }})</option>
+          <option value="Sick">Sick Leave (Balance: {{ emp.sick_leave_balance }})</option>
+          <option value="Emergency">Emergency Leave (Balance: {{ emp.emergency_leave_balance }})</option>
+        </select>
+      </div>
+      <div class="form-row" style="gap:12px;">
+        <div class="form-group">
+          <label>Start Date</label>
+          <input type="date" name="start_date" required>
+        </div>
+        <div class="form-group">
+          <label>End Date</label>
+          <input type="date" name="end_date" required>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Reason</label>
+        <textarea name="reason" placeholder="Brief reason for leave..." style="min-height:60px;" required></textarea>
+      </div>
+      <button type="submit" class="btn btn-primary" style="width:100%;"><i class="bi bi-send-fill"></i> Submit Request</button>
+    </form>
+  </div>
+</div>
+
+<div class="card" style="border-radius:16px;">
+  <div class="card-header"><h4 class="card-title">Leave History</h4></div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Dates</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for req in leaves %}
+        <tr>
+          <td><span class="badge badge-gray">{{ req.leave_type }}</span></td>
+          <td class="fs-sm">
+            {{ req.start_date.strftime('%d %b') }} - {{ req.end_date.strftime('%d %b') }}<br>
+            <span class="td-muted">{{ req.days }} day(s)</span>
+          </td>
+          <td>
+            {% if req.status == 'Pending' %}<span class="badge badge-amber">Pending</span>
+            {% elif req.status == 'Approved' %}<span class="badge badge-green">Approved</span>
+            {% elif req.status == 'Rejected' %}<span class="badge badge-red">Rejected</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="3" class="empty-state" style="padding:20px;">No leave requests found.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div style="margin-top:20px; text-align:center;">
+  <a href="{{ url_for('hrms.employee_portal') }}" class="btn btn-ghost"><i class="bi bi-arrow-left"></i> Back to Dashboard</a>
+</div>
+{% endblock %}

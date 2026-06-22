@@ -1,0 +1,173 @@
+{% extends 'base.html' %}
+{% block title %}HRMS Dashboard{% endblock %}
+{% block page_title %}Workforce Management System{% endblock %}
+{% block page_subtitle %}Employee Attendance · Payroll · Factory Operations{% endblock %}
+
+{% block content %}
+<!-- ═══ KPI Stats Grid ═══ -->
+<div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));">
+  <div class="stat-card stat-blue">
+    <div class="stat-label"><i class="bi bi-people-fill"></i> Total Employees</div>
+    <div class="stat-value text-blue">{{ total_employees }}</div>
+    <div class="stat-sub">Active workforce</div>
+    <i class="bi bi-people-fill stat-icon"></i>
+  </div>
+  <div class="stat-card stat-green">
+    <div class="stat-label"><i class="bi bi-check-circle-fill"></i> Present Today</div>
+    <div class="stat-value text-green">{{ present_today }}</div>
+    <div class="stat-sub">{{ today.strftime('%d %b %Y') }}</div>
+    <i class="bi bi-check-circle-fill stat-icon"></i>
+  </div>
+  <div class="stat-card stat-red">
+    <div class="stat-label"><i class="bi bi-x-circle-fill"></i> Absent Today</div>
+    <div class="stat-value text-red">{{ absent_today }}</div>
+    <div class="stat-sub">Not checked in</div>
+    <i class="bi bi-x-circle-fill stat-icon"></i>
+  </div>
+  <div class="stat-card stat-amber">
+    <div class="stat-label"><i class="bi bi-calendar-check"></i> On Leave</div>
+    <div class="stat-value text-amber">{{ on_leave_today }}</div>
+    <div class="stat-sub">Approved leaves</div>
+    <i class="bi bi-calendar-check stat-icon"></i>
+  </div>
+  <div class="stat-card stat-purple">
+    <div class="stat-label"><i class="bi bi-clock-fill"></i> Late Arrivals</div>
+    <div class="stat-value text-purple">{{ late_today }}</div>
+    <div class="stat-sub">Today</div>
+    <i class="bi bi-clock-fill stat-icon"></i>
+  </div>
+  <div class="stat-card stat-cyan">
+    <div class="stat-label"><i class="bi bi-cash-stack"></i> Monthly Payroll</div>
+    <div class="stat-value text-cyan">₹{{ "{:,.0f}".format(monthly_payroll) }}</div>
+    <div class="stat-sub">This month cost</div>
+    <i class="bi bi-cash-stack stat-icon"></i>
+  </div>
+</div>
+
+<!-- ═══ Quick Actions ═══ -->
+<div class="card" style="margin-bottom:20px;">
+  <div class="card-body" style="display:flex; gap:12px; flex-wrap:wrap; align-items:center;">
+    <a href="{{ url_for('hrms.add_employee') }}" class="btn btn-primary"><i class="bi bi-person-plus-fill"></i> Add Employee</a>
+    <a href="{{ url_for('hrms.add_factory') }}" class="btn btn-success"><i class="bi bi-building-fill-add"></i> Add Factory</a>
+    <a href="{{ url_for('hrms.attendance_admin') }}" class="btn btn-ghost"><i class="bi bi-calendar2-day"></i> View Attendance</a>
+    <a href="{{ url_for('hrms.leaves_admin') }}" class="btn btn-ghost">
+      <i class="bi bi-calendar-x"></i> Leave Requests
+      {% if pending_leaves > 0 %}<span class="badge badge-red" style="margin-left:4px;">{{ pending_leaves }}</span>{% endif %}
+    </a>
+    <a href="{{ url_for('hrms.payroll') }}" class="btn btn-ghost"><i class="bi bi-receipt"></i> Payroll</a>
+    <a href="{{ url_for('hrms.audit_log') }}" class="btn btn-ghost"><i class="bi bi-shield-check"></i> Audit Log</a>
+  </div>
+</div>
+
+<div class="grid-2">
+  <!-- ═══ Attendance Trend Chart ═══ -->
+  <div class="card">
+    <div class="card-header"><h4 class="card-title"><i class="bi bi-graph-up text-blue"></i> Attendance Trend (7 Days)</h4></div>
+    <div class="card-body"><canvas id="attendanceTrendChart" height="220"></canvas></div>
+  </div>
+
+  <!-- ═══ Department Distribution ═══ -->
+  <div class="card">
+    <div class="card-header"><h4 class="card-title"><i class="bi bi-pie-chart-fill text-purple"></i> Department Distribution</h4></div>
+    <div class="card-body"><canvas id="deptChart" height="220"></canvas></div>
+  </div>
+</div>
+
+<div class="grid-2">
+  <!-- ═══ Currently Checked In (Real-Time) ═══ -->
+  <div class="card">
+    <div class="card-header">
+      <h4 class="card-title"><i class="bi bi-broadcast text-green"></i> Live — Currently Checked In</h4>
+      <span class="badge badge-green">{{ checked_in|length }} Active</span>
+    </div>
+    <div class="table-wrap" style="max-height:320px; overflow-y:auto;">
+      <table>
+        <thead><tr><th>Employee</th><th>Factory</th><th>Check-In</th><th>Status</th></tr></thead>
+        <tbody>
+          {% for att in checked_in %}
+          <tr>
+            <td style="font-weight:600;">{{ att.employee.name }}<br><span class="td-muted">{{ att.employee.employee_code }}</span></td>
+            <td>{{ att.factory.name if att.factory else '-' }}</td>
+            <td>{{ att.check_in.strftime('%I:%M %p') if att.check_in else '-' }}</td>
+            <td>
+              {% if att.location_verified %}<span class="badge badge-green"><i class="bi bi-geo-alt-fill"></i> Verified</span>
+              {% else %}<span class="badge badge-amber">Unverified</span>{% endif %}
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="4" class="empty-state" style="padding:30px;">No employees currently checked in.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ═══ Recent Notifications ═══ -->
+  <div class="card">
+    <div class="card-header">
+      <h4 class="card-title"><i class="bi bi-bell-fill text-amber"></i> Recent Notifications</h4>
+      {% if unread_notifications|length > 0 %}<span class="badge badge-red">{{ unread_notifications|length }} New</span>{% endif %}
+    </div>
+    <div style="max-height:320px; overflow-y:auto;">
+      {% for n in unread_notifications %}
+      <div style="padding:12px 20px; border-bottom:1px solid var(--border); display:flex; gap:12px; align-items:flex-start;">
+        <div>
+          {% if n.event_type == 'check_in' %}<i class="bi bi-box-arrow-in-right text-green"></i>
+          {% elif n.event_type == 'check_out' %}<i class="bi bi-box-arrow-right text-blue"></i>
+          {% elif n.event_type == 'leave_request' %}<i class="bi bi-calendar-x text-amber"></i>
+          {% elif n.event_type == 'attendance_outside_radius' %}<i class="bi bi-exclamation-triangle-fill text-red"></i>
+          {% else %}<i class="bi bi-bell text-purple"></i>{% endif %}
+        </div>
+        <div style="flex:1;">
+          <div style="font-size:13px;">{{ n.message }}</div>
+          <div class="td-muted" style="font-size:11px; margin-top:2px;">{{ n.created_at.strftime('%d %b %I:%M %p') }}</div>
+        </div>
+      </div>
+      {% else %}
+      <div class="empty-state" style="padding:30px;">No new notifications.</div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+  const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
+  const gridColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
+  const textColor = isDark ? '#94a3b8' : '#475569';
+
+  // Attendance Trend
+  new Chart(document.getElementById('attendanceTrendChart'), {
+    type: 'bar',
+    data: {
+      labels: {{ trend_labels|tojson }},
+      datasets: [
+        { label:'Present', data:{{ trend_present|tojson }}, backgroundColor:'rgba(16,185,129,0.7)', borderRadius:6 },
+        { label:'Absent', data:{{ trend_absent|tojson }}, backgroundColor:'rgba(239,68,68,0.5)', borderRadius:6 }
+      ]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{ labels:{ color:textColor, font:{size:11} } } },
+      scales:{ x:{ticks:{color:textColor},grid:{display:false}}, y:{ticks:{color:textColor},grid:{color:gridColor}} }
+    }
+  });
+
+  // Dept Distribution
+  const deptLabels = {{ dept_labels|tojson }};
+  const deptValues = {{ dept_values|tojson }};
+  if(deptLabels.length > 0) {
+    new Chart(document.getElementById('deptChart'), {
+      type: 'doughnut',
+      data: {
+        labels: deptLabels,
+        datasets: [{ data: deptValues, backgroundColor:['#4f8ef7','#10b981','#f59e0b','#ef4444','#a78bfa','#06b6d4','#ec4899','#84cc16'] }]
+      },
+      options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:'bottom', labels:{color:textColor, font:{size:11}} } } }
+    });
+  }
+});
+</script>
+{% endblock %}

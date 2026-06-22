@@ -24,7 +24,11 @@ def login():
                 
             login_user(user, remember=False)
             next_page = request.args.get('next')
-            return redirect(next_page) if next_page else redirect(url_for('dashboard.index'))
+            if next_page:
+                return redirect(next_page)
+            if user.role == 'Employee':
+                return redirect(url_for('hrms.employee_portal'))
+            return redirect(url_for('dashboard.index'))
         else:
             flash('Invalid username or password configuration.', 'danger')
             
@@ -58,6 +62,20 @@ def init_admin():
     db.session.add(admin_user)
     db.session.commit()
     return "Demo Admin initialized! Username: admin | Password: admin123", 201
+
+@auth_bp.route('/migrate-db')
+def migrate_db():
+    """
+    Emergency route to run database migrations on Vercel serverless.
+    It applies all pending alembic migrations to the production database.
+    """
+    try:
+        from flask_migrate import upgrade
+        upgrade()
+        return "Database migrations applied successfully! You can now use the HRMS module.", 200
+    except Exception as e:
+        import traceback
+        return f"Migration failed: {str(e)}<br><pre>{traceback.format_exc()}</pre>", 500
 
 @auth_bp.route('/users', methods=['GET', 'POST'])
 @login_required

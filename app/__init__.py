@@ -59,6 +59,7 @@ def create_app(config_name: str = None) -> Flask:
         from app.modules.finance import finance_bp
         from app.modules.settings import settings_bp
         from app.modules.home_expenses import home_expenses_bp
+        from app.modules.hrms import hrms_bp
 
         app.register_blueprint(auth_bp)
         app.register_blueprint(dashboard_bp)
@@ -74,6 +75,7 @@ def create_app(config_name: str = None) -> Flask:
         app.register_blueprint(finance_bp, url_prefix='/finance')
         app.register_blueprint(settings_bp, url_prefix='/settings')
         app.register_blueprint(home_expenses_bp, url_prefix='/home-expenses')
+        app.register_blueprint(hrms_bp, url_prefix='/hrms')
 
         # Tables are managed via Flask-Migrate / init_db.py
         # Do NOT call db.create_all() here — it causes Vercel cold-start timeouts

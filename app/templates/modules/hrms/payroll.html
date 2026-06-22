@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+{% block title %}Payroll Register{% endblock %}
+{% block page_title %}Payroll Register{% endblock %}
+
+{% block content %}
+<div class="card" style="margin-bottom: 20px;">
+  <div class="card-body" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
+    <form method="GET" action="{{ url_for('hrms.payroll') }}" style="display:flex; gap:16px; align-items:flex-end;">
+      <div class="form-group" style="margin-bottom:0;">
+        <label>Month</label>
+        <select name="month" class="form-control" onchange="this.form.submit()">
+          {% for m in range(1, 13) %}
+          <option value="{{ m }}" {% if m == month %}selected{% endif %}>{{ m }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group" style="margin-bottom:0;">
+        <label>Year</label>
+        <input type="number" name="year" class="form-control" value="{{ year }}" onchange="this.form.submit()">
+      </div>
+      <button type="submit" class="btn btn-secondary"><i class="bi bi-search"></i> View</button>
+    </form>
+    
+    <div style="display:flex; gap:16px; align-items:center;">
+      <div style="text-align:right; margin-right:16px;">
+        <div style="font-size:11px; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.1em; font-weight:700;">Total Payout</div>
+        <div style="font-size:24px; font-weight:800; color:var(--accent-cyan); line-height:1;">₹{{ "{:,.2f}".format(total_payroll) }}</div>
+      </div>
+      <form method="POST" action="{{ url_for('hrms.payroll', month=month, year=year) }}">
+        <input type="hidden" name="action" value="generate">
+        <button type="submit" class="btn btn-primary"><i class="bi bi-gear-fill"></i> Generate Slips for {{ month_name }} {{ year }}</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <h4 class="card-title">Salary Slips - {{ month_name }} {{ year }}</h4>
+  </div>
+  <div class="table-responsive">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>EMP Code</th>
+          <th>Name</th>
+          <th>Days (P/A)</th>
+          <th>Basic Salary</th>
+          <th>Overtime Pay</th>
+          <th>Deductions</th>
+          <th>Net Salary</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for slip in slips %}
+        <tr>
+          <td><span class="badge badge-gray">{{ slip.employee.employee_code }}</span></td>
+          <td style="font-weight:600;">{{ slip.employee.name }}</td>
+          <td><span class="text-green">{{ slip.days_present }}</span> / <span class="text-red">{{ slip.days_absent }}</span></td>
+          <td>₹{{ "{:,.2f}".format(slip.basic_salary) }}</td>
+          <td class="text-purple">+₹{{ "{:,.2f}".format(slip.overtime_pay) }} <span class="fs-xs td-muted">({{ slip.total_overtime_hours }}h)</span></td>
+          <td class="text-red">-₹{{ "{:,.2f}".format(slip.deductions) }}</td>
+          <td style="font-weight:800;" class="text-cyan">₹{{ "{:,.2f}".format(slip.net_salary) }}</td>
+          <td>
+            {% if slip.status == 'Generated' %}<span class="badge badge-blue">Generated</span>
+            {% elif slip.status == 'Paid' %}<span class="badge badge-green">Paid</span>
+            {% else %}<span class="badge badge-gray">{{ slip.status }}</span>{% endif %}
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="8" class="empty-state">
+            <i class="bi bi-cash-stack" style="font-size:2rem; opacity:0.3;"></i>
+            <p>No salary slips generated for this month.</p>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
