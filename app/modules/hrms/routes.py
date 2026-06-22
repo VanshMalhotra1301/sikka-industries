@@ -475,7 +475,15 @@ def employee_checkin():
         db.session.commit()  # commit notification
         return jsonify({'success': False, 'message': reject_msg or 'You are not within the assigned factory location.'}), 403
 
-    now = datetime.utcnow()
+    device_time_str = request.json.get('device_time')
+    if device_time_str:
+        try:
+            now = datetime.strptime(device_time_str, '%Y-%m-%d %H:%M:%S')
+        except ValueError:
+            now = datetime.now()
+    else:
+        now = datetime.now()
+
     if not existing:
         existing = Attendance(employee_id=emp.id, date=today, factory_id=emp.factory_id)
         db.session.add(existing)
@@ -507,7 +515,15 @@ def employee_checkout():
     if att.check_out:
         return jsonify({'success': False, 'message': 'Already checked out today.'}), 400
 
-    now = datetime.utcnow()
+    device_time_str = request.json.get('device_time') if request.json else None
+    if device_time_str:
+        try:
+            now = datetime.strptime(device_time_str, '%Y-%m-%d %H:%M:%S')
+        except ValueError:
+            now = datetime.now()
+    else:
+        now = datetime.now()
+
     att.check_out = now
 
     # Calculate working & overtime hours

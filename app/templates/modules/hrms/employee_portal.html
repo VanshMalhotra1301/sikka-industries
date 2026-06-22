@@ -125,10 +125,18 @@ function markCheckIn() {
 function submitCheckIn(lat, lng) {
   const deviceInfo = navigator.userAgent;
   
+  const now = new Date();
+  const deviceTime = now.getFullYear() + '-' +
+    String(now.getMonth() + 1).padStart(2, '0') + '-' +
+    String(now.getDate()).padStart(2, '0') + ' ' +
+    String(now.getHours()).padStart(2, '0') + ':' +
+    String(now.getMinutes()).padStart(2, '0') + ':' +
+    String(now.getSeconds()).padStart(2, '0');
+  
   fetch("{{ url_for('hrms.employee_checkin') }}", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ latitude: lat, longitude: lng, device_info: deviceInfo })
+    body: JSON.stringify({ latitude: lat, longitude: lng, device_info: deviceInfo, device_time: deviceTime })
   })
   .then(res => res.json())
   .then(data => {
@@ -151,7 +159,19 @@ function markCheckOut() {
   btn.disabled = true;
   btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Processing...';
   
-  fetch("{{ url_for('hrms.employee_checkout') }}", { method: "POST" })
+  const now = new Date();
+  const deviceTime = now.getFullYear() + '-' +
+    String(now.getMonth() + 1).padStart(2, '0') + '-' +
+    String(now.getDate()).padStart(2, '0') + ' ' +
+    String(now.getHours()).padStart(2, '0') + ':' +
+    String(now.getMinutes()).padStart(2, '0') + ':' +
+    String(now.getSeconds()).padStart(2, '0');
+  
+  fetch("{{ url_for('hrms.employee_checkout') }}", { 
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ device_time: deviceTime })
+  })
   .then(res => res.json())
   .then(data => {
     if(data.success) {
