@@ -86,7 +86,7 @@ def index():
             else:
                 cash_dr, cash_cr = 0.0, 0.0
             cash_ob = sum(l.opening_balance if l.opening_balance_type == 'Dr' else -l.opening_balance for l in cash_ledgers)
-            cash_in_hand = cash_ob + cash_dr - cash_cr
+            cash_in_hand = cash_ob + cash_dr - cash_cr - home_expenses_total
 
             # 3. Bank Balance
             bank_groups = AccountGroup.query.filter(AccountGroup.name == 'Bank Accounts').all()
