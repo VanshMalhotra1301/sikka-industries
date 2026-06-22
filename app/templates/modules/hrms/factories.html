@@ -25,9 +25,12 @@
             <a href="{{ url_for('hrms.edit_factory', factory_id=f.id) }}" class="btn btn-ghost btn-sm" title="Edit"><i class="bi bi-pencil-square"></i></a>
             {% if f.is_active %}
             <form action="{{ url_for('hrms.delete_factory', factory_id=f.id) }}" method="POST" style="display:inline;" onsubmit="return confirm('Are you sure you want to deactivate this factory?');">
-              <button type="submit" class="btn btn-ghost btn-sm text-red" title="Deactivate"><i class="bi bi-trash"></i></button>
+              <button type="submit" class="btn btn-ghost btn-sm text-amber" title="Deactivate"><i class="bi bi-building-dash"></i></button>
             </form>
             {% endif %}
+            <form action="{{ url_for('hrms.hard_delete_factory', factory_id=f.id) }}" method="POST" style="display:inline;" onsubmit="return confirm('WARNING: Are you sure you want to PERMANENTLY delete this factory? This cannot be undone.');">
+              <button type="submit" class="btn btn-ghost btn-sm text-red" title="Hard Delete"><i class="bi bi-trash-fill"></i></button>
+            </form>
           </td>
         </tr>
         {% else %}

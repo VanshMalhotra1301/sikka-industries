@@ -171,6 +171,24 @@ def delete_factory(factory_id):
     flash(f'Factory "{factory.name}" has been deactivated.', 'info')
     return redirect(url_for('hrms.factories'))
 
+@hrms_bp.route('/factories/<int:factory_id>/hard_delete', methods=['POST'])
+@login_required
+@roles_required(['Admin', 'Owner'])
+def hard_delete_factory(factory_id):
+    factory = Factory.query.get_or_404(factory_id)
+    # Caution: Hard deleting will fail if there are dependent records (like employees or attendance).
+    # We will try to delete, and if it fails due to foreign key constraints, we will catch it.
+    try:
+        db.session.delete(factory)
+        _log_audit('Factory Permanently Deleted', 'Factory', old_value=factory.name)
+        db.session.commit()
+        flash(f'Factory "{factory.name}" has been permanently deleted.', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Cannot delete factory "{factory.name}" because it has associated records. Deactivate it instead.', 'danger')
+    return redirect(url_for('hrms.factories'))
+
+
 # ══════════════════════════════════════════════════════════════════════════════
 # ADMIN: EMPLOYEE MANAGEMENT
 # ══════════════════════════════════════════════════════════════════════════════
@@ -282,6 +300,8 @@ def edit_employee(emp_id):
         new_status = request.form.get('status')
         if new_status:
             emp.status = new_status
+            if emp.user:
+                emp.user.is_active = (new_status == 'Active')
 
         if 'photo' in request.files:
             file = request.files['photo']
@@ -311,6 +331,25 @@ def delete_employee(emp_id):
     _log_audit('Employee Terminated (Soft Delete)', 'Employee', entity_id=emp.id, old_value=emp.name)
     db.session.commit()
     flash(f'Employee "{emp.name}" has been marked as Terminated.', 'info')
+    return redirect(url_for('hrms.employees'))
+
+
+@hrms_bp.route('/employees/<int:emp_id>/hard_delete', methods=['POST'])
+@login_required
+@roles_required(['Admin', 'Owner', 'HR Manager'])
+def hard_delete_employee(emp_id):
+    emp = Employee.query.get_or_404(emp_id)
+    try:
+        user_to_delete = emp.user
+        db.session.delete(emp)
+        if user_to_delete:
+            db.session.delete(user_to_delete)
+        _log_audit('Employee Permanently Deleted', 'Employee', old_value=emp.name)
+        db.session.commit()
+        flash(f'Employee "{emp.name}" has been permanently deleted.', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Cannot delete employee "{emp.name}" because they have associated records (attendance, salary, etc). Terminate them instead.', 'danger')
     return redirect(url_for('hrms.employees'))
 
 
