@@ -497,9 +497,12 @@ class SalarySlip(db.Model):
 
     # 'Draft', 'Generated', 'Paid'
     status = db.Column(db.String(20), default='Draft')
+    payment_mode = db.Column(db.String(20), nullable=True) # 'Cash' or 'Bank'
+    voucher_id = db.Column(db.Integer, db.ForeignKey('vouchers.id'), nullable=True)
     generated_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     employee = db.relationship('Employee', backref='salary_slips')
+    voucher = db.relationship('Voucher', backref='salary_slips', foreign_keys=[voucher_id])
 
     def __repr__(self):
         return f'<SalarySlip {self.month}/{self.year} {self.employee_id}>'

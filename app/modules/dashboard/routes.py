@@ -3,7 +3,7 @@ from flask_login import login_required, current_user
 from sqlalchemy import func, extract, cast, Date
 from datetime import datetime, date
 from app import db
-from app.models import Sale, Purchase, Expense, LedgerEntry, Product, ProductionRun, AccountGroup, Ledger, Voucher, VoucherEntry
+from app.models import Sale, Purchase, Expense, LedgerEntry, Product, ProductionRun, AccountGroup, Ledger, Voucher, VoucherEntry, SalarySlip
 from app.modules.home_expenses.models import HomeExpense
 from app.modules.dashboard import dashboard_bp
 
@@ -31,7 +31,7 @@ def index():
         return redirect(url_for('hrms.employee_portal'))
 
     # ── Finance KPIs (Accountant / Admin / Owner) ─────────────────────────────
-    total_sales = total_purchases = total_expenses = 0.0
+    total_sales = total_purchases = total_expenses = total_salaries = 0.0
     yearly_net_profit = 0.0
     home_expenses_total = 0.0
     cash_in_hand = bank_balance = 0.0
@@ -129,6 +129,10 @@ def index():
             # Due Date Reminders
             pending_sales_dues = Sale.query.filter(Sale.balance_amount > 0, Sale.due_date != None).order_by(Sale.due_date.asc()).all()
             pending_purchase_dues = Purchase.query.filter(Purchase.balance_amount > 0, Purchase.due_date != None).order_by(Purchase.due_date.asc()).all()
+
+            # Total Salaries
+            total_salaries = db.session.query(func.coalesce(func.sum(SalarySlip.net_salary), 0.0)).scalar()
+
         except Exception as e:
             current_app.logger.error(f'Dashboard finance KPI error: {e}')
             db.session.rollback()
@@ -161,6 +165,7 @@ def index():
         total_sales=total_sales,
         total_purchases=total_purchases,
         total_expenses=total_expenses,
+        total_salaries=total_salaries,
         yearly_net_profit=yearly_net_profit,
         cash_in_hand=cash_in_hand,
         bank_balance=bank_balance,

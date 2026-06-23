@@ -26,10 +26,30 @@
         <div style="font-size:11px; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.1em; font-weight:700;">Total Payout</div>
         <div style="font-size:24px; font-weight:800; color:var(--accent-cyan); line-height:1;">₹{{ "{:,.2f}".format(total_payroll) }}</div>
       </div>
-      <form method="POST" action="{{ url_for('hrms.payroll', month=month, year=year) }}">
-        <input type="hidden" name="action" value="generate">
-        <button type="submit" class="btn btn-primary"><i class="bi bi-gear-fill"></i> Generate Slips for {{ month_name }} {{ year }}</button>
-      </form>
+      <button type="button" class="btn btn-primary" onclick="document.getElementById('generateModal').style.display='block'">
+        <i class="bi bi-gear-fill"></i> Generate Slips for {{ month_name }} {{ year }}
+      </button>
+
+      <!-- Generate Modal -->
+      <div id="generateModal" class="modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; text-align:left;">
+        <div class="modal-content" style="background:var(--bg-card); padding:20px; border-radius:8px; width:400px; max-width:90%; margin: 100px auto;">
+          <h4 style="margin-bottom:15px; color:var(--text-color);">Generate Salaries</h4>
+          <form method="POST" action="{{ url_for('hrms.payroll', month=month, year=year) }}">
+            <input type="hidden" name="action" value="generate">
+            <div class="form-group" style="margin-bottom:15px;">
+              <label style="color:var(--text-color);">Payment Method</label>
+              <select name="payment_mode" class="form-control" required style="background:var(--bg-body); color:var(--text-color); border:1px solid var(--border-color);">
+                <option value="Cash">Cash</option>
+                <option value="Bank">Bank</option>
+              </select>
+            </div>
+            <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px;">
+              <button type="button" class="btn btn-secondary" onclick="document.getElementById('generateModal').style.display='none'">Cancel</button>
+              <button type="submit" class="btn btn-primary">Generate & Pay</button>
+            </div>
+          </form>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -50,6 +70,7 @@
           <th>Deductions</th>
           <th>Net Salary</th>
           <th>Status</th>
+          <th>Actions</th>
         </tr>
       </thead>
       <tbody>
@@ -66,6 +87,40 @@
             {% if slip.status == 'Generated' %}<span class="badge badge-blue">Generated</span>
             {% elif slip.status == 'Paid' %}<span class="badge badge-green">Paid</span>
             {% else %}<span class="badge badge-gray">{{ slip.status }}</span>{% endif %}
+            <div style="font-size:11px; margin-top:4px; color:var(--text-muted);">{{ slip.payment_mode or '' }}</div>
+          </td>
+          <td>
+            <div style="display:flex; gap:5px;">
+              <button type="button" class="btn btn-sm btn-secondary" onclick="document.getElementById('editModal{{ slip.id }}').style.display='block'"><i class="bi bi-pencil"></i></button>
+              <form method="POST" action="{{ url_for('hrms.delete_salary_slip', slip_id=slip.id) }}" onsubmit="return confirm('Are you sure you want to delete this slip? This will reverse the accounting entries.');">
+                <button type="submit" class="btn btn-sm btn-danger"><i class="bi bi-trash"></i></button>
+              </form>
+            </div>
+
+            <!-- Edit Modal -->
+            <div id="editModal{{ slip.id }}" class="modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; text-align:left; white-space:normal;">
+              <div class="modal-content" style="background:var(--bg-card); padding:20px; border-radius:8px; width:400px; max-width:90%; margin: 100px auto;">
+                <h4 style="margin-bottom:15px; color:var(--text-color);">Edit Slip - {{ slip.employee.name }}</h4>
+                <form method="POST" action="{{ url_for('hrms.edit_salary_slip', slip_id=slip.id) }}">
+                  <div class="form-group" style="margin-bottom:15px;">
+                    <label style="color:var(--text-color);">Basic Salary</label>
+                    <input type="number" step="0.01" name="basic_salary" class="form-control" value="{{ slip.basic_salary }}" required style="background:var(--bg-body); color:var(--text-color); border:1px solid var(--border-color);">
+                  </div>
+                  <div class="form-group" style="margin-bottom:15px;">
+                    <label style="color:var(--text-color);">Overtime Pay</label>
+                    <input type="number" step="0.01" name="overtime_pay" class="form-control" value="{{ slip.overtime_pay }}" required style="background:var(--bg-body); color:var(--text-color); border:1px solid var(--border-color);">
+                  </div>
+                  <div class="form-group" style="margin-bottom:15px;">
+                    <label style="color:var(--text-color);">Deductions</label>
+                    <input type="number" step="0.01" name="deductions" class="form-control" value="{{ slip.deductions }}" required style="background:var(--bg-body); color:var(--text-color); border:1px solid var(--border-color);">
+                  </div>
+                  <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px;">
+                    <button type="button" class="btn btn-secondary" onclick="document.getElementById('editModal{{ slip.id }}').style.display='none'">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                  </div>
+                </form>
+              </div>
+            </div>
           </td>
         </tr>
         {% else %}

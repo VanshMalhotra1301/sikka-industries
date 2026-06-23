@@ -3,13 +3,13 @@ from flask_login import login_required, current_user
 from app import db, bcrypt
 from app.models import (
     Employee, Attendance, SalarySlip, Factory, LeaveRequest,
-    HRNotification, HRAuditLog, User
+    HRNotification, HRAuditLog, User, AccountGroup, Ledger, Voucher, VoucherEntry
 )
 from app.modules.hrms import hrms_bp
 from app.utils.decorators import roles_required
 from datetime import date, datetime, timedelta
 from werkzeug.utils import secure_filename
-import calendar, os, math, json
+import calendar, os, math, json, uuid
 
 UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'static', 'uploads', 'employees')
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'webp'}
@@ -31,6 +31,19 @@ def _log_audit(action, entity_type=None, entity_id=None, old_value=None, new_val
 def _notify(event_type, message, employee_id=None):
     n = HRNotification(event_type=event_type, message=message, employee_id=employee_id)
     db.session.add(n)
+
+def _get_or_create_ledger(name, group_name, nature="Expense", is_system=True):
+    group = AccountGroup.query.filter_by(name=group_name).first()
+    if not group:
+        group = AccountGroup(name=group_name, nature=nature, is_system=is_system)
+        db.session.add(group)
+        db.session.flush()
+    ledger = Ledger.query.filter_by(name=name, group_id=group.id).first()
+    if not ledger:
+        ledger = Ledger(name=name, group_id=group.id, is_system=is_system)
+        db.session.add(ledger)
+        db.session.flush()
+    return ledger
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -458,6 +471,33 @@ def payroll():
     if request.method == 'POST':
         action = request.form.get('action')
         if action == 'generate':
+            payment_mode = request.form.get('payment_mode', 'Cash')
+
+            salary_ledger = _get_or_create_ledger('Salary Expense', 'Indirect Expenses', nature='Expense')
+            
+            if payment_mode == 'Bank':
+                bank_group = AccountGroup.query.filter_by(name='Bank Accounts').first()
+                if not bank_group:
+                    bank_group = AccountGroup(name='Bank Accounts', nature='Asset', is_system=True)
+                    db.session.add(bank_group)
+                    db.session.flush()
+                payment_ledger = Ledger.query.filter_by(group_id=bank_group.id).first()
+                if not payment_ledger:
+                    payment_ledger = Ledger(name="Main Bank", group_id=bank_group.id, is_system=True)
+                    db.session.add(payment_ledger)
+                    db.session.flush()
+            else:
+                cash_group = AccountGroup.query.filter_by(name='Cash-in-Hand').first()
+                if not cash_group:
+                    cash_group = AccountGroup(name='Cash-in-Hand', nature='Asset', is_system=True)
+                    db.session.add(cash_group)
+                    db.session.flush()
+                payment_ledger = Ledger.query.filter_by(group_id=cash_group.id).first()
+                if not payment_ledger:
+                    payment_ledger = Ledger(name="Main Cash", group_id=cash_group.id, is_system=True)
+                    db.session.add(payment_ledger)
+                    db.session.flush()
+
             employees = Employee.query.filter_by(status='Active').all()
             _, days_in_month = calendar.monthrange(year, month)
             start_d = date(year, month, 1)
@@ -483,14 +523,34 @@ def payroll():
                 deductions = days_absent * per_day
                 overtime_pay = total_ot * per_hour_ot
                 net = emp.base_salary - deductions + overtime_pay
+                net = round(net, 2)
+
+                # Create Voucher for the payment
+                v_number = f"PAY-{uuid.uuid4().hex[:6].upper()}"
+                voucher = Voucher(
+                    voucher_type='Payment',
+                    voucher_number=v_number,
+                    date=datetime.utcnow(),
+                    narration=f"Salary for {month_name} {year} - {emp.name}",
+                    created_by=current_user.id
+                )
+                db.session.add(voucher)
+                db.session.flush()
+
+                # Dr Salary Expense
+                db.session.add(VoucherEntry(voucher_id=voucher.id, ledger_id=salary_ledger.id, entry_type='Dr', amount=net))
+                # Cr Cash/Bank
+                db.session.add(VoucherEntry(voucher_id=voucher.id, ledger_id=payment_ledger.id, entry_type='Cr', amount=net))
 
                 slip = SalarySlip(
                     employee_id=emp.id, month=month, year=year,
                     working_days=days_in_month, days_present=days_present, days_absent=days_absent,
                     total_overtime_hours=total_ot,
                     basic_salary=emp.base_salary, overtime_pay=round(overtime_pay, 2),
-                    deductions=round(deductions, 2), net_salary=round(net, 2),
-                    status='Generated'
+                    deductions=round(deductions, 2), net_salary=net,
+                    status='Paid',
+                    payment_mode=payment_mode,
+                    voucher_id=voucher.id
                 )
                 db.session.add(slip)
                 count += 1
@@ -504,6 +564,51 @@ def payroll():
     total_payroll = sum(s.net_salary for s in slips)
     return render_template('modules/hrms/payroll.html', slips=slips, month=month, year=year,
                            month_name=month_name, total_payroll=total_payroll)
+
+@hrms_bp.route('/payroll/<int:slip_id>/edit', methods=['POST'])
+@login_required
+@roles_required(['Admin', 'Owner', 'HR Manager', 'Accountant'])
+def edit_salary_slip(slip_id):
+    slip = SalarySlip.query.get_or_404(slip_id)
+    
+    basic = float(request.form.get('basic_salary', slip.basic_salary))
+    overtime = float(request.form.get('overtime_pay', slip.overtime_pay))
+    deductions = float(request.form.get('deductions', slip.deductions))
+    
+    net = basic + overtime - deductions
+    slip.basic_salary = basic
+    slip.overtime_pay = overtime
+    slip.deductions = deductions
+    slip.net_salary = round(net, 2)
+    
+    # Update associated voucher amounts
+    if slip.voucher:
+        for entry in slip.voucher.entries:
+            entry.amount = round(net, 2)
+            
+    db.session.commit()
+    _log_audit('Salary Slip Edited', 'SalarySlip', slip_id)
+    flash(f'Salary slip for {slip.employee.name} updated successfully.', 'success')
+    return redirect(url_for('hrms.payroll', month=slip.month, year=slip.year))
+
+@hrms_bp.route('/payroll/<int:slip_id>/delete', methods=['POST'])
+@login_required
+@roles_required(['Admin', 'Owner', 'HR Manager', 'Accountant'])
+def delete_salary_slip(slip_id):
+    slip = SalarySlip.query.get_or_404(slip_id)
+    month = slip.month
+    year = slip.year
+    emp_name = slip.employee.name
+    
+    if slip.voucher:
+        db.session.delete(slip.voucher) # CASCADE handles VoucherEntries
+        
+    db.session.delete(slip)
+    db.session.commit()
+    
+    _log_audit('Salary Slip Deleted', 'SalarySlip', slip_id)
+    flash(f'Salary slip for {emp_name} deleted successfully.', 'success')
+    return redirect(url_for('hrms.payroll', month=month, year=year))
 
 
 # ══════════════════════════════════════════════════════════════════════════════
