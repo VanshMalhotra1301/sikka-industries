@@ -1,13 +1,23 @@
 #!/usr/bin/env bash
 # Render Start Script for Sikka ERP
 
+echo ">>> Running database migrations..."
+flask db upgrade || echo "Migration failed or already up to date, continuing..."
+
 echo ">>> Creating database tables..."
 python -c "
 from app import create_app, db
 app = create_app('production')
 with app.app_context():
     db.create_all()
-    print('All tables created successfully.')
+    try:
+        db.session.execute(db.text('ALTER TABLE salary_slips ADD COLUMN IF NOT EXISTS payment_mode VARCHAR(20);'))
+        db.session.execute(db.text('ALTER TABLE salary_slips ADD COLUMN IF NOT EXISTS voucher_id INTEGER;'))
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        print('Could not alter salary_slips (might already exist or SQLite in use):', e)
+    print('All tables created/verified successfully.')
 "
 
 echo ">>> Seeding default Account Groups & Ledgers (if not exists)..."
