@@ -354,15 +354,29 @@ def hard_delete_employee(emp_id):
     emp = Employee.query.get_or_404(emp_id)
     try:
         user_to_delete = emp.user
+        
+        # Delete associated records first
+        Attendance.query.filter_by(employee_id=emp.id).delete()
+        LeaveRequest.query.filter_by(employee_id=emp.id).delete()
+        HRNotification.query.filter_by(employee_id=emp.id).delete()
+        
+        # Salary slips and associated vouchers
+        slips = SalarySlip.query.filter_by(employee_id=emp.id).all()
+        for slip in slips:
+            if slip.voucher:
+                db.session.delete(slip.voucher)
+            db.session.delete(slip)
+            
         db.session.delete(emp)
         if user_to_delete:
             db.session.delete(user_to_delete)
-        _log_audit('Employee Permanently Deleted', 'Employee', old_value=emp.name)
+            
+        _log_audit('Employee Permanently Deleted (with all records)', 'Employee', old_value=emp.name)
         db.session.commit()
-        flash(f'Employee "{emp.name}" has been permanently deleted.', 'success')
+        flash(f'Employee "{emp.name}" and all associated records have been permanently deleted.', 'success')
     except Exception as e:
         db.session.rollback()
-        flash(f'Cannot delete employee "{emp.name}" because they have associated records (attendance, salary, etc). Terminate them instead.', 'danger')
+        flash(f'Cannot delete employee "{emp.name}": {str(e)}', 'danger')
     return redirect(url_for('hrms.employees'))
 
 
