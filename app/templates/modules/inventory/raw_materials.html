@@ -3,6 +3,24 @@
 {% block page_title %}Raw Materials{% endblock %}
 {% block page_subtitle %}Inventory management for components and supplies{% endblock %}
 
+{# ── Macro: extract unit from name like "Copper Wire [Kg]" → "Kg" ── #}
+{% macro get_unit(name) %}
+  {%- if '[' in name and name.endswith(']') -%}
+    {{ name[name.rindex('[') + 1 : -1] }}
+  {%- else -%}
+    Pcs
+  {%- endif -%}
+{% endmacro %}
+
+{# ── Macro: extract display name (strip the [unit] suffix) ── #}
+{% macro get_display_name(name) %}
+  {%- if '[' in name and name.endswith(']') -%}
+    {{ name[:name.rindex('[')].strip() }}
+  {%- else -%}
+    {{ name }}
+  {%- endif -%}
+{% endmacro %}
+
 {% block content %}
 
 <div class="page-header">
@@ -62,6 +80,7 @@
         <tr>
           <th>Code</th>
           <th>Material Name</th>
+          <th>Unit</th>
           <th>Date Added</th>
           <th class="text-right">Unit Cost (₹)</th>
           <th class="text-right">Stock Qty</th>
@@ -71,18 +90,23 @@
       </thead>
       <tbody>
         {% for p in products %}
+        {% set unit_label = get_unit(p.name)|trim %}
+        {% set display_name = get_display_name(p.name)|trim %}
         <tr>
           <td class="mono" style="font-weight:700; color:var(--accent-purple);">{{ p.code }}</td>
           <td>
-            <div style="font-weight:600;">{{ p.name }}</div>
+            <div style="font-weight:600;">{{ display_name }}</div>
+          </td>
+          <td>
+            <span class="badge badge-blue" style="font-size:10px; letter-spacing:0.03em;">{{ unit_label }}</span>
           </td>
           <td class="td-muted">{{ p.created_at.strftime('%d %b %Y') }}</td>
           <td class="text-right td-muted">{{ "{:,.2f}".format(p.purchase_cost) }}</td>
           <td class="text-right">
             {% if p.stock_quantity <= p.low_stock_threshold %}
-              <span class="badge badge-red">{{ p.stock_quantity|int }}</span>
+              <span class="badge badge-red">{{ p.stock_quantity|int }} {{ unit_label }}</span>
             {% else %}
-              <span style="font-weight:700; color:var(--accent-green);">{{ p.stock_quantity|int }}</span>
+              <span style="font-weight:700; color:var(--accent-green);">{{ p.stock_quantity|int }} {{ unit_label }}</span>
             {% endif %}
           </td>
           <td class="text-right" style="color:var(--accent-amber); font-weight:600;">
@@ -95,11 +119,11 @@
               </a>
               {% if current_user.role == 'Admin' %}
               <button class="btn btn-ghost btn-xs text-blue" title="Edit Material"
-                      onclick="openEditModal('{{ p.id }}', '{{ p.code|escape }}', '{{ p.name|escape }}', '{{ p.purchase_cost }}', '{{ p.low_stock_threshold }}')">
+                      onclick="openEditModal('{{ p.id }}', '{{ p.code|escape }}', '{{ display_name|escape }}', '{{ p.purchase_cost }}', '{{ p.low_stock_threshold }}', '{{ unit_label }}')">
                 <i class="bi bi-pencil-fill"></i> Edit
               </button>
               <a href="{{ url_for('inventory.delete_product', id=p.id) }}" class="btn btn-ghost btn-xs text-red" title="Delete Material"
-                 onclick="return confirm('Are you sure you want to delete material [{{ p.code|escape }}] {{ p.name|escape }}?');">
+                 onclick="return confirm('Are you sure you want to delete material [{{ p.code|escape }}] {{ display_name|escape }}?');">
                 <i class="bi bi-trash-fill"></i> Delete
               </a>
               {% endif %}
@@ -107,7 +131,7 @@
           </td>
         </tr>
         {% else %}
-        <tr><td colspan="7">
+        <tr><td colspan="8">
           <div class="empty-state">
             <div class="empty-state-icon">🔧</div>
             <h5>No raw materials found</h5>
@@ -120,6 +144,38 @@
   </div>
 </div>
 
+<!-- Smart Material Suggestions Datalist -->
+<datalist id="materialSuggestions">
+  <option value="Copper Wire">
+  <option value="Enamelled Copper Wire">
+  <option value="Aluminum Wire">
+  <option value="Stator Lamination">
+  <option value="Rotor Shaft">
+  <option value="Ball Bearing">
+  <option value="Bush">
+  <option value="Capacitor">
+  <option value="PVC Insulation Tape">
+  <option value="Sleeves">
+  <option value="Winding Paper">
+  <option value="Insulation Sheet">
+  <option value="Terminal Block">
+  <option value="Connector Wire">
+  <option value="Cooling Fan Blade">
+  <option value="Motor Housing">
+  <option value="Nut & Bolt Set">
+  <option value="Rubber Grommet">
+  <option value="Shaft Collar">
+  <option value="End Shield">
+  <option value="Spring Washer">
+  <option value="Carbon Brush">
+  <option value="Thermal Protector">
+  <option value="Junction Box">
+  <option value="Impeller">
+  <option value="Varnish (Insulating)">
+  <option value="Soldering Wire">
+  <option value="Cable Tie">
+</datalist>
+
 <!-- Add Material Modal -->
 <div class="modal-overlay" id="addModal">
   <div class="modal-box" style="max-width:600px;">
@@ -128,7 +184,7 @@
       <button class="modal-close" onclick="document.getElementById('addModal').classList.remove('open')">×</button>
     </div>
     <div class="modal-body">
-      <form method="POST" action="{{ url_for('inventory.add_product') }}">
+      <form method="POST" action="{{ url_for('inventory.add_product') }}" id="addForm" onsubmit="return encodeUnitOnSubmit(this)">
         <input type="hidden" name="category" value="Raw Material">
         <input type="hidden" name="selling_price" value="0.0">
         <div class="form-row">
@@ -141,9 +197,30 @@
             <input type="number" name="initial_stock" step="0.01" placeholder="0" min="0">
           </div>
         </div>
-        <div class="form-group">
-          <label>Material Name *</label>
-          <input type="text" name="name" placeholder="e.g. Copper Wire 1mm" required>
+        <div class="form-row">
+          <div class="form-group" style="flex:2;">
+            <label>Material Name *</label>
+            <input type="text" name="name" id="add_name" list="materialSuggestions" placeholder="Type or select — e.g. Copper Wire" required autocomplete="off">
+            <div style="font-size:10px; color:var(--text-muted); margin-top:4px;">
+              💡 Start typing for smart suggestions from common cooler motor materials
+            </div>
+          </div>
+          <div class="form-group" style="flex:1;">
+            <label>Unit of Measurement *</label>
+            <select name="unit" id="add_unit" required style="height:42px;">
+              <option value="">— Select —</option>
+              <option value="Pcs">Pieces (Pcs)</option>
+              <option value="Kg">Kilograms (Kg)</option>
+              <option value="g">Grams (g)</option>
+              <option value="m">Meters (m)</option>
+              <option value="ft">Feet (ft)</option>
+              <option value="L">Liters (L)</option>
+              <option value="ml">Milliliters (ml)</option>
+              <option value="Sets">Sets</option>
+              <option value="Boxes">Boxes</option>
+              <option value="Rolls">Rolls</option>
+            </select>
+          </div>
         </div>
         <div class="form-row">
           <div class="form-group">
@@ -172,7 +249,7 @@
       <button class="modal-close" onclick="document.getElementById('editModal').classList.remove('open')">×</button>
     </div>
     <div class="modal-body">
-      <form id="editForm" method="POST" action="">
+      <form id="editForm" method="POST" action="" onsubmit="return encodeUnitOnSubmit(this)">
         <input type="hidden" name="category" value="Raw Material">
         <input type="hidden" name="selling_price" value="0.0">
         <div class="form-row">
@@ -185,9 +262,27 @@
             <input type="number" name="low_stock_threshold" id="edit_low_stock_threshold" step="0.01" min="0">
           </div>
         </div>
-        <div class="form-group">
-          <label>Material Name *</label>
-          <input type="text" name="name" id="edit_name" required>
+        <div class="form-row">
+          <div class="form-group" style="flex:2;">
+            <label>Material Name *</label>
+            <input type="text" name="name" id="edit_name" list="materialSuggestions" required autocomplete="off">
+          </div>
+          <div class="form-group" style="flex:1;">
+            <label>Unit of Measurement *</label>
+            <select name="unit" id="edit_unit" required style="height:42px;">
+              <option value="">— Select —</option>
+              <option value="Pcs">Pieces (Pcs)</option>
+              <option value="Kg">Kilograms (Kg)</option>
+              <option value="g">Grams (g)</option>
+              <option value="m">Meters (m)</option>
+              <option value="ft">Feet (ft)</option>
+              <option value="L">Liters (L)</option>
+              <option value="ml">Milliliters (ml)</option>
+              <option value="Sets">Sets</option>
+              <option value="Boxes">Boxes</option>
+              <option value="Rolls">Rolls</option>
+            </select>
+          </div>
         </div>
         <div class="form-row">
           <div class="form-group">
@@ -205,15 +300,70 @@
 </div>
 
 <script>
-function openEditModal(id, code, name, cost, threshold) {
+/**
+ * Encodes the unit of measurement into the material name before form submission.
+ * e.g. "Copper Wire" + unit="Kg" → name submitted as "Copper Wire [Kg]"
+ */
+function encodeUnitOnSubmit(form) {
+  const nameInput = form.querySelector('[name="name"]');
+  const unitSelect = form.querySelector('[name="unit"]');
+  const rawName = nameInput.value.trim().replace(/\s*\[.+?\]\s*$/, '');
+  const unit = unitSelect.value;
+  if (!unit) {
+    alert('Please select a Unit of Measurement.');
+    unitSelect.focus();
+    return false;
+  }
+  nameInput.value = rawName + ' [' + unit + ']';
+  unitSelect.removeAttribute('name');
+  return true;
+}
+
+/**
+ * Opens the Edit Material modal with pre-populated fields including unit.
+ */
+function openEditModal(id, code, name, cost, threshold, unit) {
   document.getElementById('editForm').action = "/inventory/products/edit/" + id;
   document.getElementById('edit_code').value = code;
   document.getElementById('edit_name').value = name;
   document.getElementById('edit_purchase_cost').value = cost;
   document.getElementById('edit_low_stock_threshold').value = threshold;
-  
+  document.getElementById('edit_unit').value = unit || 'Pcs';
   document.getElementById('editModal').classList.add('open');
 }
+
+/**
+ * Smart auto-suggest: auto-fill unit based on common material name patterns.
+ */
+document.addEventListener('DOMContentLoaded', function() {
+  const nameInput = document.getElementById('add_name');
+  const unitSelect = document.getElementById('add_unit');
+
+  const unitHints = {
+    'copper wire': 'Kg', 'enamelled copper wire': 'Kg', 'aluminum wire': 'Kg',
+    'stator lamination': 'Pcs', 'rotor shaft': 'Pcs', 'ball bearing': 'Pcs',
+    'bush': 'Pcs', 'capacitor': 'Pcs', 'pvc insulation tape': 'Rolls',
+    'sleeves': 'Pcs', 'winding paper': 'Rolls', 'insulation sheet': 'Pcs',
+    'terminal block': 'Pcs', 'connector wire': 'm', 'cooling fan blade': 'Pcs',
+    'motor housing': 'Pcs', 'nut & bolt set': 'Sets', 'rubber grommet': 'Pcs',
+    'shaft collar': 'Pcs', 'end shield': 'Pcs', 'spring washer': 'Pcs',
+    'carbon brush': 'Pcs', 'thermal protector': 'Pcs', 'junction box': 'Pcs',
+    'impeller': 'Pcs', 'varnish (insulating)': 'L', 'soldering wire': 'Rolls',
+    'cable tie': 'Pcs'
+  };
+
+  if (nameInput) {
+    nameInput.addEventListener('change', function() {
+      const val = this.value.trim().toLowerCase();
+      if (unitHints[val] && !unitSelect.value) {
+        unitSelect.value = unitHints[val];
+        unitSelect.style.transition = 'box-shadow 0.3s ease';
+        unitSelect.style.boxShadow = '0 0 0 2px var(--accent-blue)';
+        setTimeout(() => { unitSelect.style.boxShadow = ''; }, 1200);
+      }
+    });
+  }
+});
 </script>
 
 {% endblock %}

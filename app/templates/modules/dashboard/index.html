@@ -215,12 +215,19 @@
           <thead><tr><th>Item</th><th class="text-right">Qty</th></tr></thead>
           <tbody>
             {% for item in low_stock_alerts %}
+            {% if '[' in item.name and item.name.endswith(']') %}
+              {% set item_unit = item.name[item.name.rindex('[') + 1 : -1] %}
+              {% set item_display = item.name[:item.name.rindex('[')]|trim %}
+            {% else %}
+              {% set item_unit = 'Pcs' %}
+              {% set item_display = item.name %}
+            {% endif %}
             <tr>
               <td>
-                <div style="font-size:12px;font-weight:600;">{{ item.name }}</div>
+                <div style="font-size:12px;font-weight:600;">{{ item_display }}</div>
                 <div style="font-size:10px;color:var(--text-muted);">[{{ item.code }}]</div>
               </td>
-              <td class="text-right"><span class="badge badge-red">{{ item.stock_quantity|int }}</span></td>
+              <td class="text-right"><span class="badge badge-red">{{ item.stock_quantity|int }} {{ item_unit }}</span></td>
             </tr>
             {% endfor %}
           </tbody>
@@ -380,13 +387,20 @@
           <thead><tr><th>Item</th><th>Category</th><th class="text-right">Stock Qty</th><th class="text-right">Min. Level</th></tr></thead>
           <tbody>
             {% for item in low_stock_alerts %}
+            {% if '[' in item.name and item.name.endswith(']') %}
+              {% set item_unit = item.name[item.name.rindex('[') + 1 : -1] %}
+              {% set item_display = item.name[:item.name.rindex('[')]|trim %}
+            {% else %}
+              {% set item_unit = 'Pcs' %}
+              {% set item_display = item.name %}
+            {% endif %}
             <tr>
               <td>
-                <div style="font-size:12px;font-weight:600;">{{ item.name }}</div>
+                <div style="font-size:12px;font-weight:600;">{{ item_display }}</div>
                 <div style="font-size:10px;color:var(--text-muted);">[{{ item.code }}]</div>
               </td>
               <td><span class="badge {% if item.category == 'Raw Material' %}badge-amber{% else %}badge-blue{% endif %}">{{ item.category }}</span></td>
-              <td class="text-right"><span class="badge badge-red">{{ item.stock_quantity|int }}</span></td>
+              <td class="text-right"><span class="badge badge-red">{{ item.stock_quantity|int }} {{ item_unit }}</span></td>
               <td class="text-right td-muted">{{ item.low_stock_threshold|int }}</td>
             </tr>
             {% endfor %}

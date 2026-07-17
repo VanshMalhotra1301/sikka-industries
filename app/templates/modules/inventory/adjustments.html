@@ -30,8 +30,15 @@
           <select name="product_id" required onchange="updateCurrentStock(this)">
             <option value="">— Select a product —</option>
             {% for p in products %}
-            <option value="{{ p.id }}" data-stock="{{ p.stock_quantity }}">
-              [{{ p.code }}] {{ p.name }} — Stock: {{ p.stock_quantity|int }}
+            {% if '[' in p.name and p.name.endswith(']') %}
+              {% set p_unit = p.name[p.name.rindex('[') + 1 : -1] %}
+              {% set p_display = p.name[:p.name.rindex('[')]|trim %}
+            {% else %}
+              {% set p_unit = 'Pcs' %}
+              {% set p_display = p.name %}
+            {% endif %}
+            <option value="{{ p.id }}" data-stock="{{ p.stock_quantity }}" data-unit="{{ p_unit }}">
+              [{{ p.code }}] {{ p_display }} — Stock: {{ p.stock_quantity|int }} {{ p_unit }}
             </option>
             {% endfor %}
           </select>
@@ -70,7 +77,8 @@
 function updateCurrentStock(sel) {
   const opt = sel.options[sel.selectedIndex];
   const stock = opt.getAttribute('data-stock');
-  document.getElementById('adj-qty').setAttribute('title', 'Current stock: ' + stock);
+  const unit = opt.getAttribute('data-unit') || 'Pcs';
+  document.getElementById('adj-qty').setAttribute('title', 'Current stock: ' + stock + ' ' + unit);
 }
 </script>
 {% endblock %}

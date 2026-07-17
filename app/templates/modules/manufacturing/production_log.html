@@ -52,7 +52,14 @@
             <select name="raw_material_id[]" required>
               <option value="">— Select raw material —</option>
               {% for r in raw_materials %}
-              <option value="{{ r.id }}">[{{ r.code }}] {{ r.name }} (Stock: {{ r.stock_quantity|int }})</option>
+              {% if '[' in r.name and r.name.endswith(']') %}
+                {% set r_unit = r.name[r.name.rindex('[') + 1 : -1] %}
+                {% set r_display = r.name[:r.name.rindex('[')]|trim %}
+              {% else %}
+                {% set r_unit = 'Pcs' %}
+                {% set r_display = r.name %}
+              {% endif %}
+              <option value="{{ r.id }}">[{{ r.code }}] {{ r_display }} (Stock: {{ r.stock_quantity|int }} {{ r_unit }})</option>
               {% endfor %}
             </select>
             <input type="number" name="quantity_consumed[]" step="0.01" min="0.01" placeholder="Qty used" required>
@@ -80,13 +87,20 @@
     </div>
     <div class="card-body" style="padding:12px;">
       {% for r in raw_materials %}
+      {% if '[' in r.name and r.name.endswith(']') %}
+        {% set r_unit = r.name[r.name.rindex('[') + 1 : -1] %}
+        {% set r_display = r.name[:r.name.rindex('[')]|trim %}
+      {% else %}
+        {% set r_unit = 'Pcs' %}
+        {% set r_display = r.name %}
+      {% endif %}
       <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 8px;border-bottom:1px solid var(--border);">
         <div>
-          <div style="font-size:12px;font-weight:600;">{{ r.name }}</div>
+          <div style="font-size:12px;font-weight:600;">{{ r_display }}</div>
           <div style="font-size:10px;color:var(--text-muted);">[{{ r.code }}]</div>
         </div>
         <span class="badge {% if r.stock_quantity <= r.low_stock_threshold %}badge-red{% else %}badge-green{% endif %}">
-          {{ r.stock_quantity|int }}
+          {{ r.stock_quantity|int }} {{ r_unit }}
         </span>
       </div>
       {% else %}
@@ -135,8 +149,13 @@
           <td class="td-muted">{{ run.logger.username if run.logger else 'System' }}</td>
           <td>
             {% for c in run.consumptions %}
+              {% if '[' in c.raw_material.name and c.raw_material.name.endswith(']') %}
+                {% set c_unit = c.raw_material.name[c.raw_material.name.rindex('[') + 1 : -1] %}
+              {% else %}
+                {% set c_unit = 'Pcs' %}
+              {% endif %}
               <span class="badge badge-gray" style="margin:2px;">
-                {{ c.raw_material.code }}: {{ c.quantity_consumed|int }}
+                {{ c.raw_material.code }}: {{ c.quantity_consumed|int }} {{ c_unit }}
               </span>
             {% endfor %}
           </td>
@@ -170,7 +189,14 @@
 let rmCount = 1;
 const rawMaterials = {
   {% for r in raw_materials %}
-  {{ r.id }}: { code: '{{ r.code }}', name: '{{ r.name }}', stock: {{ r.stock_quantity }} }{% if not loop.last %},{% endif %}
+  {% if '[' in r.name and r.name.endswith(']') %}
+    {% set r_unit = r.name[r.name.rindex('[') + 1 : -1] %}
+    {% set r_display = r.name[:r.name.rindex('[')]|trim %}
+  {% else %}
+    {% set r_unit = 'Pcs' %}
+    {% set r_display = r.name %}
+  {% endif %}
+  {{ r.id }}: { code: '{{ r.code }}', name: '{{ r_display }}', stock: {{ r.stock_quantity }}, unit: '{{ r_unit }}' }{% if not loop.last %},{% endif %}
   {% endfor %}
 };
 
@@ -185,7 +211,7 @@ function addRMRow() {
     <select name="raw_material_id[]" required>
       <option value="">— Select raw material —</option>
       ${Object.entries(rawMaterials).map(([id,r]) =>
-        `<option value="${id}">[${r.code}] ${r.name} (Stock: ${Math.floor(r.stock)})</option>`
+        `<option value="${id}">[${r.code}] ${r.name} (Stock: ${Math.floor(r.stock)} ${r.unit})</option>`
       ).join('')}
     </select>
     <input type="number" name="quantity_consumed[]" step="0.01" min="0.01" placeholder="Qty used" required>

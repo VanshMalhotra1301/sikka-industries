@@ -45,7 +45,14 @@
             <select name="product_id[]" required onchange="calcRow(0)">
               <option value="">— Select material —</option>
               {% for m in materials %}
-              <option value="{{ m.id }}">[{{ m.code }}] {{ m.name }}</option>
+              {% if '[' in m.name and m.name.endswith(']') %}
+                {% set m_unit = m.name[m.name.rindex('[') + 1 : -1] %}
+                {% set m_display = m.name[:m.name.rindex('[')]|trim %}
+              {% else %}
+                {% set m_unit = 'Pcs' %}
+                {% set m_display = m.name %}
+              {% endif %}
+              <option value="{{ m.id }}">[{{ m.code }}] {{ m_display }} ({{ m_unit }})</option>
               {% endfor %}
             </select>
             <input type="number" name="quantity[]" step="0.01" min="0.01" placeholder="Qty"
@@ -178,7 +185,14 @@
 let rowCount = 1;
 const materialsData = {
   {% for m in materials %}
-  {{ m.id }}: { code: '{{ m.code }}', name: '{{ m.name }}' }{% if not loop.last %},{% endif %}
+  {% if '[' in m.name and m.name.endswith(']') %}
+    {% set m_unit = m.name[m.name.rindex('[') + 1 : -1] %}
+    {% set m_display = m.name[:m.name.rindex('[')]|trim %}
+  {% else %}
+    {% set m_unit = 'Pcs' %}
+    {% set m_display = m.name %}
+  {% endif %}
+  {{ m.id }}: { code: '{{ m.code }}', name: '{{ m_display }}', unit: '{{ m_unit }}' }{% if not loop.last %},{% endif %}
   {% endfor %}
 };
 
@@ -192,7 +206,7 @@ function addRow() {
     <select name="product_id[]" required onchange="calcRow(${idx})">
       <option value="">— Select material —</option>
       ${Object.entries(materialsData).map(([id, m]) =>
-        `<option value="${id}">[${m.code}] ${m.name}</option>`
+        `<option value="${id}">[${m.code}] ${m.name} (${m.unit})</option>`
       ).join('')}
     </select>
     <input type="number" name="quantity[]" step="0.01" min="0.01" placeholder="Qty"
