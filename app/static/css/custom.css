@@ -1,0 +1,232 @@
+/* ============================================================
+   SIKKA ERP — Supplementary Styles (custom.css)
+   Enhancements, animations, and overrides
+   ============================================================ */
+
+/* ── Page Transition ── */
+.page-body {
+  animation: fadeInContent 0.35s ease-out;
+}
+
+@keyframes fadeInContent {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ── Enhanced Chart Container ── */
+.chart-container canvas {
+  border-radius: var(--radius);
+}
+
+/* ── Stat Card Hover Refinement ── */
+.stat-card {
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+[data-theme="light"] .stat-card {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+/* ── Table Row Stagger Animation ── */
+@keyframes tableRowFade {
+  from {
+    opacity: 0;
+    transform: translateX(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+tbody tr {
+  animation: tableRowFade 0.25s ease-out both;
+}
+
+tbody tr:nth-child(1)  { animation-delay: 0.02s; }
+tbody tr:nth-child(2)  { animation-delay: 0.04s; }
+tbody tr:nth-child(3)  { animation-delay: 0.06s; }
+tbody tr:nth-child(4)  { animation-delay: 0.08s; }
+tbody tr:nth-child(5)  { animation-delay: 0.10s; }
+tbody tr:nth-child(6)  { animation-delay: 0.12s; }
+tbody tr:nth-child(7)  { animation-delay: 0.14s; }
+tbody tr:nth-child(8)  { animation-delay: 0.16s; }
+tbody tr:nth-child(9)  { animation-delay: 0.18s; }
+tbody tr:nth-child(10) { animation-delay: 0.20s; }
+tbody tr:nth-child(n+11) { animation-delay: 0.22s; }
+
+/* ── Card Stagger Animation ── */
+.stats-grid .stat-card {
+  animation: statCardFade 0.4s ease-out both;
+}
+
+@keyframes statCardFade {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.stats-grid .stat-card:nth-child(1) { animation-delay: 0.05s; }
+.stats-grid .stat-card:nth-child(2) { animation-delay: 0.1s; }
+.stats-grid .stat-card:nth-child(3) { animation-delay: 0.15s; }
+.stats-grid .stat-card:nth-child(4) { animation-delay: 0.2s; }
+.stats-grid .stat-card:nth-child(5) { animation-delay: 0.25s; }
+
+/* ── Sidebar Active Link Indicator ── */
+.nav-link-custom.active {
+  position: relative;
+}
+
+/* ── Button Icon Transitions ── */
+.btn i,
+.btn .bi {
+  transition: transform 0.15s ease;
+}
+
+.btn:hover i,
+.btn:hover .bi {
+  transform: scale(1.05);
+}
+
+/* ── Flash Message Auto-dismiss Animation ── */
+.flash-msg {
+  animation: slideDown 0.3s ease, fadeOutFlash 0.5s ease 4.5s forwards;
+}
+
+@keyframes fadeOutFlash {
+  to {
+    opacity: 0;
+    transform: translateY(-4px);
+    max-height: 0;
+    padding: 0 16px;
+    margin-bottom: 0;
+    overflow: hidden;
+  }
+}
+
+/* ── Modal Backdrop Enhanced ── */
+.modal-overlay {
+  transition: opacity 0.2s ease;
+}
+
+/* ── Tabular Numbers for Financial Data ── */
+.stat-value,
+.text-green,
+.text-red,
+.text-blue,
+.text-amber,
+.text-purple,
+.text-cyan,
+.fw-bold,
+.bal-positive,
+.bal-negative,
+.item-subtotal-display,
+.mono,
+.td-mono {
+  font-feature-settings: 'tnum';
+}
+
+/* ── Enhanced Print Styles ── */
+@media print {
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .sidebar-toggle,
+  .sidebar-overlay,
+  .flash-container,
+  .page-actions,
+  .btn,
+  .search-box {
+    display: none !important;
+  }
+
+  .page-body {
+    padding: 0 !important;
+    animation: none !important;
+  }
+
+  tbody tr {
+    animation: none !important;
+  }
+
+  .stat-card,
+  .card,
+  .chart-container {
+    break-inside: avoid;
+    box-shadow: none !important;
+    border: 1px solid #ddd !important;
+  }
+
+  table {
+    font-size: 11px;
+  }
+
+  thead th {
+    background: #f5f5f5 !important;
+    color: #333 !important;
+  }
+}
+
+/* ── Better Select Dropdown Arrow ── */
+select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%238B95A5' d='M3.5 4.5L6 7l2.5-2.5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 12px;
+  padding-right: 32px;
+}
+
+/* ── Smooth Sidebar Hover ── */
+.sidebar .nav-link-custom {
+  will-change: background-color;
+}
+
+/* ── Card Inner Spacing Fix ── */
+.card > .table-wrap:last-child {
+  margin-bottom: -1px;
+}
+
+.card > .table-wrap:last-child table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* ── Keyboard Focus Ring ── */
+.btn:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+.nav-link-custom:focus-visible {
+  outline: 2px solid var(--accent-blue);
+  outline-offset: 2px;
+}
+
+/* ── Responsive Card Grids ── */
+.grid-8-4 > .chart-container,
+.grid-8-4 > .card {
+  min-width: 0;
+}
+
+/* ── Better Empty State ── */
+.empty-state {
+  user-select: none;
+}
+
+/* ── Sidebar Section Divider ── */
+.nav-section-label:not(:first-child) {
+  margin-top: 4px;
+}
